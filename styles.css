@@ -444,3 +444,17 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
   .stats-grid div { padding: 18px 14px; }
   .lesson-card { padding: 22px; }
 }
+
+/* Ariza formasi */
+.lead-card { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; padding: 46px; border-radius: 32px; background: #fff; border: 1px solid var(--border); }
+.lead-card h2 { margin-bottom: 18px; }
+.lead-card p:not(.eyebrow):not(.lf-msg) { color: #665d75; max-width: 460px; margin: 0; }
+#lead-form { display: grid; gap: 14px; }
+.lf-field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+.lf-field input, .lf-field select { width: 100%; min-height: 50px; padding: 0 18px; border: 1px solid var(--border); border-radius: 16px; background: #fff; color: var(--foreground); font: inherit; }
+.lf-field input:focus, .lf-field select:focus { outline: 2px solid var(--ring); border-color: var(--ring); }
+#lead-form .button { width: 100%; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.lf-msg { margin: 0; min-height: 1.4em; font-size: 14px; font-weight: 700; }
+.lf-msg.ok { color: #2f7d57; } .lf-msg.err { color: #b3372f; }
+@media (max-width: 900px) { .lead-card { grid-template-columns: 1fr; gap: 26px; padding: 28px 22px; } }

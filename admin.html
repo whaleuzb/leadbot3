@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>trademove — Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<!-- Kirish -->
+<div id="login" class="login" hidden>
+  <form id="login-form" class="login-card">
+    <a class="brand" href="/">trademove</a>
+    <p class="eyebrow">ADMIN PANEL</p>
+    <label for="login-pw">Parol</label>
+    <input id="login-pw" type="password" autocomplete="current-password" required autofocus />
+    <p class="form-error" id="login-error" role="alert"></p>
+    <button class="btn primary" type="submit">Kirish</button>
+  </form>
+</div>
+
+<!-- Panel -->
+<div id="app" class="app" hidden>
+  <aside class="sidebar">
+    <a class="brand" href="/" title="Saytni ochish">trademove</a>
+    <nav id="nav">
+      <a href="#dashboard" data-tab="dashboard">Umumiy ko‘rinish</a>
+      <a href="#leads" data-tab="leads">Arizalar <span class="count" id="nav-new" hidden></span></a>
+      <a href="#plans" data-tab="plans">Tariflar</a>
+      <a href="#lessons" data-tab="lessons">Darslar</a>
+      <a href="#settings" data-tab="settings">Sozlamalar</a>
+      <a href="#security" data-tab="security">Xavfsizlik</a>
+    </nav>
+    <div class="side-foot">
+      <a href="/" target="_blank" rel="noopener">Saytni ko‘rish ↗</a>
+      <button class="link-btn" id="logout" type="button">Chiqish</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="warn" class="banner" hidden>
+      ⚠️ Standart parol ishlatilyapti. <a href="#security">Parolni hoziroq o‘zgartiring.</a>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Umumiy ko'rinish -->
+    <section class="tab" id="tab-dashboard" hidden>
+      <header class="page-head"><h1>Umumiy ko‘rinish</h1><p>Oxirgi 14 kun va umumiy ko‘rsatkichlar</p></header>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="card"><h2>Tashriflar va arizalar</h2><div id="chart" class="chart"></div>
+          <p class="legend"><i class="dot views"></i> Tashrif <i class="dot leads"></i> Ariza</p></div>
+        <div class="card"><h2>Ariza holatlari</h2><div id="status-bars"></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h2>Tariflar bo‘yicha</h2><div class="table-wrap"><table id="plan-table"></table></div></div>
+        <div class="card"><h2>So‘nggi arizalar</h2><div id="recent"></div></div>
+      </div>
+    </section>
+
+    <!-- Arizalar -->
+    <section class="tab" id="tab-leads" hidden>
+      <header class="page-head row">
+        <div><h1>Arizalar</h1><p id="leads-sub"></p></div>
+        <button class="btn" id="export-csv" type="button">CSV yuklab olish</button>
+      </header>
+      <div class="filters">
+        <input id="lead-search" type="search" placeholder="Ism yoki telefon bo‘yicha qidirish" aria-label="Qidirish" />
+        <select id="lead-status" aria-label="Holat bo‘yicha filtr">
+          <option value="">Barcha holatlar</option>
+          <option value="new">Yangi</option><option value="contacted">Bog‘lanildi</option>
+          <option value="paid">To‘landi</option><option value="rejected">Rad etildi</option>
+        </select>
+        <select id="lead-plan" aria-label="Tarif bo‘yicha filtr"></select>
+      </div>
+      <div class="card flush"><div class="table-wrap"><table id="leads-table"></table></div></div>
+    </section>
+
+    <!-- Tariflar -->
+    <section class="tab" id="tab-plans" hidden>
+      <header class="page-head row">
+        <div><h1>Tariflar</h1><p>Narx, tarkib va tartibni o‘zgartiring. Saqlangach saytda darhol ko‘rinadi.</p></div>
+        <div class="actions"><button class="btn" id="add-plan" type="button">+ Tarif qo‘shish</button><button class="btn primary" id="save-plans" type="button">Saqlash</button></div>
+      </header>
+      <div id="plans-editor" class="stack"></div>
+    </section>
+
+    <!-- Darslar -->
+    <section class="tab" id="tab-lessons" hidden>
+      <header class="page-head row">
+        <div><h1>Darslar</h1><p>Saytdagi “Community ichida” galereyasi kartalari.</p></div>
+        <div class="actions"><button class="btn" id="add-lesson" type="button">+ Dars qo‘shish</button><button class="btn primary" id="save-lessons" type="button">Saqlash</button></div>
+      </header>
+      <div id="lessons-editor" class="stack"></div>
+    </section>
+
+    <!-- Sozlamalar -->
+    <section class="tab" id="tab-settings" hidden>
+      <header class="page-head row">
+        <div><h1>Sozlamalar</h1><p>Brend, aloqa, qabul sanalari va statistika.</p></div>
+        <button class="btn primary" id="save-settings" type="button">Saqlash</button>
+      </header>
+      <form id="settings-form" class="card form-grid" autocomplete="off">
+        <div class="field"><label for="s-brand">Brend nomi</label><input id="s-brand" maxlength="30" /></div>
+        <div class="field"><label for="s-author">Muallif ismi</label><input id="s-author" maxlength="60" /></div>
+        <div class="field"><label for="s-tg">Telegram username</label><input id="s-tg" maxlength="40" placeholder="username (@ siz)" /><small>Sotib olish tugmalari shu akkauntga yo‘naltiradi.</small></div>
+        <div class="field"><label for="s-open">Qabul holati</label>
+          <select id="s-open"><option value="true">Ochiq — countdown ko‘rsatiladi</option><option value="false">Yopiq — “qabul yakunlandi”</option></select></div>
+        <div class="field"><label for="s-start">Qabul boshlanishi</label><input id="s-start" type="datetime-local" /></div>
+        <div class="field"><label for="s-end">Qabul tugashi</label><input id="s-end" type="datetime-local" /><small>Toshkent vaqti (UTC+5)</small></div>
+        <fieldset class="field wide"><legend>“Mening yo‘lim” statistikasi (4 ta)</legend><div id="stats-editor" class="stats-editor"></div></fieldset>
+        <div class="field wide"><label for="s-risk">Risk haqida ogohlantirish</label><textarea id="s-risk" rows="4" maxlength="1200"></textarea></div>
+      </form>
+    </section>
+
+    <!-- Xavfsizlik -->
+    <section class="tab" id="tab-security" hidden>
+      <header class="page-head"><h1>Xavfsizlik</h1><p>Admin parolini o‘zgartirish</p></header>
+      <form id="pw-form" class="card form-narrow">
+        <div class="field"><label for="pw-cur">Joriy parol</label><input id="pw-cur" type="password" autocomplete="current-password" required /></div>
+        <div class="field"><label for="pw-new">Yangi parol</label><input id="pw-new" type="password" autocomplete="new-password" minlength="8" required /><small>Kamida 8 belgi.</small></div>
+        <div class="field"><label for="pw-rep">Yangi parolni takrorlang</label><input id="pw-rep" type="password" autocomplete="new-password" required /></div>
+        <p class="form-error" id="pw-error" role="alert"></p>
+        <button class="btn primary" type="submit">Parolni yangilash</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

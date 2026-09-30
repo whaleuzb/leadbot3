@@ -13,7 +13,7 @@
   <!-- ========== HERO ========== -->
   <div class="hero-shell">
     <header>
-      <a class="brand" href="/">trademove</a>
+      <a class="brand js-brand" href="/">trademove</a>
       <nav>
         <a href="#community">Community</a>
         <a href="#for-whom">Kimga mos</a>
@@ -63,7 +63,7 @@
       <p class="eyebrow">MENING SHAXSIY YO‘LIM</p>
       <h2>BOZORGA<br><em>YANGICHA QARASH</em></h2>
       <div class="result-story">
-        <p class="result-lead">Mani ismim [Ismingiz].</p>
+        <p class="result-lead">Mani ismim <span class="js-author">[Ismingiz]</span>.</p>
         <div class="result-prose">
           <p>Man ham bir paytlar treydingni “tez boyish yo‘li” deb o‘ylardim. Depozitni bir necha marta yo‘qotdim — sababi bozor emas, tizimning yo‘qligi va hissiyotlar edi.</p>
           <p>Bugun man treydingni <strong>qoidalar, riskni nazorat qilish va intizom</strong> orqali o‘rgataman.</p>
@@ -71,15 +71,10 @@
         </div>
         <p class="result-note">Bu “kafolatlangan daromad” va’dasi emas. Bu — bozorni tushunish va o‘z qarorlaringiz uchun mas’uliyat olishni o‘rganadigan yondashuv.</p>
       </div>
-      <span class="result-signature">[Ismingiz] / trademove</span>
+      <span class="result-signature"><span class="js-author">[Ismingiz]</span> / <span class="js-brand">trademove</span></span>
     </div>
     <figure class="result-photo stats-card">
-      <div class="stats-grid">
-        <div><strong>3+ yil</strong><span>bozor tajribasi</span></div>
-        <div><strong>1:2</strong><span>minimal risk / foyda nisbati</span></div>
-        <div><strong>1–2%</strong><span>bitimga maksimal risk</span></div>
-        <div><strong>100%</strong><span>jurnal bilan nazorat</span></div>
-      </div>
+      <div class="stats-grid" id="stats-grid"></div>
       <figcaption><span>OLDIN: hissiyot</span><span>KEYIN: tizim</span></figcaption>
     </figure>
   </section>
@@ -165,6 +160,25 @@
     </div>
   </section>
 
+  <!-- ========== ARIZA FORMASI ========== -->
+  <section class="section lead-section" id="apply">
+    <div class="lead-card">
+      <div>
+        <p class="eyebrow">ARIZA QOLDIRING</p>
+        <h2>Menejer o‘zi<br><em>bog‘lanadi</em></h2>
+        <p>Ism va telefon raqamingizni qoldiring. Tarif tanlashda yordam beramiz va to‘lov tartibini tushuntiramiz.</p>
+      </div>
+      <form id="lead-form" novalidate>
+        <div class="lf-field"><label for="lf-name">Ismingiz</label><input id="lf-name" name="name" autocomplete="name" maxlength="80" required /></div>
+        <div class="lf-field"><label for="lf-phone">Telefon</label><input id="lf-phone" name="phone" type="tel" autocomplete="tel" placeholder="+998 __ ___ __ __" maxlength="30" required /></div>
+        <div class="lf-field"><label for="lf-plan">Tarif</label><select id="lf-plan" name="plan"></select></div>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <p class="lf-msg" id="lf-msg" role="status"></p>
+        <button class="button" type="submit">Ariza yuborish<svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg></button>
+      </form>
+    </div>
+  </section>
+
   <!-- ========== CONTACT ========== -->
   <section class="section">
     <div class="contact">
@@ -180,11 +194,11 @@
   </section>
 
   <section class="section risk-section">
-    <p class="risk-note"><strong>Risk haqida ogohlantirish.</strong> Treyding — yuqori xavfli faoliyat, kapitalingizning bir qismini yoki hammasini yo‘qotishingiz mumkin. Ushbu community ta’lim maqsadida va moliyaviy maslahat emas; o‘tgan natijalar kelajakdagi daromadni kafolatlamaydi. Faqat yo‘qotishga tayyor bo‘lgan mablag‘ bilan savdo qiling.</p>
+    <p class="risk-note"><strong>Risk haqida ogohlantirish.</strong> <span id="risk-text">Treyding — yuqori xavfli faoliyat, kapitalingizning bir qismini yoki hammasini yo‘qotishingiz mumkin. Ushbu community ta’lim maqsadida va moliyaviy maslahat emas; o‘tgan natijalar kelajakdagi daromadni kafolatlamaydi. Faqat yo‘qotishga tayyor bo‘lgan mablag‘ bilan savdo qiling.</span></p>
   </section>
 
   <footer>
-    <a class="brand" href="/">trademove</a>
+    <a class="brand js-brand" href="/">trademove</a>
     <span>Treyding community · Intizom va tizim bilan.</span>
     <a class="icon-link" id="footer-tg" target="_blank" rel="noopener noreferrer" href="#">Telegram
       <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg>
