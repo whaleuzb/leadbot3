@@ -475,3 +475,18 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
 .lesson-card.has-img > *:not(img) { position: relative; z-index: 1; }
 .lesson-card.has-img .lesson-bars { visibility: hidden; }
 .aud-img { display: block; width: 100%; max-width: 300px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; margin-top: 12px; }
+
+/* Chegirmalar */
+.old-price { display: inline-block; margin-right: 10px; color: #8b8494; font-size: 20px; font-weight: 400; letter-spacing: 0; text-decoration-thickness: 2px; }
+.plan .disc-badge { background: #2f7d57; color: #fff; }
+.disc-left, .disc-note { margin: 4px 0 0; color: #2f7d57; font-size: 13px; font-weight: 700; }
+.promo-form { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: -10px 0 24px; }
+.promo-form label { font-size: 13px; font-weight: 700; }
+.promo-form input { flex: 0 1 260px; min-height: 50px; padding: 0 18px; border: 1px solid var(--border); border-radius: 99px; background: #fff; font: inherit; text-transform: uppercase; }
+.promo-form input::placeholder { text-transform: none; }
+.promo-form input:focus { outline: 2px solid var(--ring); border-color: var(--ring); }
+.promo-form .button { padding: 14px 26px; }
+.promo-msg { font-size: 14px; font-weight: 700; }
+.promo-msg.ok { color: #2f7d57; } .promo-msg.err { color: #b3372f; }
+.lf-promo { margin: 0; padding: 10px 14px; border-radius: 14px; background: #e2f3ea; color: #2f7d57; font-size: 14px; font-weight: 700; }
+@media (max-width: 760px) { .promo-form { margin-top: 0; } .promo-form input { flex: 1 1 160px; } }

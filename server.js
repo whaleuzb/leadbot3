@@ -19,6 +19,17 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
 const IMG_RE = /^\/uploads\/[a-f0-9]{16}\.(jpg|png|webp|gif)$/;
 const IMG_MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+/* ---------- Chegirma yordamchilari ---------- */
+function livePlan(p) {
+  const q = { ...p, oldPrice: p.oldPrice || 0, discountUntil: p.discountUntil || "" };
+  if (q.oldPrice > 0 && q.discountUntil && Date.parse(q.discountUntil) <= Date.now()) { q.price = q.oldPrice; q.oldPrice = 0; q.discountUntil = ""; } // aksiya tugadi
+  if (q.oldPrice <= q.price) { q.oldPrice = 0; q.discountUntil = ""; }
+  return q;
+}
+const findPromo = (code) => db.promos.find((x) => x.code === String(code || "").trim().toUpperCase());
+const promoUsable = (pr) => !!pr && pr.active && (!pr.expiresAt || Date.parse(pr.expiresAt) > Date.now()) && (!pr.maxUses || pr.used < pr.maxUses);
+const promoApplies = (pr, plan) => !pr.plans.length || pr.plans.includes(plan.id);
+const applyPromo = (price, pr) => (pr.type === "percent" ? Math.round(price * (100 - pr.value) / 100) : Math.max(0, price - pr.value));
 const cleanImg = (v) => (typeof v === "string" && IMG_RE.test(v) ? v : "");
 const STATIC = {
   "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js",
@@ -86,6 +97,7 @@ function defaults() {
       "Ko‘p narsani o‘rgandingiz, lekin bitta ishlaydigan tizim yig‘a olmadingizmi?",
       "“Tez boyish” emas, kapitalni himoya qiladigan va barqaror yondashuvni xohlaysizmi?",
     ],
+    promos: [],
     leads: [],
     stats: { views: {}, clicks: {} }, // views: {sana: n}, clicks: {sana: {tarif: n}}
     auth: { secret: crypto.randomBytes(32).toString("hex"), passwordHash: null },
@@ -235,8 +247,28 @@ function cleanPlans(arr) {
       name: str(p.name, 40) || "Tarif", description: str(p.description, 300),
       price: Number.isFinite(price) && price >= 0 ? price : 0,
       duration: str(p.duration, 80), featured: !!p.featured, image: cleanImg(p.image),
+      oldPrice: Math.max(0, Math.round(Number(p.oldPrice)) || 0), discountUntil: isDate(p.discountUntil) ? p.discountUntil : "",
       features: strList(p.features), excluded: strList(p.excluded, 10),
     };
+  });
+}
+function cleanPromos(arr) {
+  if (!Array.isArray(arr)) throw Object.assign(new Error("Noto‘g‘ri ro‘yxat"), { code: 400 });
+  const seen = new Set(), planIds = new Set(db.plans.map((p) => p.id));
+  return arr.slice(0, 100).map((x) => {
+    const code = str(x.code, 30).toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+    if (code.length < 3) throw Object.assign(new Error("Promo-kod kamida 3 ta belgi bo‘lsin (harf yoki raqam)"), { code: 400 });
+    if (seen.has(code)) throw Object.assign(new Error("Takroriy promo-kod: " + code), { code: 400 });
+    seen.add(code);
+    const type = x.type === "fixed" ? "fixed" : "percent";
+    let value = Math.round(Number(x.value));
+    if (!(value > 0)) throw Object.assign(new Error(`“${code}” uchun chegirma qiymati 0 dan katta bo‘lsin`), { code: 400 });
+    if (type === "percent" && value > 100) value = 100;
+    const id = str(x.id, 20).replace(/[^\w-]/g, "") || uid();
+    const prev = db.promos.find((p) => p.id === id);
+    return { id, code, type, value, plans: (Array.isArray(x.plans) ? x.plans : []).filter((p) => planIds.has(p)),
+      maxUses: Math.max(0, Math.round(Number(x.maxUses)) || 0), used: prev ? prev.used : 0,
+      expiresAt: isDate(x.expiresAt) ? x.expiresAt : "", active: x.active !== false };
   });
 }
 function cleanLessons(arr) {
@@ -253,11 +285,12 @@ function dashboard() {
   const byStatus = { new: 0, contacted: 0, paid: 0, rejected: 0 };
   const byPlan = {};
   let revenue = 0;
-  const priceOf = (name) => db.plans.find((p) => p.name === name)?.price || 0;
+  const priceOf = (name) => db.plans.map(livePlan).find((p) => p.name === name)?.price || 0;
+  let discount = 0;
   for (const l of db.leads) {
     byStatus[l.status] = (byStatus[l.status] || 0) + 1;
     byPlan[l.plan || "—"] = (byPlan[l.plan || "—"] || 0) + 1;
-    if (l.status === "paid") revenue += priceOf(l.plan);
+    if (l.status === "paid") { revenue += l.price ?? priceOf(l.plan); if (l.listPrice) discount += Math.max(0, l.listPrice - l.price); }
   }
   const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
   const clicksByPlan = {};
@@ -265,7 +298,7 @@ function dashboard() {
   for (const d of Object.values(db.stats.clicks)) for (const [k, v] of Object.entries(d)) { clicksByPlan[k] = (clicksByPlan[k] || 0) + v; clicksTotal += v; }
   const viewsTotal = sum(db.stats.views);
   return {
-    totals: { views: viewsTotal, clicks: clicksTotal, leads: db.leads.length, paid: byStatus.paid, revenue,
+    totals: { views: viewsTotal, clicks: clicksTotal, leads: db.leads.length, paid: byStatus.paid, revenue, discount,
       conversion: viewsTotal ? +(db.leads.length / viewsTotal * 100).toFixed(1) : 0 },
     byStatus, byPlan, clicksByPlan,
     series: days.map((d) => ({ date: d, views: db.stats.views[d] || 0, leads: leadsByDay[d] || 0 })),
@@ -278,7 +311,7 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero }, plans: db.plans, lessons: db.lessons, audience: db.audience });
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero }, plans: db.plans.map(livePlan), lessons: db.lessons, audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -298,6 +331,13 @@ async function api(req, res, url) {
     return send(res, 204);
   }
 
+  if (m === "POST" && p === "/api/promo/check") {
+    if (limited("p:" + clientIp(req), 20, 10 * 6e4)) return send(res, 429, { error: "Ko‘p urinish. Birozdan keyin qayta urinib ko‘ring." });
+    const pr = findPromo((await readJson(req)).code);
+    if (!promoUsable(pr)) return send(res, 404, { valid: false, error: "Promo-kod topilmadi yoki muddati tugagan" });
+    return send(res, 200, { valid: true, code: pr.code, type: pr.type, value: pr.value, plans: pr.plans });
+  }
+
   if (m === "POST" && p === "/api/leads") {
     const b = await readJson(req);
     if (limited("l:" + clientIp(req), 5, 36e5)) return send(res, 429, { error: "Juda ko‘p ariza. Keyinroq urinib ko‘ring." });
@@ -306,7 +346,16 @@ async function api(req, res, url) {
     const name = str(b.name, 80), phone = str(b.phone, 30), plan = str(b.plan, 40);
     if (name.length < 2) return send(res, 400, { error: "Ismingizni kiriting" });
     if (phone.replace(/\D/g, "").length < 9) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });
-    db.leads.unshift({ id: uid(), name, phone, plan, note: str(b.note, 300), status: "new", adminNote: "", consent: true, createdAt: new Date().toISOString() });
+    const planObj = db.plans.map(livePlan).find((x) => x.name === plan);
+    let price = planObj ? planObj.price : 0, promo = "";
+    const listPrice = price;
+    if (str(b.promo, 30)) {
+      const pr = findPromo(b.promo);
+      if (!promoUsable(pr)) return send(res, 400, { error: "Promo-kod yaroqsiz yoki muddati tugagan" });
+      if (!planObj || !promoApplies(pr, planObj)) return send(res, 400, { error: "Bu promo-kod tanlangan tarifga tegishli emas" });
+      price = applyPromo(price, pr); promo = pr.code; pr.used++;
+    }
+    db.leads.unshift({ id: uid(), name, phone, plan, price, listPrice, promo, note: str(b.note, 300), status: "new", adminNote: "", consent: true, createdAt: new Date().toISOString() });
     if (db.leads.length > 5000) db.leads.length = 5000;
     save();
     return send(res, 201, { ok: true });
@@ -328,7 +377,7 @@ async function api(req, res, url) {
   if (m === "GET" && p === "/api/admin/me") return send(res, 200, { ok: true, defaultPassword: !db.auth.passwordHash && !process.env.ADMIN_PASSWORD });
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
-  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience });
+  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, promos: db.promos });
 
   const lead = /^\/api\/admin\/leads\/(\w+)$/.exec(p);
   if (lead) {
@@ -364,6 +413,7 @@ async function api(req, res, url) {
     db.audience = a.map((x) => (typeof x === "string" ? { t: str(x, 300), image: "" } : { t: str(x?.t, 300), image: cleanImg(x?.image) })).filter((x) => x.t).slice(0, 16);
     save(); return send(res, 200, db.audience);
   }
+  if (m === "PUT" && p === "/api/admin/promos") { db.promos = cleanPromos((await readJson(req)).promos); save(); return send(res, 200, db.promos); }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
 
   if (m === "POST" && p === "/api/admin/password") {

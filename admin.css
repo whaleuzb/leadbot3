@@ -155,3 +155,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .img-thumb { width: 96px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); }
 span.img-thumb { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
 .lesson-row > .img-field { grid-column: 2 / -1; }
+
+.bulk-disc { display: grid; gap: 12px; margin-bottom: 16px; }
+.bulk-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.bulk-row .field { width: 190px; }
+.plan-checks { display: flex; gap: 8px 22px; flex-wrap: wrap; padding-top: 4px; }
+.editor-tools .lead-meta { align-self: center; margin-right: 6px; }
+.editor-card .link-btn { margin-top: 6px; font-size: 13px; }

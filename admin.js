@@ -45,13 +45,13 @@ $("#login-form").addEventListener("submit", async (e) => {
 $("#logout").addEventListener("click", async () => { await api("/logout", { method: "POST" }).catch(() => {}); showLogin(); });
 
 /* ---------- Marshrutlash ---------- */
-const TABS = ["dashboard", "leads", "plans", "lessons", "audience", "settings", "security"];
+const TABS = ["dashboard", "leads", "plans", "promos", "lessons", "audience", "settings", "security"];
 const loaded = {};
 function route() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.tab === tab));
-  const loader = { dashboard: loadDashboard, leads: loadLeads, plans: loadContent, lessons: loadContent, audience: loadContent, settings: loadContent }[tab];
+  const loader = { dashboard: loadDashboard, leads: loadLeads, plans: loadContent, promos: loadContent, lessons: loadContent, audience: loadContent, settings: loadContent }[tab];
   if (loader) guard(loader);
   window.scrollTo(0, 0);
 }
@@ -82,6 +82,7 @@ async function loadDashboard() {
     ["Arizalar", money(t.leads), `konversiya ${t.conversion}%`],
     ["To‘langan", money(t.paid), "ta ariza"],
     ["Tushum", money(t.revenue), "so‘m (to‘langan arizalar)"],
+    ["Berilgan chegirma", money(t.discount || 0), "so‘m (promo-kodlar)"],
   ].map(([l, v, s]) => `<div class="kpi"><span>${l}</span><strong>${v}</strong><small>${s}</small></div>`).join("");
 
   drawChart(d.series);
@@ -148,7 +149,7 @@ function renderLeads() {
     ? `<tr><th>Mijoz</th><th>Tarif</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
       <tr data-id="${l.id}">
         <td><div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
-        <td>${esc(l.plan || "—")}</td>
+        <td>${esc(l.plan || "—")}${l.price ? `<div class="lead-meta">${money(l.price)} so‘m${l.promo ? ` · <span class="pill paid">${esc(l.promo)}</span>` : ""}</div>` : ""}</td>
         <td class="lead-meta">${fmtDate(l.createdAt)}</td>
         <td><div class="lead-tools">
           <select data-act="status" aria-label="Holat">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${l.status === k ? " selected" : ""}>${v}</option>`).join("")}</select>
@@ -173,7 +174,7 @@ $("#leads-table").addEventListener("click", (e) => {
 });
 $("#export-csv").addEventListener("click", () => {
   const cell = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
-  const rows = [["Sana", "Ism", "Telefon", "Tarif", "Holat", "Xabar", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.plan, STATUS[l.status], l.note, l.adminNote])];
+  const rows = [["Sana", "Ism", "Telefon", "Tarif", "Narx", "Promo-kod", "Holat", "Xabar", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.plan, l.price ?? "", l.promo || "", STATUS[l.status], l.note, l.adminNote])];
   const blob = new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "arizalar.csv" });
   a.click(); URL.revokeObjectURL(a.href);
@@ -182,7 +183,7 @@ $("#export-csv").addEventListener("click", () => {
 /* ---------- Kontent (tariflar, darslar, sozlamalar) ---------- */
 let CONTENT = null;
 async function ensureContent() { if (!CONTENT) CONTENT = await api("/all"); }
-async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderSettings(); }
+async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderPromos(); renderLessons(); renderAudience(); renderSettings(); }
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
 
 /* ---------- Rasm yuklash (umumiy) ---------- */
@@ -227,6 +228,8 @@ function wireImages(container, getArr, rerender) {
 }
 
 /* Tariflar */
+const discPct = (old, price) => (old > price && price >= 0 ? Math.round((1 - price / old) * 100) : 0);
+const discInfo = (p) => (p.oldPrice > p.price ? `Chegirma: −${discPct(p.oldPrice, p.price)}% (${money(p.oldPrice - p.price)} so‘m)` : "Chegirma yo‘q");
 function renderPlans() {
   const plans = CONTENT.plans;
   $("#plans-editor").innerHTML = plans.map((p, i) => `
@@ -235,6 +238,7 @@ function renderPlans() {
         <div class="editor-tools">
           <button class="btn sm" data-act="up" type="button" ${i === 0 ? "disabled" : ""}>↑</button>
           <button class="btn sm" data-act="down" type="button" ${i === plans.length - 1 ? "disabled" : ""}>↓</button>
+          ${p.oldPrice > p.price ? `<button class="btn sm" data-act="nodisc" type="button">Chegirmani bekor qilish</button>` : ""}
           <button class="btn sm danger" data-act="del" type="button">O‘chirish</button>
         </div></div>
       <div class="fields">
@@ -242,6 +246,8 @@ function renderPlans() {
         <div><label>Narx (so‘m)</label><input data-f="price" type="number" min="0" step="1000" value="${p.price}" /></div>
         <div><label>Yorliq (eyebrow)</label><input data-f="eyebrow" value="${esc(p.eyebrow)}" maxlength="40" /></div>
         <div><label>Nishon (badge)</label><input data-f="badge" value="${esc(p.badge)}" maxlength="40" placeholder="Masalan: 10 TA JOY" /></div>
+        <div><label>Eski narx (chegirmadan oldin)</label><input data-f="oldPrice" type="number" min="0" step="1000" value="${p.oldPrice || 0}" placeholder="0 = chegirma yo‘q" /><small>${discInfo(p)}</small></div>
+        <div><label>Chegirma tugash vaqti</label><input data-f="discountUntil" type="datetime-local" value="${p.discountUntil ? toLocalInput(p.discountUntil) : ""}" /><small>Bo‘sh = muddatsiz</small></div>
         <div class="span2"><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" /></div>
         <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
@@ -256,7 +262,8 @@ $("#plans-editor").addEventListener("input", (e) => {
   const p = CONTENT.plans[card.dataset.i];
   if (f === "features" || f === "excluded") p[f] = e.target.value.split("\n").map((x) => x.trim()).filter(Boolean);
   else if (f === "featured") p.featured = e.target.checked;
-  else if (f === "price") p.price = Number(e.target.value) || 0;
+  else if (f === "price" || f === "oldPrice") { p[f] = Number(e.target.value) || 0; const sm = e.target.closest(".fields").querySelector('[data-f=oldPrice]').parentElement.querySelector("small"); sm.textContent = discInfo(p); }
+  else if (f === "discountUntil") p.discountUntil = e.target.value ? fromLocalInput(e.target.value) : "";
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
 $("#plans-editor").addEventListener("click", (e) => {
@@ -264,6 +271,7 @@ $("#plans-editor").addEventListener("click", (e) => {
   const i = +card.dataset.i, plans = CONTENT.plans;
   if (b.dataset.act === "up") move(plans, i, -1);
   if (b.dataset.act === "down") move(plans, i, 1);
+  if (b.dataset.act === "nodisc") { plans[i].price = plans[i].oldPrice || plans[i].price; plans[i].oldPrice = 0; plans[i].discountUntil = ""; }
   if (b.dataset.act === "del") {
     if (plans.length === 1) return toast("Kamida bitta tarif qolishi kerak", true);
     if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tasdiqlang"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "O‘chirish"; }, 3000); return; }
@@ -272,10 +280,67 @@ $("#plans-editor").addEventListener("click", (e) => {
   renderPlans();
 });
 $("#add-plan").addEventListener("click", () => {
-  CONTENT.plans.push({ id: "", eyebrow: String(CONTENT.plans.length + 1).padStart(2, "0") + " / YANGI", badge: "", name: "Yangi tarif", description: "", price: 0, duration: "", featured: false, image: "", features: [], excluded: [] });
+  CONTENT.plans.push({ id: "", eyebrow: String(CONTENT.plans.length + 1).padStart(2, "0") + " / YANGI", badge: "", name: "Yangi tarif", description: "", price: 0, duration: "", featured: false, image: "", oldPrice: 0, discountUntil: "", features: [], excluded: [] });
   renderPlans(); $$("#plans-editor .card").at(-1).scrollIntoView({ behavior: "smooth", block: "center" });
 });
+$("#bd-apply").addEventListener("click", () => {
+  const pct = Number($("#bd-pct").value);
+  if (!(pct >= 1 && pct <= 90)) return toast("Chegirma 1 dan 90 gacha bo‘lsin", true);
+  const until = $("#bd-until").value ? fromLocalInput($("#bd-until").value) : "";
+  if (until && Date.parse(until) <= Date.now()) return toast("Tugash vaqti kelajakda bo‘lsin", true);
+  CONTENT.plans.forEach((p) => { const base = p.oldPrice > p.price ? p.oldPrice : p.price; p.oldPrice = base; p.price = Math.round(base * (100 - pct) / 100 / 1000) * 1000; p.discountUntil = until; });
+  renderPlans(); toast(`−${pct}% qo‘llandi. Saqlash tugmasini bosing.`);
+});
+$("#bd-clear").addEventListener("click", () => {
+  CONTENT.plans.forEach((p) => { if (p.oldPrice > p.price) p.price = p.oldPrice; p.oldPrice = 0; p.discountUntil = ""; });
+  renderPlans(); toast("Chegirmalar bekor qilindi. Saqlash tugmasini bosing.");
+});
 $("#save-plans").addEventListener("click", () => guard(async () => { CONTENT.plans = await api("/plans", { method: "PUT", body: { plans: CONTENT.plans } }); renderPlans(); }, "Tariflar saqlandi — saytda yangilandi"));
+
+/* Promo-kodlar */
+const genCode = () => "TM" + Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+function renderPromos() {
+  const P = CONTENT.promos;
+  $("#promo-editor").innerHTML = P.length ? P.map((x, i) => `
+    <div class="card editor-card" data-i="${i}">
+      <div class="editor-head"><strong>${esc(x.code || "Yangi promo-kod")} <span class="pill ${x.active ? "paid" : "rejected"}">${x.active ? "Faol" : "O‘chirilgan"}</span></strong>
+        <div class="editor-tools"><span class="lead-meta">Ishlatilgan: <b>${x.used || 0}</b>${x.maxUses ? " / " + x.maxUses : " (cheksiz)"}</span><button class="btn sm danger" data-act="del" type="button">O‘chirish</button></div></div>
+      <div class="fields">
+        <div><label>Kod</label><input data-f="code" value="${esc(x.code)}" maxlength="30" style="text-transform:uppercase" /><button class="link-btn" data-act="gen" type="button">Tasodifiy kod</button></div>
+        <div><label>Turi</label><select data-f="type"><option value="percent"${x.type === "percent" ? " selected" : ""}>Foiz (%)</option><option value="fixed"${x.type === "fixed" ? " selected" : ""}>Aniq summa (so‘m)</option></select></div>
+        <div><label>Chegirma qiymati</label><input data-f="value" type="number" min="1" value="${x.value}" /></div>
+        <div><label>Necha marta ishlatilsin</label><input data-f="maxUses" type="number" min="0" value="${x.maxUses || 0}" /><small>0 = cheklanmagan</small></div>
+        <div><label>Amal qilish muddati</label><input data-f="expiresAt" type="datetime-local" value="${x.expiresAt ? toLocalInput(x.expiresAt) : ""}" /><small>Bo‘sh = muddatsiz</small></div>
+        <div><label class="check" style="margin-top:26px"><input type="checkbox" data-f="active" ${x.active ? "checked" : ""} /> Faol</label></div>
+        <fieldset class="span3"><legend>Qaysi tariflarga amal qiladi</legend><div class="plan-checks">
+          ${CONTENT.plans.filter((p) => p.id).map((p) => `<label class="check"><input type="checkbox" data-plan="${esc(p.id)}" ${x.plans.includes(p.id) ? "checked" : ""}/> ${esc(p.name)}</label>`).join("")}
+        </div><small>Hech biri belgilanmasa — barcha tariflarga.</small></fieldset>
+      </div>
+    </div>`).join("") : `<div class="card empty">Promo-kodlar yo‘q. “+ Promo-kod” tugmasini bosing.</div>`;
+}
+$("#promo-editor").addEventListener("input", (e) => {
+  const card = e.target.closest("[data-i]"); if (!card) return;
+  const x = CONTENT.promos[card.dataset.i], f = e.target.dataset.f;
+  if (e.target.dataset.plan) { x.plans = e.target.checked ? [...new Set([...x.plans, e.target.dataset.plan])] : x.plans.filter((p) => p !== e.target.dataset.plan); return; }
+  if (!f) return;
+  if (f === "active") x.active = e.target.checked;
+  else if (f === "value" || f === "maxUses") x[f] = Number(e.target.value) || 0;
+  else if (f === "expiresAt") x.expiresAt = e.target.value ? fromLocalInput(e.target.value) : "";
+  else if (f === "code") x.code = e.target.value.toUpperCase();
+  else x[f] = e.target.value;
+});
+$("#promo-editor").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"), card = e.target.closest("[data-i]"); if (!b || !card) return;
+  const i = +card.dataset.i;
+  if (b.dataset.act === "gen") CONTENT.promos[i].code = genCode();
+  if (b.dataset.act === "del") {
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tasdiqlang"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "O‘chirish"; }, 3000); return; }
+    CONTENT.promos.splice(i, 1);
+  }
+  renderPromos();
+});
+$("#add-promo").addEventListener("click", () => { CONTENT.promos.push({ id: "", code: genCode(), type: "percent", value: 10, plans: [], maxUses: 0, used: 0, expiresAt: "", active: true }); renderPromos(); $$("#promo-editor .card").at(-1).scrollIntoView({ behavior: "smooth", block: "center" }); });
+$("#save-promos").addEventListener("click", () => guard(async () => { CONTENT.promos = await api("/promos", { method: "PUT", body: { promos: CONTENT.promos } }); renderPromos(); }, "Promo-kodlar saqlandi"));
 
 /* Darslar */
 function renderLessons() {

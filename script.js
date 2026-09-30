@@ -79,14 +79,39 @@ let LESSONS = [
 
 let ENROLL_OPEN = true;
 let AUDIENCE = null;
+let PROMO = null; // { code, type, value, plans[] }
+const promoApplies = (p) => !!PROMO && (!PROMO.plans.length || PROMO.plans.includes(p.id));
+const promoPrice = (price) => (PROMO.type === "percent" ? Math.round(price * (100 - PROMO.value) / 100) : Math.max(0, price - PROMO.value));
+const discPct = (old, now) => (old > now ? Math.round((1 - now / old) * 100) : 0);
+function priceInfo(p) {
+  let final = p.price, old = p.oldPrice > p.price ? p.oldPrice : 0;
+  if (promoApplies(p)) { final = promoPrice(p.price); old = p.oldPrice > p.price ? p.oldPrice : p.price; }
+  if (old <= final) old = 0;
+  return { final, old, pct: discPct(old, final) };
+}
+function timeLeft(iso) {
+  const ms = Date.parse(iso) - Date.now();
+  if (!(ms > 0)) return "";
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+  return d ? `${d} kun ${h} soat` : h ? `${h} soat ${m} daq` : `${m} daq`;
+}
+function updateDiscTimers() {
+  document.querySelectorAll(".disc-left[data-until]").forEach((e) => {
+    const t = timeLeft(e.dataset.until);
+    e.textContent = t ? `Chegirma tugashiga: ${t}` : "";
+  });
+}
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtPrice = (p) => (typeof p === "number" ? p.toLocaleString("ru-RU").replace(/\u00a0/g, " ") : p);
 
 function telegramLink(text) {
   return `https://t.me/${TELEGRAM}?text=${encodeURIComponent(text)}`;
 }
-const planLink = (name) =>
-  telegramLink(`Tarif: ${name}\n\nAssalomu alaykum! «${name}» tarifini sotib olmoqchiman. To‘lovni qanday amalga oshirish mumkin?`);
+const planLink = (p) => {
+  const i = priceInfo(p);
+  const extra = (i.old ? `\nNarx: ${fmtPrice(i.final)} so‘m (−${i.pct}%)` : "") + (promoApplies(p) ? `\nPromo-kod: ${PROMO.code}` : "");
+  return telegramLink(`Tarif: ${p.name}${extra}\n\nAssalomu alaykum! «${p.name}» tarifini sotib olmoqchiman. To‘lovni qanday amalga oshirish mumkin?`);
+};
 
 function featureList(plan) {
   const ok = plan.features.map((f) => `<li><span>✓</span>${esc(f)}</li>`).join("");
@@ -98,18 +123,22 @@ function featureList(plan) {
 function renderPlans() {
   const grid = document.getElementById("plans-grid");
   if (!grid) return;
-  grid.innerHTML = PLANS.map((p, i) => `
+  grid.innerHTML = PLANS.map((p, i) => {
+    const pi = priceInfo(p);
+    return `
     <article class="plan ${p.featured ? "featured" : ""}">
       ${p.image ? `<img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy">` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
         ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
+        ${pi.pct ? `<span class="badge disc-badge">−${pi.pct}%</span>` : ""}
       </div>
       <h3>${esc(p.name)}</h3>
       <p class="plan-description">${esc(p.description)}</p>
-      <p class="price">${fmtPrice(p.price)} <small>so‘m</small></p>
+      <p class="price">${pi.old ? `<s class="old-price">${fmtPrice(pi.old)}</s>` : ""}${fmtPrice(pi.final)} <small>so‘m</small></p>
+      ${promoApplies(p) ? `<p class="disc-note">Promo-kod ${esc(PROMO.code)} qo‘llandi</p>` : p.discountUntil && pi.old ? `<p class="disc-left" data-until="${esc(p.discountUntil)}"></p>` : ""}
       <p class="duration">${esc(p.duration)}</p>
-      <a class="button" target="_blank" rel="noopener noreferrer" href="${planLink(p.name)}" data-plan="${esc(p.name)}">Sotib olish${ARROW}</a>
+      <a class="button" target="_blank" rel="noopener noreferrer" href="${planLink(p)}" data-plan="${esc(p.name)}">Sotib olish${ARROW}</a>
       <p class="telegram-note">Telegram orqali · Menejer</p>
       <div class="desktop-features">${featureList(p)}</div>
       <div class="mobile-features">
@@ -118,7 +147,9 @@ function renderPlans() {
         </button>
         <div id="features-${i}" hidden>${featureList(p)}</div>
       </div>
-    </article>`).join("");
+    </article>`;
+  }).join("");
+  updateDiscTimers();
 
   /* ---------- 2) Mobil akkordeon ---------- */
   grid.querySelectorAll(".features-toggle").forEach((btn) => {
@@ -339,6 +370,38 @@ function initTracking() {
   });
 }
 
+function showLeadPromo() {
+  const e = document.getElementById("lf-promo");
+  if (!e) return;
+  e.hidden = !PROMO;
+  if (PROMO) e.textContent = `Promo-kod ${PROMO.code} qo‘llanadi (−${PROMO.type === "percent" ? PROMO.value + "%" : fmtPrice(PROMO.value) + " so‘m"})`;
+}
+function initPromo() {
+  const form = document.getElementById("promo-form");
+  if (!form) return;
+  const input = document.getElementById("promo-code"), msg = document.getElementById("promo-msg");
+  const check = async (code, silent) => {
+    msg.className = "promo-msg"; msg.textContent = "";
+    try {
+      const r = await post("/api/promo/check", { code });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.valid) throw new Error(d.error || "Promo-kod topilmadi");
+      PROMO = { code: d.code, type: d.type, value: d.value, plans: d.plans || [] };
+      try { sessionStorage.setItem("tm_promo", d.code); } catch {}
+      input.value = d.code;
+      msg.className = "promo-msg ok";
+      msg.textContent = `✓ ${d.code}: −${d.type === "percent" ? d.value + "%" : fmtPrice(d.value) + " so‘m"}` + (d.plans.length ? " (ba’zi tariflar uchun)" : "");
+      renderPlans(); showLeadPromo();
+    } catch (err) {
+      PROMO = null; try { sessionStorage.removeItem("tm_promo"); } catch {}
+      if (!silent) { msg.className = "promo-msg err"; msg.textContent = err.message; }
+      renderPlans(); showLeadPromo();
+    }
+  };
+  form.addEventListener("submit", (e) => { e.preventDefault(); const c = input.value.trim(); if (c) check(c, false); });
+  try { const saved = sessionStorage.getItem("tm_promo"); if (saved) check(saved, true); } catch {}
+}
+
 function initLeadForm() {
   const form = document.getElementById("lead-form");
   if (!form) return;
@@ -350,7 +413,7 @@ function initLeadForm() {
     msg.className = "lf-msg"; msg.textContent = "";
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on" });
+      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on", promo: PROMO ? PROMO.code : "" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
       form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
     } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }
@@ -368,5 +431,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initCountdown();
   initCandles();
   initTracking();
+  initPromo();
   initLeadForm();
+  setInterval(updateDiscTimers, 30000);
 });
