@@ -141,3 +141,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 @media (max-width: 520px) { .fields { grid-template-columns: 1fr; } .stats-editor div { grid-template-columns: 90px minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } html { scroll-behavior: auto; } }
+
+.aud-row { grid-template-columns: 36px minmax(0, 1fr) auto; }
+@media (max-width: 900px) { .aud-row { grid-template-columns: 30px minmax(0, 1fr) auto; } }

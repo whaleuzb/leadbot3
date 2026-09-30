@@ -62,6 +62,16 @@ function defaults() {
       { n: "04", t: "Treyding rejasi", d: "Kirish, chiqish, shartlar" },
       { n: "05", t: "Psixologiya", d: "Hissiyotlarni nazorat qilish" },
     ],
+    audience: [
+      "Treydingni noldan boshlamoqchisiz, lekin qayerdan boshlashni bilmayapsizmi?",
+      "Depozitni bir necha marta yo‘qotgansiz va sababini tushunmayapsizmi?",
+      "Boshqalarning signallariga tayanasiz, o‘z qarorlaringizga ishonchingiz yo‘qmi?",
+      "Bitimga kirish va chiqishni qanday belgilashni bilmayapsizmi?",
+      "Har bitimda qancha risk qilishni va stop-loss’ni qanday qo‘yishni bilmaysizmi?",
+      "Hissiyotlarga berilib, rejadan chetga chiqib ketasizmi (qo‘rquv, ochko‘zlik)?",
+      "Ko‘p narsani o‘rgandingiz, lekin bitta ishlaydigan tizim yig‘a olmadingizmi?",
+      "“Tez boyish” emas, kapitalni himoya qiladigan va barqaror yondashuvni xohlaysizmi?",
+    ],
     leads: [],
     stats: { views: {}, clicks: {} }, // views: {sana: n}, clicks: {sana: {tarif: n}}
     auth: { secret: crypto.randomBytes(32).toString("hex"), passwordHash: null },
@@ -228,7 +238,7 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote }, plans: db.plans, lessons: db.lessons });
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote }, plans: db.plans, lessons: db.lessons, audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -252,10 +262,11 @@ async function api(req, res, url) {
     const b = await readJson(req);
     if (limited("l:" + clientIp(req), 5, 36e5)) return send(res, 429, { error: "Juda ko‘p ariza. Keyinroq urinib ko‘ring." });
     if (b.website) return send(res, 204); // honeypot
+    if (b.consent !== true) return send(res, 400, { error: "Davom etish uchun shaxsiy ma’lumotlarni qayta ishlashga rozilik bering" });
     const name = str(b.name, 80), phone = str(b.phone, 30), plan = str(b.plan, 40);
     if (name.length < 2) return send(res, 400, { error: "Ismingizni kiriting" });
     if (phone.replace(/\D/g, "").length < 9) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });
-    db.leads.unshift({ id: uid(), name, phone, plan, note: str(b.note, 300), status: "new", adminNote: "", createdAt: new Date().toISOString() });
+    db.leads.unshift({ id: uid(), name, phone, plan, note: str(b.note, 300), status: "new", adminNote: "", consent: true, createdAt: new Date().toISOString() });
     if (db.leads.length > 5000) db.leads.length = 5000;
     save();
     return send(res, 201, { ok: true });
@@ -277,7 +288,7 @@ async function api(req, res, url) {
   if (m === "GET" && p === "/api/admin/me") return send(res, 200, { ok: true, defaultPassword: !db.auth.passwordHash && !process.env.ADMIN_PASSWORD });
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
-  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons });
+  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience });
 
   const lead = /^\/api\/admin\/leads\/(\w+)$/.exec(p);
   if (lead) {
@@ -298,6 +309,12 @@ async function api(req, res, url) {
 
   if (m === "PUT" && p === "/api/admin/settings") { db.settings = cleanSettings(await readJson(req)); save(); return send(res, 200, db.settings); }
   if (m === "PUT" && p === "/api/admin/plans") { db.plans = cleanPlans((await readJson(req)).plans); save(); return send(res, 200, db.plans); }
+  if (m === "PUT" && p === "/api/admin/audience") {
+    const a = (await readJson(req)).audience;
+    if (!Array.isArray(a)) return send(res, 400, { error: "Noto‘g‘ri ro‘yxat" });
+    db.audience = a.map((x) => str(x, 300)).filter(Boolean).slice(0, 16);
+    save(); return send(res, 200, db.audience);
+  }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
 
   if (m === "POST" && p === "/api/admin/password") {

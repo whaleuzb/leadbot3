@@ -78,6 +78,7 @@ let LESSONS = [
 ];
 
 let ENROLL_OPEN = true;
+let AUDIENCE = null;
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtPrice = (p) => (typeof p === "number" ? p.toLocaleString("ru-RU").replace(/\u00a0/g, " ") : p);
 
@@ -262,15 +263,22 @@ function initCandles() {
   g.innerHTML = out;
 }
 
+function renderAudience() {
+  const ol = document.getElementById("audience-grid");
+  if (!ol || !AUDIENCE) return;
+  ol.innerHTML = AUDIENCE.map((t, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span><p>${esc(t)}</p></li>`).join("");
+}
+
 /* ---------- 6) Server ma'lumotlari, kuzatuv, ariza formasi ---------- */
 async function loadConfig() {
   try {
     const r = await fetch("/api/config", { cache: "no-store" });
     if (!r.ok) throw new Error();
-    const { settings: s, plans, lessons } = await r.json();
+    const { settings: s, plans, lessons, audience } = await r.json();
     TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
+    if (Array.isArray(audience) && audience.length) AUDIENCE = audience;
     document.title = `${s.brand} — Treydingni tizim bilan o‘rgan`;
     document.querySelectorAll(".js-brand").forEach((e) => (e.textContent = s.brand));
     document.querySelectorAll(".js-author").forEach((e) => (e.textContent = s.authorName));
@@ -303,7 +311,7 @@ function initLeadForm() {
     msg.className = "lf-msg"; msg.textContent = "";
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website") });
+      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
       form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
     } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }
@@ -316,6 +324,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const contact = telegramLink("Assalomu alaykum! Tariflar haqida ma’lumot olmoqchiman.");
   ["contact-btn", "footer-tg"].forEach((id) => { const a = document.getElementById(id); if (a) a.href = contact; });
   renderPlans();
+  renderAudience();
   initGallery();
   initCountdown();
   initCandles();

@@ -45,13 +45,13 @@ $("#login-form").addEventListener("submit", async (e) => {
 $("#logout").addEventListener("click", async () => { await api("/logout", { method: "POST" }).catch(() => {}); showLogin(); });
 
 /* ---------- Marshrutlash ---------- */
-const TABS = ["dashboard", "leads", "plans", "lessons", "settings", "security"];
+const TABS = ["dashboard", "leads", "plans", "lessons", "audience", "settings", "security"];
 const loaded = {};
 function route() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.tab === tab));
-  const loader = { dashboard: loadDashboard, leads: loadLeads, plans: loadContent, lessons: loadContent, settings: loadContent }[tab];
+  const loader = { dashboard: loadDashboard, leads: loadLeads, plans: loadContent, lessons: loadContent, audience: loadContent, settings: loadContent }[tab];
   if (loader) guard(loader);
   window.scrollTo(0, 0);
 }
@@ -182,7 +182,7 @@ $("#export-csv").addEventListener("click", () => {
 /* ---------- Kontent (tariflar, darslar, sozlamalar) ---------- */
 let CONTENT = null;
 async function ensureContent() { if (!CONTENT) CONTENT = await api("/all"); }
-async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderSettings(); }
+async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderSettings(); }
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
 
 /* Tariflar */
@@ -259,6 +259,28 @@ $("#lessons-editor").addEventListener("click", (e) => {
 });
 $("#add-lesson").addEventListener("click", () => { CONTENT.lessons.push({ n: "", t: "", d: "" }); renderLessons(); $$("#lessons-editor input").at(-2)?.focus(); });
 $("#save-lessons").addEventListener("click", () => guard(async () => { CONTENT.lessons = await api("/lessons", { method: "PUT", body: { lessons: CONTENT.lessons } }); renderLessons(); }, "Darslar saqlandi"));
+
+/* Kimga mos */
+function renderAudience() {
+  const a = CONTENT.audience;
+  $("#aud-editor").innerHTML = a.length ? `<div class="card stack">` + a.map((t, i) => `
+    <div class="lesson-row aud-row" data-i="${i}">
+      <span class="idx">${String(i + 1).padStart(2, "0")}</span>
+      <textarea data-f="t" rows="2" maxlength="300" aria-label="Karta matni ${i + 1}">${esc(t)}</textarea>
+      <span class="editor-tools"><button class="btn sm" data-act="up" type="button" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn sm" data-act="down" type="button" ${i === a.length - 1 ? "disabled" : ""}>↓</button><button class="btn sm danger" data-act="del" type="button">×</button></span>
+    </div>`).join("") + `</div>` : `<div class="card empty">Kartalar yo‘q. “+ Karta qo‘shish” tugmasini bosing.</div>`;
+}
+$("#aud-editor").addEventListener("input", (e) => { const r = e.target.closest("[data-i]"); if (r) CONTENT.audience[r.dataset.i] = e.target.value; });
+$("#aud-editor").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"), r = e.target.closest("[data-i]"); if (!b || !r) return;
+  const i = +r.dataset.i;
+  if (b.dataset.act === "up") move(CONTENT.audience, i, -1);
+  if (b.dataset.act === "down") move(CONTENT.audience, i, 1);
+  if (b.dataset.act === "del") CONTENT.audience.splice(i, 1);
+  renderAudience();
+});
+$("#add-aud").addEventListener("click", () => { CONTENT.audience.push(""); renderAudience(); $$("#aud-editor textarea").at(-1)?.focus(); });
+$("#save-aud").addEventListener("click", () => guard(async () => { CONTENT.audience = await api("/audience", { method: "PUT", body: { audience: CONTENT.audience } }); renderAudience(); }, "Kartalar saqlandi — saytda yangilandi"));
 
 /* Sozlamalar */
 const toLocalInput = (iso) => new Date(Date.parse(iso) + 5 * 36e5).toISOString().slice(0, 16);
