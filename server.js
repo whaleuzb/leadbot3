@@ -38,7 +38,7 @@ function defaults() {
     settings: {
       brand: "trademove",
       authorName: "[Ismingiz]",
-      telegram: "trademove_admin",
+      telegram: "managermtuz",
       enrollStart: "2026-09-30T00:00:00+05:00",
       enrollEnd: "2026-10-10T23:59:00+05:00",
       enrollmentOpen: true,
@@ -87,6 +87,8 @@ function load() {
   const d = defaults();
   for (const k of Object.keys(d)) if (db[k] === undefined) db[k] = d[k];
   db.auth.secret = db.auth.secret || d.auth.secret;
+  // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
+  if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
 }
 let saving = false, dirty = false;
 function save() {

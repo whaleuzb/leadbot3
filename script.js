@@ -3,7 +3,7 @@
    1) Tariflar  2) Mobil akkordeon  3) Galereya  4) Countdown  5) Hero sham grafigi
    ========================================================= */
 
-let TELEGRAM = "trademove_admin"; // ⚠️ Menejer Telegram username'ini yozing
+let TELEGRAM = "managermtuz"; // ⚠️ Menejer Telegram username'ini yozing
 
 // Qabul sanalari (Toshkent vaqti)
 let ENROLL_START = "2026-09-30T00:00:00+05:00";
