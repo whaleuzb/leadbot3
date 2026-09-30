@@ -79,6 +79,7 @@ let LESSONS = [
 
 let ENROLL_OPEN = true;
 let AUDIENCE = null;
+let PROMO_ENABLED = false;
 let PROMO = null; // { code, type, value, plans[] }
 const promoApplies = (p) => !!PROMO && (!PROMO.plans.length || PROMO.plans.includes(p.id));
 const promoPrice = (price) => (PROMO.type === "percent" ? Math.round(price * (100 - PROMO.value) / 100) : Math.max(0, price - PROMO.value));
@@ -94,6 +95,16 @@ function timeLeft(iso) {
   if (!(ms > 0)) return "";
   const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
   return d ? `${d} kun ${h} soat` : h ? `${h} soat ${m} daq` : `${m} daq`;
+}
+function renderSaleBanner() {
+  const el = document.getElementById("sale-banner");
+  if (!el) return;
+  const sales = PLANS.map((p) => ({ p, pct: p.oldPrice > p.price ? discPct(p.oldPrice, p.price) : 0 })).filter((x) => x.pct > 0);
+  if (!sales.length) { el.hidden = true; return; }
+  const max = Math.max(...sales.map((x) => x.pct));
+  const untils = sales.map((x) => x.p.discountUntil).filter(Boolean).sort();
+  el.hidden = false;
+  el.innerHTML = `<strong>Aksiya</strong><span>Tariflarga ${max}% gacha chegirma</span>` + (untils.length ? `<em class="disc-left" data-until="${esc(untils[0])}"></em>` : "");
 }
 function updateDiscTimers() {
   document.querySelectorAll(".disc-left[data-until]").forEach((e) => {
@@ -149,6 +160,7 @@ function renderPlans() {
       </div>
     </article>`;
   }).join("");
+  renderSaleBanner();
   updateDiscTimers();
 
   /* ---------- 2) Mobil akkordeon ---------- */
@@ -344,7 +356,7 @@ async function loadConfig() {
     const r = await fetch("/api/config", { cache: "no-store" });
     if (!r.ok) throw new Error();
     const { settings: s, plans, lessons, audience } = await r.json();
-    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false;
+    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; PROMO_ENABLED = !!s.promoEnabled;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
     if (Array.isArray(audience) && audience.length) AUDIENCE = audience;
@@ -379,6 +391,8 @@ function showLeadPromo() {
 function initPromo() {
   const form = document.getElementById("promo-form");
   if (!form) return;
+  form.hidden = !PROMO_ENABLED;
+  if (!PROMO_ENABLED) return;
   const input = document.getElementById("promo-code"), msg = document.getElementById("promo-msg");
   const check = async (code, silent) => {
     msg.className = "promo-msg"; msg.textContent = "";

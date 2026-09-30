@@ -246,6 +246,7 @@ function renderPlans() {
         <div><label>Narx (so‘m)</label><input data-f="price" type="number" min="0" step="1000" value="${p.price}" /></div>
         <div><label>Yorliq (eyebrow)</label><input data-f="eyebrow" value="${esc(p.eyebrow)}" maxlength="40" /></div>
         <div><label>Nishon (badge)</label><input data-f="badge" value="${esc(p.badge)}" maxlength="40" placeholder="Masalan: 10 TA JOY" /></div>
+        <div><label>Chegirma, %</label><input data-f="pct" type="number" min="0" max="90" value="${discPct(p.oldPrice, p.price) || ""}" placeholder="Masalan: 20" /><small>Foiz kiritsangiz, narx avtomatik hisoblanadi</small></div>
         <div><label>Eski narx (chegirmadan oldin)</label><input data-f="oldPrice" type="number" min="0" step="1000" value="${p.oldPrice || 0}" placeholder="0 = chegirma yo‘q" /><small>${discInfo(p)}</small></div>
         <div><label>Chegirma tugash vaqti</label><input data-f="discountUntil" type="datetime-local" value="${p.discountUntil ? toLocalInput(p.discountUntil) : ""}" /><small>Bo‘sh = muddatsiz</small></div>
         <div class="span2"><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" /></div>
@@ -263,6 +264,13 @@ $("#plans-editor").addEventListener("input", (e) => {
   if (f === "features" || f === "excluded") p[f] = e.target.value.split("\n").map((x) => x.trim()).filter(Boolean);
   else if (f === "featured") p.featured = e.target.checked;
   else if (f === "price" || f === "oldPrice") { p[f] = Number(e.target.value) || 0; const sm = e.target.closest(".fields").querySelector('[data-f=oldPrice]').parentElement.querySelector("small"); sm.textContent = discInfo(p); }
+  else if (f === "pct") {
+    const pct = Math.min(90, Math.max(0, Number(e.target.value) || 0)), base = p.oldPrice > p.price ? p.oldPrice : p.price;
+    if (pct) { p.oldPrice = base; p.price = Math.round(base * (100 - pct) / 100 / 1000) * 1000; } else { p.price = base; p.oldPrice = 0; p.discountUntil = ""; }
+    const f2 = e.target.closest(".fields");
+    f2.querySelector("[data-f=price]").value = p.price; f2.querySelector("[data-f=oldPrice]").value = p.oldPrice || 0;
+    f2.querySelector("[data-f=oldPrice]").parentElement.querySelector("small").textContent = discInfo(p);
+  }
   else if (f === "discountUntil") p.discountUntil = e.target.value ? fromLocalInput(e.target.value) : "";
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
@@ -401,7 +409,7 @@ const fromLocalInput = (v) => v + ":00+05:00";
 function renderSettings() {
   const s = CONTENT.settings;
   $("#s-brand").value = s.brand; $("#s-author").value = s.authorName; $("#s-tg").value = s.telegram;
-  $("#s-open").value = String(s.enrollmentOpen);
+  $("#s-open").value = String(s.enrollmentOpen); $("#s-promo").value = String(!!s.promoEnabled);
   $("#s-start").value = toLocalInput(s.enrollStart); $("#s-end").value = toLocalInput(s.enrollEnd);
   $("#s-risk").value = s.riskNote;
   const H = s.hero;
@@ -415,7 +423,7 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
   if ($("#s-end").value <= $("#s-start").value) throw new Error("Tugash sanasi boshlanishdan keyin bo‘lishi kerak");
   const body = {
     brand: $("#s-brand").value, authorName: $("#s-author").value, telegram: $("#s-tg").value,
-    enrollmentOpen: $("#s-open").value === "true", enrollStart: fromLocalInput($("#s-start").value), enrollEnd: fromLocalInput($("#s-end").value),
+    enrollmentOpen: $("#s-open").value === "true", promoEnabled: $("#s-promo").value === "true", enrollStart: fromLocalInput($("#s-start").value), enrollEnd: fromLocalInput($("#s-end").value),
     riskNote: $("#s-risk").value,
     hero: { eyebrow: $("#h-eyebrow").value, title1: $("#h-t1").value, accent: $("#h-acc").value, title3: $("#h-t3").value,
       intro: $("#h-intro").value, note: $("#h-note").value, captionLabel: $("#h-clabel").value, caption: $("#h-caption").value },

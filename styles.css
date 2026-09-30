@@ -27,6 +27,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 25px; }
 body {
   margin: 0;
@@ -490,3 +491,8 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
 .promo-msg.ok { color: #2f7d57; } .promo-msg.err { color: #b3372f; }
 .lf-promo { margin: 0; padding: 10px 14px; border-radius: 14px; background: #e2f3ea; color: #2f7d57; font-size: 14px; font-weight: 700; }
 @media (max-width: 760px) { .promo-form { margin-top: 0; } .promo-form input { flex: 1 1 160px; } }
+
+.sale-banner { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin: -10px 0 22px; padding: 14px 20px; border-radius: 18px; background: #2f7d57; color: #fff; font-size: 15px; }
+.sale-banner strong { padding: 3px 12px; border-radius: 99px; background: #fff; color: #2f7d57; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
+.sale-banner .disc-left { margin: 0 0 0 auto; color: #fff; font-style: normal; }
+@media (max-width: 760px) { .sale-banner { margin-top: 0; } .sale-banner .disc-left { margin-left: 0; } }

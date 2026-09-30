@@ -57,6 +57,7 @@ function defaults() {
       enrollStart: "2026-09-30T00:00:00+05:00",
       enrollEnd: "2026-10-10T23:59:00+05:00",
       enrollmentOpen: true,
+      promoEnabled: false,
       stats: [
         { value: "3+ yil", label: "bozor tajribasi" },
         { value: "1:2", label: "minimal risk / foyda nisbati" },
@@ -228,6 +229,7 @@ function cleanSettings(s = {}) {
     enrollStart: isDate(s.enrollStart) ? s.enrollStart : cur.enrollStart,
     enrollEnd: isDate(s.enrollEnd) ? s.enrollEnd : cur.enrollEnd,
     enrollmentOpen: typeof s.enrollmentOpen === "boolean" ? s.enrollmentOpen : cur.enrollmentOpen,
+    promoEnabled: typeof s.promoEnabled === "boolean" ? s.promoEnabled : cur.promoEnabled,
     stats,
     riskNote: str(s.riskNote, 1200) || cur.riskNote,
     hero: cleanHero(s.hero, cur.hero),
@@ -310,8 +312,8 @@ async function api(req, res, url) {
   const m = req.method, p = url.pathname;
 
   if (m === "GET" && p === "/api/config") {
-    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero }, plans: db.plans.map(livePlan), lessons: db.lessons, audience: db.audience });
+    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, promoEnabled, stats, riskNote, hero } = db.settings;
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, promoEnabled, stats, riskNote, hero }, plans: db.plans.map(livePlan), lessons: db.lessons, audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -332,6 +334,7 @@ async function api(req, res, url) {
   }
 
   if (m === "POST" && p === "/api/promo/check") {
+    if (!db.settings.promoEnabled) return send(res, 404, { valid: false, error: "Promo-kodlar hozircha o‘chirilgan" });
     if (limited("p:" + clientIp(req), 20, 10 * 6e4)) return send(res, 429, { error: "Ko‘p urinish. Birozdan keyin qayta urinib ko‘ring." });
     const pr = findPromo((await readJson(req)).code);
     if (!promoUsable(pr)) return send(res, 404, { valid: false, error: "Promo-kod topilmadi yoki muddati tugagan" });
@@ -349,7 +352,7 @@ async function api(req, res, url) {
     const planObj = db.plans.map(livePlan).find((x) => x.name === plan);
     let price = planObj ? planObj.price : 0, promo = "";
     const listPrice = price;
-    if (str(b.promo, 30)) {
+    if (db.settings.promoEnabled && str(b.promo, 30)) {
       const pr = findPromo(b.promo);
       if (!promoUsable(pr)) return send(res, 400, { error: "Promo-kod yaroqsiz yoki muddati tugagan" });
       if (!planObj || !promoApplies(pr, planObj)) return send(res, 400, { error: "Bu promo-kod tanlangan tarifga tegishli emas" });
