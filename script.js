@@ -100,6 +100,7 @@ function renderPlans() {
   if (!grid) return;
   grid.innerHTML = PLANS.map((p, i) => `
     <article class="plan ${p.featured ? "featured" : ""}">
+      ${p.image ? `<img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy">` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
         ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
@@ -149,7 +150,8 @@ function initGallery() {
   const group = (hidden) =>
     `<div class="gallery-group"${hidden ? ' aria-hidden="true"' : ""}>` +
     LESSONS.map((l, i) =>
-      `<figure class="community-shot lesson-card">
+      `<figure class="community-shot lesson-card${l.image ? " has-img" : ""}">
+         ${l.image ? `<img class="lesson-img" src="${esc(l.image)}" alt="" loading="lazy" draggable="false">` : ""}
          <span class="lesson-n">${esc(l.n)}</span>
          <div class="lesson-bars" aria-hidden="true">${bars(i + 3)}</div>
          <figcaption><strong>${esc(l.t)}</strong><span>${esc(l.d)}</span></figcaption>
@@ -287,7 +289,10 @@ function initCandles() {
 function renderAudience() {
   const ol = document.getElementById("audience-grid");
   if (!ol || !AUDIENCE) return;
-  ol.innerHTML = AUDIENCE.map((t, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span><p>${esc(t)}</p></li>`).join("");
+  ol.innerHTML = AUDIENCE.map((a, i) => {
+    const t = typeof a === "string" ? a : a.t, img = typeof a === "string" ? "" : a.image;
+    return `<li><span>${String(i + 1).padStart(2, "0")}</span><div><p>${esc(t)}</p>${img ? `<img class="aud-img" src="${esc(img)}" alt="" loading="lazy">` : ""}</div></li>`;
+  }).join("");
 }
 
 /* ---------- 6) Server ma'lumotlari, kuzatuv, ariza formasi ---------- */

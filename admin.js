@@ -185,6 +185,47 @@ async function ensureContent() { if (!CONTENT) CONTENT = await api("/all"); }
 async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderSettings(); }
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
 
+/* ---------- Rasm yuklash (umumiy) ---------- */
+const imgField = (url) => `<div class="img-field">
+  ${url ? `<img class="img-thumb" src="${esc(url)}" alt="Yuklangan rasm" />` : `<span class="img-thumb empty">Rasm yo‘q</span>`}
+  <button class="btn sm" data-act="img" type="button">${url ? "Rasmni almashtirish" : "Rasm yuklash"}</button>
+  ${url ? `<button class="btn sm danger" data-act="imgdel" type="button">Olib tashlash</button>` : ""}
+  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-file hidden aria-label="Rasm tanlash" />
+</div>`;
+async function shrink(file) {
+  if (!/^image\//.test(file.type)) throw new Error("Faqat rasm fayli tanlang");
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+  const c = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) });
+  const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error("Rasmni o‘qib bo‘lmadi"))), "image/jpeg", 0.85));
+}
+async function uploadImage(file) {
+  const blob = await shrink(file);
+  const r = await fetch("/api/admin/upload", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob, credentials: "same-origin" });
+  if (r.status === 401) { showLogin(); throw new Error("Kirish kerak"); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "Yuklab bo‘lmadi");
+  return d.url;
+}
+/* editor: konteyner, ma'lumot massivi olish funksiyasi, qayta chizish */
+function wireImages(container, getArr, rerender) {
+  container.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act=img],[data-act=imgdel]"); if (!b) return;
+    const row = b.closest("[data-i]"); if (!row) return;
+    if (b.dataset.act === "imgdel") { getArr()[row.dataset.i].image = ""; rerender(); return; }
+    $("[data-file]", row).click();
+  });
+  container.addEventListener("change", async (e) => {
+    if (!e.target.matches("[data-file]")) return;
+    const row = e.target.closest("[data-i]"), file = e.target.files[0]; if (!file) return;
+    toast("Rasm yuklanmoqda…");
+    try { getArr()[row.dataset.i].image = await uploadImage(file); rerender(); toast("Rasm yuklandi. Oxirida “Saqlash” bosing."); }
+    catch (err) { toast(err.message, true); }
+    e.target.value = "";
+  });
+}
+
 /* Tariflar */
 function renderPlans() {
   const plans = CONTENT.plans;
@@ -202,6 +243,7 @@ function renderPlans() {
         <div><label>Yorliq (eyebrow)</label><input data-f="eyebrow" value="${esc(p.eyebrow)}" maxlength="40" /></div>
         <div><label>Nishon (badge)</label><input data-f="badge" value="${esc(p.badge)}" maxlength="40" placeholder="Masalan: 10 TA JOY" /></div>
         <div class="span2"><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" /></div>
+        <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
         <div class="span2"><label>Nimalar kiradi (har qatorda bittadan)</label><textarea data-f="features" rows="8">${esc(p.features.join("\n"))}</textarea></div>
         <div><label>Kirmaydi (har qatorda bittadan)</label><textarea data-f="excluded" rows="3">${esc(p.excluded.join("\n"))}</textarea>
@@ -218,7 +260,7 @@ $("#plans-editor").addEventListener("input", (e) => {
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
 $("#plans-editor").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]"), card = e.target.closest("[data-i]"); if (!b || !card) return;
+  const b = e.target.closest("[data-act]"), card = e.target.closest("[data-i]"); if (!b || !card || b.dataset.act.startsWith("img")) return;
   const i = +card.dataset.i, plans = CONTENT.plans;
   if (b.dataset.act === "up") move(plans, i, -1);
   if (b.dataset.act === "down") move(plans, i, 1);
@@ -230,7 +272,7 @@ $("#plans-editor").addEventListener("click", (e) => {
   renderPlans();
 });
 $("#add-plan").addEventListener("click", () => {
-  CONTENT.plans.push({ id: "", eyebrow: String(CONTENT.plans.length + 1).padStart(2, "0") + " / YANGI", badge: "", name: "Yangi tarif", description: "", price: 0, duration: "", featured: false, features: [], excluded: [] });
+  CONTENT.plans.push({ id: "", eyebrow: String(CONTENT.plans.length + 1).padStart(2, "0") + " / YANGI", badge: "", name: "Yangi tarif", description: "", price: 0, duration: "", featured: false, image: "", features: [], excluded: [] });
   renderPlans(); $$("#plans-editor .card").at(-1).scrollIntoView({ behavior: "smooth", block: "center" });
 });
 $("#save-plans").addEventListener("click", () => guard(async () => { CONTENT.plans = await api("/plans", { method: "PUT", body: { plans: CONTENT.plans } }); renderPlans(); }, "Tariflar saqlandi — saytda yangilandi"));
@@ -244,20 +286,21 @@ function renderLessons() {
       <input data-f="t" value="${esc(l.t)}" maxlength="50" aria-label="Dars nomi" placeholder="Dars nomi" />
       <input class="l-desc" data-f="d" value="${esc(l.d)}" maxlength="100" aria-label="Qisqa tavsif" placeholder="Qisqa tavsif" />
       <span class="editor-tools"><button class="btn sm" data-act="up" type="button" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn sm" data-act="down" type="button" ${i === ls.length - 1 ? "disabled" : ""}>↓</button><button class="btn sm danger" data-act="del" type="button">×</button></span>
+      ${imgField(l.image)}
     </div>`).join("") + `</div>` : `<div class="card empty">Darslar yo‘q. “+ Dars qo‘shish” tugmasini bosing.</div>`;
 }
 $("#lessons-editor").addEventListener("input", (e) => {
   const row = e.target.closest("[data-i]"); if (row && e.target.dataset.f) CONTENT.lessons[row.dataset.i][e.target.dataset.f] = e.target.value;
 });
 $("#lessons-editor").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]"), row = e.target.closest("[data-i]"); if (!b || !row) return;
+  const b = e.target.closest("[data-act]"), row = e.target.closest("[data-i]"); if (!b || !row || b.dataset.act.startsWith("img")) return;
   const i = +row.dataset.i;
   if (b.dataset.act === "up") move(CONTENT.lessons, i, -1);
   if (b.dataset.act === "down") move(CONTENT.lessons, i, 1);
   if (b.dataset.act === "del") CONTENT.lessons.splice(i, 1);
   renderLessons();
 });
-$("#add-lesson").addEventListener("click", () => { CONTENT.lessons.push({ n: "", t: "", d: "" }); renderLessons(); $$("#lessons-editor input").at(-2)?.focus(); });
+$("#add-lesson").addEventListener("click", () => { CONTENT.lessons.push({ n: "", t: "", d: "", image: "" }); renderLessons(); $$("#lessons-editor input").at(-2)?.focus(); });
 $("#save-lessons").addEventListener("click", () => guard(async () => { CONTENT.lessons = await api("/lessons", { method: "PUT", body: { lessons: CONTENT.lessons } }); renderLessons(); }, "Darslar saqlandi"));
 
 /* Kimga mos */
@@ -266,20 +309,21 @@ function renderAudience() {
   $("#aud-editor").innerHTML = a.length ? `<div class="card stack">` + a.map((t, i) => `
     <div class="lesson-row aud-row" data-i="${i}">
       <span class="idx">${String(i + 1).padStart(2, "0")}</span>
-      <textarea data-f="t" rows="2" maxlength="300" aria-label="Karta matni ${i + 1}">${esc(t)}</textarea>
+      <textarea data-f="t" rows="2" maxlength="300" aria-label="Karta matni ${i + 1}">${esc(t.t)}</textarea>
       <span class="editor-tools"><button class="btn sm" data-act="up" type="button" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn sm" data-act="down" type="button" ${i === a.length - 1 ? "disabled" : ""}>↓</button><button class="btn sm danger" data-act="del" type="button">×</button></span>
+      ${imgField(t.image)}
     </div>`).join("") + `</div>` : `<div class="card empty">Kartalar yo‘q. “+ Karta qo‘shish” tugmasini bosing.</div>`;
 }
-$("#aud-editor").addEventListener("input", (e) => { const r = e.target.closest("[data-i]"); if (r) CONTENT.audience[r.dataset.i] = e.target.value; });
+$("#aud-editor").addEventListener("input", (e) => { const r = e.target.closest("[data-i]"); if (r && e.target.matches("textarea")) CONTENT.audience[r.dataset.i].t = e.target.value; });
 $("#aud-editor").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]"), r = e.target.closest("[data-i]"); if (!b || !r) return;
+  const b = e.target.closest("[data-act]"), r = e.target.closest("[data-i]"); if (!b || !r || b.dataset.act.startsWith("img")) return;
   const i = +r.dataset.i;
   if (b.dataset.act === "up") move(CONTENT.audience, i, -1);
   if (b.dataset.act === "down") move(CONTENT.audience, i, 1);
   if (b.dataset.act === "del") CONTENT.audience.splice(i, 1);
   renderAudience();
 });
-$("#add-aud").addEventListener("click", () => { CONTENT.audience.push(""); renderAudience(); $$("#aud-editor textarea").at(-1)?.focus(); });
+$("#add-aud").addEventListener("click", () => { CONTENT.audience.push({ t: "", image: "" }); renderAudience(); $$("#aud-editor textarea").at(-1)?.focus(); });
 $("#save-aud").addEventListener("click", () => guard(async () => { CONTENT.audience = await api("/audience", { method: "PUT", body: { audience: CONTENT.audience } }); renderAudience(); }, "Kartalar saqlandi — saytda yangilandi"));
 
 /* Sozlamalar */
@@ -325,6 +369,10 @@ $("#pw-form").addEventListener("submit", async (e) => {
     e.target.reset(); $("#warn").hidden = true; toast("Parol yangilandi");
   } catch (ex) { err.textContent = ex.message; }
 });
+
+wireImages($("#plans-editor"), () => CONTENT.plans, renderPlans);
+wireImages($("#lessons-editor"), () => CONTENT.lessons, renderLessons);
+wireImages($("#aud-editor"), () => CONTENT.audience, renderAudience);
 
 /* ---------- Boshlash ---------- */
 (async () => {

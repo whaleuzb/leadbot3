@@ -16,6 +16,10 @@ const crypto = require("crypto");
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
+const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+const IMG_RE = /^\/uploads\/[a-f0-9]{16}\.(jpg|png|webp|gif)$/;
+const IMG_MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+const cleanImg = (v) => (typeof v === "string" && IMG_RE.test(v) ? v : "");
 const STATIC = {
   "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js",
   "/admin": "admin.html", "/admin.html": "admin.html", "/admin.css": "admin.css", "/admin.js": "admin.js",
@@ -91,11 +95,12 @@ function defaults() {
 /* ---------- Saqlash ---------- */
 let db;
 function load() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   try { db = JSON.parse(fs.readFileSync(DB_FILE, "utf8")); }
   catch { db = defaults(); save(); }
   const d = defaults();
   for (const k of Object.keys(d)) if (db[k] === undefined) db[k] = d[k];
+  db.audience = (db.audience || []).map((x) => (typeof x === "string" ? { t: x, image: "" } : x));
   db.settings = { ...d.settings, ...db.settings }; // yangi sozlamalar eski bazada ham paydo bo'ladi
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
@@ -136,6 +141,21 @@ function readJson(req) {
     req.on("data", (c) => { size += c.length; if (size > 200_000) { reject(Object.assign(new Error("Juda katta"), { code: 413 })); req.destroy(); } else chunks.push(c); });
     req.on("end", () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString() || "{}")); } catch { reject(Object.assign(new Error("Noto‘g‘ri JSON"), { code: 400 })); } });
   });
+}
+function readRaw(req, max) {
+  return new Promise((resolve, reject) => {
+    let size = 0; const chunks = [];
+    req.on("data", (c) => { size += c.length; if (size > max) { reject(Object.assign(new Error("Rasm juda katta (4 MB dan oshmasin)"), { code: 413 })); req.destroy(); } else chunks.push(c); });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+function sniffImage(b) {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (b.length > 8 && b.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))) return "png";
+  if (b.length > 12 && b.slice(0, 4).toString() === "RIFF" && b.slice(8, 12).toString() === "WEBP") return "webp";
+  if (b.length > 6 && b.slice(0, 4).toString() === "GIF8") return "gif";
+  return null;
 }
 const clientIp = (req) => (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
 
@@ -214,14 +234,14 @@ function cleanPlans(arr) {
       id, eyebrow: str(p.eyebrow, 40), badge: str(p.badge, 40),
       name: str(p.name, 40) || "Tarif", description: str(p.description, 300),
       price: Number.isFinite(price) && price >= 0 ? price : 0,
-      duration: str(p.duration, 80), featured: !!p.featured,
+      duration: str(p.duration, 80), featured: !!p.featured, image: cleanImg(p.image),
       features: strList(p.features), excluded: strList(p.excluded, 10),
     };
   });
 }
 function cleanLessons(arr) {
   if (!Array.isArray(arr)) throw Object.assign(new Error("Noto‘g‘ri ro‘yxat"), { code: 400 });
-  return arr.slice(0, 20).map((l, i) => ({ n: String(i + 1).padStart(2, "0"), t: str(l.t, 50) || "Dars", d: str(l.d, 100) }));
+  return arr.slice(0, 20).map((l, i) => ({ n: String(i + 1).padStart(2, "0"), t: str(l.t, 50) || "Dars", d: str(l.d, 100), image: cleanImg(l.image) }));
 }
 
 /* ---------- Dashboard ---------- */
@@ -327,12 +347,21 @@ async function api(req, res, url) {
     }
   }
 
+  if (m === "POST" && p === "/api/admin/upload") {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(req.headers["content-type"] || "")) return send(res, 415, { error: "Faqat JPG, PNG, WebP yoki GIF" });
+    const buf = await readRaw(req, 4 * 1024 * 1024);
+    const ext = sniffImage(buf);
+    if (!ext) return send(res, 400, { error: "Bu rasm fayli emas" });
+    const name = crypto.randomBytes(8).toString("hex") + "." + ext;
+    fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+    return send(res, 201, { url: "/uploads/" + name });
+  }
   if (m === "PUT" && p === "/api/admin/settings") { db.settings = cleanSettings(await readJson(req)); save(); return send(res, 200, db.settings); }
   if (m === "PUT" && p === "/api/admin/plans") { db.plans = cleanPlans((await readJson(req)).plans); save(); return send(res, 200, db.plans); }
   if (m === "PUT" && p === "/api/admin/audience") {
     const a = (await readJson(req)).audience;
     if (!Array.isArray(a)) return send(res, 400, { error: "Noto‘g‘ri ro‘yxat" });
-    db.audience = a.map((x) => str(x, 300)).filter(Boolean).slice(0, 16);
+    db.audience = a.map((x) => (typeof x === "string" ? { t: str(x, 300), image: "" } : { t: str(x?.t, 300), image: cleanImg(x?.image) })).filter((x) => x.t).slice(0, 16);
     save(); return send(res, 200, db.audience);
   }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
@@ -356,6 +385,13 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");
     if (url.pathname.startsWith("/api/")) return await api(req, res, url);
+    if (url.pathname.startsWith("/uploads/")) {
+      if (req.method !== "GET" || !IMG_RE.test(url.pathname)) return send(res, 404, "Topilmadi");
+      const fp = path.join(UPLOAD_DIR, path.basename(url.pathname));
+      if (!fs.existsSync(fp)) return send(res, 404, "Topilmadi");
+      res.writeHead(200, { "Content-Type": IMG_MIME[path.extname(fp).slice(1)], "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" });
+      return fs.createReadStream(fp).pipe(res);
+    }
     const file = STATIC[url.pathname];
     if (!file || req.method !== "GET") return send(res, 404, "Topilmadi");
     const headers = { "Content-Type": MIME[path.extname(file)], "X-Content-Type-Options": "nosniff", "Cache-Control": "no-cache" };

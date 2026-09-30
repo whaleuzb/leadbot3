@@ -465,3 +465,13 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
 .gallery-ctl { margin: 10px 0 0; text-align: center; }
 .gallery-ctl button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 99px; background: #fff; color: #5d5764; font: 600 13px var(--body); cursor: pointer; }
 .gallery-ctl button:hover { background: var(--shell); }
+
+/* Karta rasmlari */
+.plan-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 18px; margin-bottom: 18px; }
+.lesson-card { position: relative; }
+.lesson-card.has-img { background: #151319; }
+.lesson-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+.lesson-card.has-img::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(rgba(23,19,30,.1) 30%, rgba(23,19,30,.88)); }
+.lesson-card.has-img > *:not(img) { position: relative; z-index: 1; }
+.lesson-card.has-img .lesson-bars { visibility: hidden; }
+.aud-img { display: block; width: 100%; max-width: 300px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; margin-top: 12px; }

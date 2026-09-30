@@ -150,3 +150,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .hero-preview { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--lilac); font-size: 14px; }
 .hero-fs { padding: 16px; border: 1px solid var(--border) !important; border-radius: 16px; }
 @media (max-width: 700px) { .hero-grid { grid-template-columns: 1fr; } }
+
+.img-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.img-thumb { width: 96px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); }
+span.img-thumb { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.lesson-row > .img-field { grid-column: 2 / -1; }
