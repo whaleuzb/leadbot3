@@ -461,3 +461,7 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
 
 .lf-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: #665d75; cursor: pointer; }
 .lf-consent input { width: 18px; height: 18px; margin: 2px 0 0; flex: 0 0 auto; accent-color: #7560b8; }
+
+.gallery-ctl { margin: 10px 0 0; text-align: center; }
+.gallery-ctl button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 99px; background: #fff; color: #5d5764; font: 600 13px var(--body); cursor: pointer; }
+.gallery-ctl button:hover { background: var(--shell); }

@@ -158,27 +158,48 @@ function initGallery() {
   track.innerHTML = group(true) + group(false) + group(true);
 
   const groupWidth = () => track.firstElementChild.getBoundingClientRect().width;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Kasr qiymatni o'zimiz yuritamiz: ba'zi brauzerlar (iOS Safari) scrollLeft ni butun songa yaxlitlaydi
+  let pos = 0, lastSet = 0, paused = false, userPaused = false, dragging = false, startX = 0, startScroll = 0, resumeTimer;
+  const SPEED = 0.045; // px/ms (~45px/soniya)
 
-  requestAnimationFrame(() => { gallery.scrollLeft = groupWidth(); });
+  requestAnimationFrame(() => { pos = lastSet = gallery.scrollLeft = groupWidth(); });
 
+  const wrapPos = () => {
+    const w = groupWidth();
+    if (pos >= w * 2) pos -= w; else if (pos <= 0) pos += w;
+  };
   const wrap = () => {
     const w = groupWidth();
     if (gallery.scrollLeft >= w * 2) gallery.scrollLeft -= w;
     else if (gallery.scrollLeft <= 0) gallery.scrollLeft += w;
+    pos = lastSet = gallery.scrollLeft;
   };
 
-  let paused = false, dragging = false, startX = 0, startScroll = 0, resumeTimer;
   const pause = () => { paused = true; clearTimeout(resumeTimer); };
   const resume = (ms = 1500) => { clearTimeout(resumeTimer); resumeTimer = setTimeout(() => (paused = false), ms); };
 
   let last = performance.now();
   const tick = (now) => {
-    const dt = now - last; last = now;
-    if (!paused && !dragging && !reduce) { gallery.scrollLeft += dt * 0.04; wrap(); }
+    const dt = Math.min(now - last, 100); last = now;
+    if (!paused && !userPaused && !dragging) {
+      // foydalanuvchi o'zi surgan bo'lsa — joyni qayta olamiz
+      if (Math.abs(gallery.scrollLeft - lastSet) > 2) pos = gallery.scrollLeft;
+      pos += dt * SPEED; wrapPos();
+      gallery.scrollLeft = pos;
+      lastSet = gallery.scrollLeft;
+    }
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+
+  // To'xtatish / davom ettirish tugmasi (harakatni boshqarish uchun)
+  const toggle = document.getElementById("gallery-toggle");
+  toggle?.addEventListener("click", () => {
+    userPaused = !userPaused;
+    toggle.setAttribute("aria-pressed", String(userPaused));
+    toggle.textContent = userPaused ? "▶ Davom ettirish" : "❚❚ To‘xtatish";
+    if (!userPaused) pos = lastSet = gallery.scrollLeft;
+  });
 
   gallery.addEventListener("pointerdown", (e) => {
     if (e.pointerType !== "mouse") return;
