@@ -120,6 +120,19 @@
           <select id="s-open"><option value="true">Ochiq — countdown ko‘rsatiladi</option><option value="false">Yopiq — “qabul yakunlandi”</option></select></div>
         <div class="field"><label for="s-start">Qabul boshlanishi</label><input id="s-start" type="datetime-local" /></div>
         <div class="field"><label for="s-end">Qabul tugashi</label><input id="s-end" type="datetime-local" /><small>Toshkent vaqti (UTC+5)</small></div>
+        <fieldset class="field wide hero-fs"><legend>Bosh sahifa (hero) matnlari</legend>
+          <div class="hero-grid">
+            <div class="field wide"><label for="h-eyebrow">Yuqori yorliq</label><input id="h-eyebrow" maxlength="60" /></div>
+            <div class="field"><label for="h-t1">Sarlavha, 1-qator</label><input id="h-t1" maxlength="40" /></div>
+            <div class="field"><label for="h-acc">2-qator (rangli)</label><input id="h-acc" maxlength="40" /></div>
+            <div class="field"><label for="h-t3">3-qator</label><input id="h-t3" maxlength="40" /></div>
+            <p class="hero-preview wide" id="hero-preview" aria-live="polite"></p>
+            <div class="field wide"><label for="h-intro">Tavsif matni</label><textarea id="h-intro" rows="3" maxlength="300"></textarea></div>
+            <div class="field wide"><label for="h-note">Tugma ostidagi qisqa izoh</label><input id="h-note" maxlength="120" /></div>
+            <div class="field"><label for="h-clabel">Rasm yorlig‘i</label><input id="h-clabel" maxlength="40" /></div>
+            <div class="field"><label for="h-caption">Rasm yozuvi (Enter — yangi qator)</label><textarea id="h-caption" rows="2" maxlength="120"></textarea></div>
+          </div>
+        </fieldset>
         <fieldset class="field wide"><legend>“Mening yo‘lim” statistikasi (4 ta)</legend><div id="stats-editor" class="stats-editor"></div></fieldset>
         <div class="field wide"><label for="s-risk">Risk haqida ogohlantirish</label><textarea id="s-risk" rows="4" maxlength="1200"></textarea></div>
       </form>

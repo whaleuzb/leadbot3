@@ -270,6 +270,18 @@ function renderAudience() {
 }
 
 /* ---------- 6) Server ma'lumotlari, kuzatuv, ariza formasi ---------- */
+function applyHero(h) {
+  if (!h) return;
+  const set = (id, html) => { const e = document.getElementById(id); if (e) e.innerHTML = html; };
+  const br = (t) => esc(t).replace(/\n/g, "<br>");
+  set("hero-eyebrow", esc(h.eyebrow));
+  set("hero-title", `${br(h.title1)}<br><em>${br(h.accent)}</em><br>${br(h.title3)}`);
+  set("hero-intro", esc(h.intro));
+  set("hero-note", esc(h.note));
+  set("hero-clabel", esc(h.captionLabel));
+  set("hero-caption", br(h.caption));
+}
+
 async function loadConfig() {
   try {
     const r = await fetch("/api/config", { cache: "no-store" });
@@ -284,6 +296,7 @@ async function loadConfig() {
     document.querySelectorAll(".js-author").forEach((e) => (e.textContent = s.authorName));
     const grid = document.getElementById("stats-grid");
     if (grid) grid.innerHTML = s.stats.map((x) => `<div><strong>${esc(x.value)}</strong><span>${esc(x.label)}</span></div>`).join("");
+    applyHero(s.hero);
     const risk = document.getElementById("risk-text");
     if (risk) risk.textContent = s.riskNote;
   } catch { /* server yo'q — standart ma'lumotlar bilan ishlaydi */ }

@@ -144,3 +144,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .aud-row { grid-template-columns: 36px minmax(0, 1fr) auto; }
 @media (max-width: 900px) { .aud-row { grid-template-columns: 30px minmax(0, 1fr) auto; } }
+
+.hero-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.hero-grid .wide { grid-column: 1 / -1; }
+.hero-preview { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--lilac); font-size: 14px; }
+.hero-fs { padding: 16px; border: 1px solid var(--border) !important; border-radius: 16px; }
+@media (max-width: 700px) { .hero-grid { grid-template-columns: 1fr; } }

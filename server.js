@@ -48,6 +48,16 @@ function defaults() {
         { value: "1–2%", label: "bitimga maksimal risk" },
         { value: "100%", label: "jurnal bilan nazorat" },
       ],
+      hero: {
+        eyebrow: "TREYDING BO‘YICHA COMMUNITY",
+        title1: "TREYDING —",
+        accent: "QUMORDAN",
+        title3: "FARQI BOR",
+        intro: "Tasodifiy bitimlarsiz va “signal”larga ko‘r-ko‘rona ishonmasdan — o‘z strategiyang, aniq riskni boshqarish va sovuqqon qaror qabul qilish.",
+        note: "Telefondan yoki kompyuterdan. O‘zingizga qulay ritmda.",
+        captionLabel: "TREYDING TIZIMI",
+        caption: "Ishonch tasodifdan emas,\ntizimdan boshlanadi",
+      },
       riskNote: "Treyding — yuqori xavfli faoliyat, kapitalingizning bir qismini yoki hammasini yo‘qotishingiz mumkin. Ushbu community ta’lim maqsadida va moliyaviy maslahat emas; o‘tgan natijalar kelajakdagi daromadni kafolatlamaydi. Faqat yo‘qotishga tayyor bo‘lgan mablag‘ bilan savdo qiling.",
     },
     plans: [
@@ -86,6 +96,8 @@ function load() {
   catch { db = defaults(); save(); }
   const d = defaults();
   for (const k of Object.keys(d)) if (db[k] === undefined) db[k] = d[k];
+  db.settings = { ...d.settings, ...db.settings }; // yangi sozlamalar eski bazada ham paydo bo'ladi
+  db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
   if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
@@ -169,6 +181,11 @@ function limited(key, max, windowMs) {
 setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some((t) => now - t < 36e5)) hits.delete(k); }, 6e5).unref();
 
 /* ---------- Tozalash (validatsiya) ---------- */
+function cleanHero(h = {}, cur) {
+  const f = (k, max) => str(h[k], max) || cur[k];
+  return { eyebrow: f("eyebrow", 60), title1: f("title1", 40), accent: f("accent", 40), title3: f("title3", 40),
+    intro: f("intro", 300), note: f("note", 120), captionLabel: f("captionLabel", 40), caption: f("caption", 120) };
+}
 function cleanSettings(s = {}) {
   const cur = db.settings;
   const stats = Array.isArray(s.stats) ? s.stats.slice(0, 4).map((x) => ({ value: str(x?.value, 20), label: str(x?.label, 60) })) : cur.stats;
@@ -181,6 +198,7 @@ function cleanSettings(s = {}) {
     enrollmentOpen: typeof s.enrollmentOpen === "boolean" ? s.enrollmentOpen : cur.enrollmentOpen,
     stats,
     riskNote: str(s.riskNote, 1200) || cur.riskNote,
+    hero: cleanHero(s.hero, cur.hero),
   };
 }
 const strList = (a, n = 30) => (Array.isArray(a) ? a.map((x) => str(x, 200)).filter(Boolean).slice(0, n) : []);
@@ -239,8 +257,8 @@ async function api(req, res, url) {
   const m = req.method, p = url.pathname;
 
   if (m === "GET" && p === "/api/config") {
-    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote }, plans: db.plans, lessons: db.lessons, audience: db.audience });
+    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero } = db.settings;
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero }, plans: db.plans, lessons: db.lessons, audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {

@@ -283,6 +283,10 @@ $("#add-aud").addEventListener("click", () => { CONTENT.audience.push(""); rende
 $("#save-aud").addEventListener("click", () => guard(async () => { CONTENT.audience = await api("/audience", { method: "PUT", body: { audience: CONTENT.audience } }); renderAudience(); }, "Kartalar saqlandi — saytda yangilandi"));
 
 /* Sozlamalar */
+function heroPreview() {
+  $("#hero-preview").innerHTML = "Ko‘rinishi: <b>" + [$("#h-t1").value, "<span style='color:var(--accent)'>" + esc($("#h-acc").value) + "</span>", $("#h-t3").value].map((x, i) => i === 1 ? x : esc(x)).join(" / ") + "</b>";
+}
+["h-t1", "h-acc", "h-t3"].forEach((id) => $("#" + id).addEventListener("input", heroPreview));
 const toLocalInput = (iso) => new Date(Date.parse(iso) + 5 * 36e5).toISOString().slice(0, 16);
 const fromLocalInput = (v) => v + ":00+05:00";
 function renderSettings() {
@@ -291,6 +295,10 @@ function renderSettings() {
   $("#s-open").value = String(s.enrollmentOpen);
   $("#s-start").value = toLocalInput(s.enrollStart); $("#s-end").value = toLocalInput(s.enrollEnd);
   $("#s-risk").value = s.riskNote;
+  const H = s.hero;
+  $("#h-eyebrow").value = H.eyebrow; $("#h-t1").value = H.title1; $("#h-acc").value = H.accent; $("#h-t3").value = H.title3;
+  $("#h-intro").value = H.intro; $("#h-note").value = H.note; $("#h-clabel").value = H.captionLabel; $("#h-caption").value = H.caption;
+  heroPreview();
   $("#stats-editor").innerHTML = s.stats.map((x, i) => `<div><input data-i="${i}" data-k="value" value="${esc(x.value)}" maxlength="20" aria-label="Qiymat ${i + 1}" /><input data-i="${i}" data-k="label" value="${esc(x.label)}" maxlength="60" aria-label="Izoh ${i + 1}" /></div>`).join("");
 }
 $("#save-settings").addEventListener("click", () => guard(async () => {
@@ -300,6 +308,8 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
     brand: $("#s-brand").value, authorName: $("#s-author").value, telegram: $("#s-tg").value,
     enrollmentOpen: $("#s-open").value === "true", enrollStart: fromLocalInput($("#s-start").value), enrollEnd: fromLocalInput($("#s-end").value),
     riskNote: $("#s-risk").value,
+    hero: { eyebrow: $("#h-eyebrow").value, title1: $("#h-t1").value, accent: $("#h-acc").value, title3: $("#h-t3").value,
+      intro: $("#h-intro").value, note: $("#h-note").value, captionLabel: $("#h-clabel").value, caption: $("#h-caption").value },
     stats: $$("#stats-editor div").map((d) => ({ value: $("[data-k=value]", d).value, label: $("[data-k=label]", d).value })),
   };
   CONTENT.settings = await api("/settings", { method: "PUT", body }); renderSettings();
