@@ -149,6 +149,7 @@ function load() {
   db.settings = { ...d.settings, ...db.settings }; // yangi sozlamalar eski bazada ham paydo bo'ladi
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
+  seedImages();
   // Parolni tiklash: RESET_ADMIN_PASSWORD qiymati o'zgarganda saqlangan parol o'chadi va ADMIN_PASSWORD amal qiladi (bir martalik)
   const rt = process.env.RESET_ADMIN_PASSWORD;
   if (rt && db.auth.resetToken !== rt) {
@@ -157,6 +158,25 @@ function load() {
   }
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
   if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
+}
+/* Mavzuga mos boshlang'ich rasmlar (assets/seed) — bir martalik: keyin admin o'zgartirsa qayta qo'yilmaydi */
+function seedImages() {
+  if (db.seededImages) return;
+  const dir = path.join(__dirname, "assets", "seed");
+  const put = (file) => {
+    const fp = path.join(dir, file);
+    if (!fs.existsSync(fp)) return "";
+    const buf = fs.readFileSync(fp);
+    const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
+    const dest = path.join(UPLOAD_DIR, name);
+    if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
+    return "/uploads/" + name;
+  };
+  db.lessons.slice(0, 5).forEach((l, i) => { if (!l.image) l.image = put(`lesson${i + 1}.jpg`); });
+  const byId = { mini: 1, pro: 2, individual: 3 };
+  db.plans.forEach((p, i) => { const n = byId[p.id] || (i < 3 ? i + 1 : 0); if (n && !p.image) p.image = put(`plan${n}.jpg`); });
+  db.seededImages = true;
+  save();
 }
 let saving = false, dirty = false;
 function save() {
