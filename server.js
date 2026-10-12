@@ -150,6 +150,12 @@ function load() {
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
   seedImages();
+  // Bir martalik: "o'rtacha oylik daromad" statistikasi o'rniga o'quvchilar soni (daromad va'dasi bo'lmasin)
+  if (!db.statsFix1) {
+    const i = (db.settings.stats || []).findIndex((x) => /daromad/i.test(x.label || "") || /^65\s*%$/.test((x.value || "").trim()));
+    if (i >= 0) db.settings.stats[i] = { value: "1000+", label: "o‘quvchilar" };
+    db.statsFix1 = true; save();
+  }
   // Parolni tiklash: RESET_ADMIN_PASSWORD qiymati o'zgarganda saqlangan parol o'chadi va ADMIN_PASSWORD amal qiladi (bir martalik)
   const rt = process.env.RESET_ADMIN_PASSWORD;
   if (rt && db.auth.resetToken !== rt) {
