@@ -29,7 +29,6 @@
       <a href="#dashboard" data-tab="dashboard">Umumiy ko‘rinish</a>
       <a href="#leads" data-tab="leads">Arizalar <span class="count" id="nav-new" hidden></span></a>
       <a href="#plans" data-tab="plans">Tariflar</a>
-      <a href="#promos" data-tab="promos">Chegirmalar</a>
       <a href="#lessons" data-tab="lessons">Darslar</a>
       <a href="#audience" data-tab="audience">Kimga mos</a>
       <a href="#settings" data-tab="settings">Sozlamalar</a>
@@ -83,29 +82,10 @@
     <!-- Tariflar -->
     <section class="tab" id="tab-plans" hidden>
       <header class="page-head row">
-        <div><h1>Tariflar</h1><p>Narx, tarkib va tartibni o‘zgartiring. Saqlangach saytda darhol ko‘rinadi.</p></div>
+        <div><h1>Tariflar</h1><p>Tarkib, nomi va tartibni o‘zgartiring. Saqlangach saytda darhol ko‘rinadi.</p></div>
         <div class="actions"><button class="btn" id="add-plan" type="button">+ Tarif qo‘shish</button><button class="btn primary" id="save-plans" type="button">Saqlash</button></div>
       </header>
-      <div class="card bulk-disc">
-        <strong>Ommaviy chegirma</strong>
-        <div class="bulk-row">
-          <div class="field"><label for="bd-pct">Chegirma, %</label><input id="bd-pct" type="number" min="1" max="90" value="20" /></div>
-          <div class="field"><label for="bd-until">Tugash vaqti (ixtiyoriy)</label><input id="bd-until" type="datetime-local" /></div>
-          <button class="btn primary" id="bd-apply" type="button">Barcha tariflarga qo‘llash</button>
-          <button class="btn" id="bd-clear" type="button">Barcha chegirmalarni bekor qilish</button>
-        </div>
-        <small>Joriy narx “eski narx” bo‘lib qoladi (saytda chizib ko‘rsatiladi), yangi narx foiz bo‘yicha hisoblanadi. Muddat tugagach narx avtomatik eski holatiga qaytadi. “Saqlash” bosilgach saytda ko‘rinadi.</small>
-      </div>
       <div id="plans-editor" class="stack"></div>
-    </section>
-
-    <!-- Chegirmalar (promo-kodlar) -->
-    <section class="tab" id="tab-promos" hidden>
-      <header class="page-head row">
-        <div><h1>Chegirmalar</h1><p>Promo-kodlar: foiz yoki aniq summa, tarifga, soniga va muddatiga cheklash mumkin.</p></div>
-        <div class="actions"><button class="btn" id="add-promo" type="button">+ Promo-kod</button><button class="btn primary" id="save-promos" type="button">Saqlash</button></div>
-      </header>
-      <div id="promo-editor" class="stack"></div>
     </section>
 
     <!-- Darslar -->
@@ -132,6 +112,20 @@
         <div><h1>Sozlamalar</h1><p>Brend, aloqa, qabul sanalari va statistika.</p></div>
         <button class="btn primary" id="save-settings" type="button">Saqlash</button>
       </header>
+      <div class="card tg-card" id="tg-card">
+        <div class="tg-head"><strong>Telegram bot</strong><span class="pill" id="tg-pill">…</span></div>
+        <p class="tg-text" id="tg-text">Yangi arizalar shu bot orqali Telegramga keladi.</p>
+        <div class="actions"><button class="btn sm" id="tg-test" type="button">Test xabar yuborish</button><button class="btn sm" id="tg-chats" type="button">Chat ID topish</button></div>
+        <ul class="tg-chats" id="tg-chat-list" hidden></ul>
+        <details class="tg-help"><summary>Qanday sozlanadi?</summary>
+          <ol>
+            <li>Telegramda <b>@BotFather</b> ga yozing → <code>/newbot</code> → bot yarating va <b>token</b>ni oling.</li>
+            <li>Yangi botingizga (yoki arizalar keladigan guruhga botni qo‘shib) biror xabar yozing.</li>
+            <li>Yuqoridagi <b>“Chat ID topish”</b> tugmasini bosing va chatingiz raqamini oling.</li>
+            <li>Railway → <b>web</b> servisi → Variables ga <code>TELEGRAM_BOT_TOKEN</code> va <code>TELEGRAM_CHAT_ID</code> ni qo‘shing (qayta deploy bo‘ladi).</li>
+          </ol>
+        </details>
+      </div>
       <form id="settings-form" class="card form-grid" autocomplete="off">
         <div class="field"><label for="s-brand">Brend nomi</label><input id="s-brand" maxlength="30" /></div>
         <div class="field"><label for="s-author">Muallif ismi</label><input id="s-author" maxlength="60" /></div>
@@ -140,9 +134,6 @@
           <select id="s-open"><option value="true">Ochiq — countdown ko‘rsatiladi</option><option value="false">Yopiq — “qabul yakunlandi”</option></select></div>
         <div class="field"><label for="s-start">Qabul boshlanishi</label><input id="s-start" type="datetime-local" /></div>
         <div class="field"><label for="s-end">Qabul tugashi</label><input id="s-end" type="datetime-local" /><small>Toshkent vaqti (UTC+5)</small></div>
-        <div class="field"><label for="s-promo">Promo-kod maydoni saytda</label>
-          <select id="s-promo"><option value="false">O‘chirilgan (faqat tarif chegirmalari)</option><option value="true">Yoqilgan</option></select>
-          <small>Promo-kodlar “Chegirmalar” bo‘limida boshqariladi.</small></div>
         <fieldset class="field wide hero-fs"><legend>Bosh sahifa (hero) matnlari</legend>
           <div class="hero-grid">
             <div class="field wide"><label for="h-eyebrow">Yuqori yorliq</label><input id="h-eyebrow" maxlength="60" /></div>

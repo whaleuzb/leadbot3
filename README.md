@@ -7,8 +7,8 @@ ADMIN_PASSWORD='kuchli-parol' npm start     # http://localhost:3000  ·  admin: 
 ```
 
 ## Nima bor
-- `/` — landing (tariflar, darslar, sozlamalar serverdan olinadi; ariza formasi; tashrif/klik hisobi)
-- `/admin` — admin panel: umumiy ko‘rinish (KPI, grafik), arizalar (holat, izoh, qidiruv, CSV), tariflar, darslar, sozlamalar, parol
+- `/` — landing (tariflar, darslar, sozlamalar serverdan olinadi; narxsiz — faqat ariza formasi; tashrif/klik hisobi)
+- `/admin` — admin panel: umumiy ko‘rinish (KPI, grafik), arizalar (holat, izoh, qidiruv, CSV), tariflar, darslar, sozlamalar, Telegram bot holati, parol
 - `server.js` — API va statik fayllar. Ma’lumotlar `DATA_DIR/db.json` da saqlanadi
 
 ## Muhit o‘zgaruvchilari
@@ -17,6 +17,8 @@ ADMIN_PASSWORD='kuchli-parol' npm start     # http://localhost:3000  ·  admin: 
 | `ADMIN_PASSWORD` | boshlang‘ich admin paroli (bo‘lmasa `admin123` — o‘zgartiring!). Panelda parol o‘zgartirilgach, saqlangan parol ustun turadi |
 | `DATA_DIR` | ma’lumotlar papkasi (default `./data`) |
 | `PORT` | port (default 3000) |
+| `TELEGRAM_BOT_TOKEN` | @BotFather bergan bot tokeni — arizalar shu bot orqali yuboriladi |
+| `TELEGRAM_CHAT_ID` | arizalar keladigan chat/guruh ID si (admin → Sozlamalar → “Chat ID topish”) |
 
 ## Railway'ga joylash
 1. Repo'ni Railway'ga ulang (start: `npm start`).

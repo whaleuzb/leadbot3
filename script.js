@@ -27,7 +27,6 @@ let PLANS = [
     eyebrow: "01 / MUSTAQIL",
     name: "Mini",
     description: "O‘z ritmida o‘rganishni istaganlar uchun. Chat va kurator nazoratisiz",
-    price: "699 000",
     duration: "Community 2 oy",
     featured: false,
     features: [...BASE_FEATURES],
@@ -38,7 +37,6 @@ let PLANS = [
     badge: "CHAT + QO‘LLAB-QUVVATLASH",
     name: "Community Pro",
     description: "Umumiy chatda muhokamalar va kurator nazorati ostida topshiriqlarni bajarish.",
-    price: "1 199 000",
     duration: "community 2 oy · materiallar 4 oy",
     featured: true,
     features: [
@@ -55,7 +53,6 @@ let PLANS = [
     badge: "10 TA JOY",
     name: "Individual",
     description: "Mentor nazorati ostida ishlash, individual tavsiyalar va bitimlaringiz xatolari ustida ishlash (online)",
-    price: "3 499 000",
     duration: "community 2 oy · materiallar 7 oy",
     featured: true,
     features: [
@@ -79,51 +76,11 @@ let LESSONS = [
 
 let ENROLL_OPEN = true;
 let AUDIENCE = null;
-let PROMO_ENABLED = false;
-let PROMO = null; // { code, type, value, plans[] }
-const promoApplies = (p) => !!PROMO && (!PROMO.plans.length || PROMO.plans.includes(p.id));
-const promoPrice = (price) => (PROMO.type === "percent" ? Math.round(price * (100 - PROMO.value) / 100) : Math.max(0, price - PROMO.value));
-const discPct = (old, now) => (old > now ? Math.round((1 - now / old) * 100) : 0);
-function priceInfo(p) {
-  let final = p.price, old = p.oldPrice > p.price ? p.oldPrice : 0;
-  if (promoApplies(p)) { final = promoPrice(p.price); old = p.oldPrice > p.price ? p.oldPrice : p.price; }
-  if (old <= final) old = 0;
-  return { final, old, pct: discPct(old, final) };
-}
-function timeLeft(iso) {
-  const ms = Date.parse(iso) - Date.now();
-  if (!(ms > 0)) return "";
-  const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
-  return d ? `${d} kun ${h} soat` : h ? `${h} soat ${m} daq` : `${m} daq`;
-}
-function renderSaleBanner() {
-  const el = document.getElementById("sale-banner");
-  if (!el) return;
-  const sales = PLANS.map((p) => ({ p, pct: p.oldPrice > p.price ? discPct(p.oldPrice, p.price) : 0 })).filter((x) => x.pct > 0);
-  if (!sales.length) { el.hidden = true; return; }
-  const max = Math.max(...sales.map((x) => x.pct));
-  const untils = sales.map((x) => x.p.discountUntil).filter(Boolean).sort();
-  el.hidden = false;
-  el.innerHTML = `<strong>Aksiya</strong><span>Tariflarga ${max}% gacha chegirma</span>` + (untils.length ? `<em class="disc-left" data-until="${esc(untils[0])}"></em>` : "");
-}
-function updateDiscTimers() {
-  document.querySelectorAll(".disc-left[data-until]").forEach((e) => {
-    const t = timeLeft(e.dataset.until);
-    e.textContent = t ? `Chegirma tugashiga: ${t}` : "";
-  });
-}
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const fmtPrice = (p) => (typeof p === "number" ? p.toLocaleString("ru-RU").replace(/\u00a0/g, " ") : p);
 
 function telegramLink(text) {
   return `https://t.me/${TELEGRAM}?text=${encodeURIComponent(text)}`;
 }
-const planLink = (p) => {
-  const i = priceInfo(p);
-  const extra = (i.old ? `\nNarx: ${fmtPrice(i.final)} so‘m (−${i.pct}%)` : "") + (promoApplies(p) ? `\nPromo-kod: ${PROMO.code}` : "");
-  return telegramLink(`Tarif: ${p.name}${extra}\n\nAssalomu alaykum! «${p.name}» tarifini sotib olmoqchiman. To‘lovni qanday amalga oshirish mumkin?`);
-};
-
 function featureList(plan) {
   const ok = plan.features.map((f) => `<li><span>✓</span>${esc(f)}</li>`).join("");
   const no = (plan.excluded || []).map((f) => `<li class="excluded"><span>×</span>${esc(f)}</li>`).join("");
@@ -135,22 +92,17 @@ function renderPlans() {
   const grid = document.getElementById("plans-grid");
   if (!grid) return;
   grid.innerHTML = PLANS.map((p, i) => {
-    const pi = priceInfo(p);
     return `
     <article class="plan ${p.featured ? "featured" : ""}">
       ${p.image ? `<img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy">` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
         ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
-        ${pi.pct ? `<span class="badge disc-badge">−${pi.pct}%</span>` : ""}
       </div>
       <h3>${esc(p.name)}</h3>
       <p class="plan-description">${esc(p.description)}</p>
-      <p class="price">${pi.old ? `<s class="old-price">${fmtPrice(pi.old)}</s>` : ""}${fmtPrice(pi.final)} <small>so‘m</small></p>
-      ${promoApplies(p) ? `<p class="disc-note">Promo-kod ${esc(PROMO.code)} qo‘llandi</p>` : p.discountUntil && pi.old ? `<p class="disc-left" data-until="${esc(p.discountUntil)}"></p>` : ""}
       <p class="duration">${esc(p.duration)}</p>
-      <a class="button" target="_blank" rel="noopener noreferrer" href="${planLink(p)}" data-plan="${esc(p.name)}">Sotib olish${ARROW}</a>
-      <p class="telegram-note">Telegram orqali · Menejer</p>
+      <a class="button" href="#apply" data-plan="${esc(p.name)}">Ariza qoldirish${ARROW}</a>
       <div class="desktop-features">${featureList(p)}</div>
       <div class="mobile-features">
         <button type="button" class="features-toggle" aria-expanded="false" aria-controls="features-${i}">
@@ -160,8 +112,6 @@ function renderPlans() {
       </div>
     </article>`;
   }).join("");
-  renderSaleBanner();
-  updateDiscTimers();
 
   /* ---------- 2) Mobil akkordeon ---------- */
   grid.querySelectorAll(".features-toggle").forEach((btn) => {
@@ -356,7 +306,7 @@ async function loadConfig() {
     const r = await fetch("/api/config", { cache: "no-store" });
     if (!r.ok) throw new Error();
     const { settings: s, plans, lessons, audience } = await r.json();
-    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; PROMO_ENABLED = !!s.promoEnabled;
+    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
     if (Array.isArray(audience) && audience.length) AUDIENCE = audience;
@@ -378,42 +328,11 @@ function initTracking() {
   } catch { post("/api/track", { type: "view" }).catch(() => {}); }
   document.getElementById("plans-grid")?.addEventListener("click", (e) => {
     const a = e.target.closest("a[data-plan]");
-    if (a) post("/api/track", { type: "click", plan: a.dataset.plan }).catch(() => {});
+    if (!a) return;
+    post("/api/track", { type: "click", plan: a.dataset.plan }).catch(() => {});
+    const sel = document.getElementById("lf-plan");
+    if (sel) { sel.value = a.dataset.plan; setTimeout(() => document.getElementById("lf-name")?.focus({ preventScroll: true }), 600); }
   });
-}
-
-function showLeadPromo() {
-  const e = document.getElementById("lf-promo");
-  if (!e) return;
-  e.hidden = !PROMO;
-  if (PROMO) e.textContent = `Promo-kod ${PROMO.code} qo‘llanadi (−${PROMO.type === "percent" ? PROMO.value + "%" : fmtPrice(PROMO.value) + " so‘m"})`;
-}
-function initPromo() {
-  const form = document.getElementById("promo-form");
-  if (!form) return;
-  form.hidden = !PROMO_ENABLED;
-  if (!PROMO_ENABLED) return;
-  const input = document.getElementById("promo-code"), msg = document.getElementById("promo-msg");
-  const check = async (code, silent) => {
-    msg.className = "promo-msg"; msg.textContent = "";
-    try {
-      const r = await post("/api/promo/check", { code });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.valid) throw new Error(d.error || "Promo-kod topilmadi");
-      PROMO = { code: d.code, type: d.type, value: d.value, plans: d.plans || [] };
-      try { sessionStorage.setItem("tm_promo", d.code); } catch {}
-      input.value = d.code;
-      msg.className = "promo-msg ok";
-      msg.textContent = `✓ ${d.code}: −${d.type === "percent" ? d.value + "%" : fmtPrice(d.value) + " so‘m"}` + (d.plans.length ? " (ba’zi tariflar uchun)" : "");
-      renderPlans(); showLeadPromo();
-    } catch (err) {
-      PROMO = null; try { sessionStorage.removeItem("tm_promo"); } catch {}
-      if (!silent) { msg.className = "promo-msg err"; msg.textContent = err.message; }
-      renderPlans(); showLeadPromo();
-    }
-  };
-  form.addEventListener("submit", (e) => { e.preventDefault(); const c = input.value.trim(); if (c) check(c, false); });
-  try { const saved = sessionStorage.getItem("tm_promo"); if (saved) check(saved, true); } catch {}
 }
 
 function initLeadForm() {
@@ -427,7 +346,7 @@ function initLeadForm() {
     msg.className = "lf-msg"; msg.textContent = "";
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on", promo: PROMO ? PROMO.code : "" });
+      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
       form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
     } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }
@@ -445,7 +364,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   initCountdown();
   initCandles();
   initTracking();
-  initPromo();
   initLeadForm();
-  setInterval(updateDiscTimers, 30000);
 });

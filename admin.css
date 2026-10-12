@@ -156,9 +156,14 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 span.img-thumb { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
 .lesson-row > .img-field { grid-column: 2 / -1; }
 
-.bulk-disc { display: grid; gap: 12px; margin-bottom: 16px; }
-.bulk-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-.bulk-row .field { width: 190px; }
-.plan-checks { display: flex; gap: 8px 22px; flex-wrap: wrap; padding-top: 4px; }
 .editor-tools .lead-meta { align-self: center; margin-right: 6px; }
 .editor-card .link-btn { margin-top: 6px; font-size: 13px; }
+
+.tg-card { display: grid; gap: 12px; margin-bottom: 18px; }
+.tg-head { display: flex; align-items: center; gap: 12px; }
+.tg-text { margin: 0; color: var(--muted); }
+.tg-chats { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.tg-chats code, .tg-help code { padding: 2px 7px; border-radius: 8px; background: var(--lilac); font-size: 13px; }
+.tg-help summary { cursor: pointer; font-weight: 700; }
+.tg-help ol { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; color: #4f4a56; }
+.lead-tools .pill { justify-self: start; }
