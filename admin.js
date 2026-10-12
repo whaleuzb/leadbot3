@@ -309,6 +309,11 @@ $("#lessons-editor").addEventListener("click", (e) => {
   renderLessons();
 });
 $("#add-lesson").addEventListener("click", () => { CONTENT.lessons.push({ n: "", t: "", d: "", image: "" }); renderLessons(); $$("#lessons-editor input").at(-2)?.focus(); });
+$("#auto-img").addEventListener("click", () => guard(async () => {
+  const r = await api("/lessons/auto-images", { method: "POST", body: {} });
+  CONTENT.lessons = r.lessons; renderLessons();
+  toast(r.count ? `${r.count} ta kartaga mavzuga mos rasm qo‘yildi` : "Hamma kartalarda rasm bor");
+}));
 $("#save-lessons").addEventListener("click", () => guard(async () => { CONTENT.lessons = await api("/lessons", { method: "PUT", body: { lessons: CONTENT.lessons } }); renderLessons(); }, "Darslar saqlandi"));
 
 /* Kimga mos */

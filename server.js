@@ -159,24 +159,59 @@ function load() {
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
   if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
 }
-/* Mavzuga mos boshlang'ich rasmlar (assets/seed) — bir martalik: keyin admin o'zgartirsa qayta qo'yilmaydi */
+/* Mavzuga mos rasmlar (assets/seed) */
+const SEED_DIR = path.join(__dirname, "assets", "seed");
+function seedFile(file) {
+  const fp = path.join(SEED_DIR, file);
+  if (!fs.existsSync(fp)) return "";
+  const buf = fs.readFileSync(fp);
+  const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
+  const dest = path.join(UPLOAD_DIR, name);
+  if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
+  return "/uploads/" + name;
+}
+// Dars nomidagi kalit so'zlar bo'yicha rasm tanlash
+const LESSON_POOL = [
+  ["lesson1.jpg", ["bozor tuzil", "trend", "struktura", "structure", "yo'nalish"]],
+  ["lesson2.jpg", ["daraja", "zona", "support", "resistance", "tayanch", "qarshilik", "level"]],
+  ["lesson3.jpg", ["risk", "stop", "take profit", "foyda nisbat", "lot", "pozitsiya hajmi"]],
+  ["lesson4.jpg", ["reja", "plan", "strategiya", "strategy", "checklist", "kirish", "chiqish"]],
+  ["lesson5.jpg", ["psixolog", "emotsi", "hissiyot", "qo'rquv", "intizom", "mindset", "motivats"]],
+  ["lesson6.jpg", ["sham", "candle", "pattern", "formatsiya", "pin bar", "doji", "engulf", "yutish", "price action"]],
+  ["lesson7.jpg", ["indikator", "indicator", "rsi", "macd", "ema", "sma", "osillyator", "bollinger", "fibo"]],
+  ["lesson8.jpg", ["hajm", "volume", "likvid", "liquidity", "orderblok", "order block", "smart money", "smc"]],
+  ["lesson9.jpg", ["jurnal", "journal", "statistika", "natija", "backtest", "xatolar"]],
+  ["lesson10.jpg", ["fundamental", "yangilik", "news", "kalendar", "makro", "iqtisod", "inflyats", "foiz stavka"]],
+  ["lesson11.jpg", ["timeframe", "taymfreym", "vaqt oraliq", "multi"]],
+  ["lesson12.jpg", ["kapital", "depozit", "money", "mablag'", "equity", "pul boshqar", "moliya"]],
+];
+const norm = (t) => String(t || "").toLowerCase().replace(/[‘’ʻʼ`´]/g, "'");
+function autoLessonImages() {
+  const urls = LESSON_POOL.map(([f]) => seedFile(f));
+  const used = new Set(db.lessons.map((l) => l.image).filter(Boolean));
+  let count = 0;
+  for (const l of db.lessons) {
+    if (l.image) continue;
+    const text = norm(l.t + " " + l.d);
+    const ranked = LESSON_POOL.map(([, kw], i) => ({ i, score: kw.filter((k) => text.includes(k)).length }))
+      .filter((x) => urls[x.i]).sort((a, b) => b.score - a.score || a.i - b.i);
+    const pick = ranked.find((x) => x.score > 0 && !used.has(urls[x.i])) || ranked.find((x) => x.score > 0)
+      || ranked.find((x) => !used.has(urls[x.i])) || ranked[0];
+    if (!pick) continue;
+    l.image = urls[pick.i]; used.add(l.image); count++;
+  }
+  if (count) save();
+  return count;
+}
 function seedImages() {
-  if (db.seededImages) return;
-  const dir = path.join(__dirname, "assets", "seed");
-  const put = (file) => {
-    const fp = path.join(dir, file);
-    if (!fs.existsSync(fp)) return "";
-    const buf = fs.readFileSync(fp);
-    const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
-    const dest = path.join(UPLOAD_DIR, name);
-    if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
-    return "/uploads/" + name;
-  };
-  db.lessons.slice(0, 5).forEach((l, i) => { if (!l.image) l.image = put(`lesson${i + 1}.jpg`); });
-  const byId = { mini: 1, pro: 2, individual: 3 };
-  db.plans.forEach((p, i) => { const n = byId[p.id] || (i < 3 ? i + 1 : 0); if (n && !p.image) p.image = put(`plan${n}.jpg`); });
-  db.seededImages = true;
-  save();
+  if (!db.seededImages) {
+    db.lessons.slice(0, 5).forEach((l, i) => { if (!l.image) l.image = seedFile(`lesson${i + 1}.jpg`); });
+    const byId = { mini: 1, pro: 2, individual: 3 };
+    db.plans.forEach((p, i) => { const n = byId[p.id] || (i < 3 ? i + 1 : 0); if (n && !p.image) p.image = seedFile(`plan${n}.jpg`); });
+    db.seededImages = true;
+    save();
+  }
+  if (!db.seededImages2) { autoLessonImages(); db.seededImages2 = true; save(); } // keyin qo'shilgan darslar uchun (bir martalik)
 }
 let saving = false, dirty = false;
 function save() {
@@ -473,6 +508,7 @@ async function api(req, res, url) {
     db.audience = a.map((x) => (typeof x === "string" ? { t: str(x, 300), image: "" } : { t: str(x?.t, 300), image: cleanImg(x?.image) })).filter((x) => x.t).slice(0, 16);
     save(); return send(res, 200, db.audience);
   }
+  if (m === "POST" && p === "/api/admin/lessons/auto-images") { const count = autoLessonImages(); return send(res, 200, { count, lessons: db.lessons }); }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
 
   if (m === "POST" && p === "/api/admin/password") {
