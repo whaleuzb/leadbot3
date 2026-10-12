@@ -88,7 +88,8 @@
       const up = c.close < c.open, col = up ? "#bba5fa" : "#6d6577";
       const y = Math.min(c.open, c.close), h = Math.max(3, Math.abs(c.open - c.close));
       const x = X0 + c.i * W;
-      return `<g class="cd" data-i="${c.i}" style="animation-delay:${delay}ms"><line x1="${x}" x2="${x}" y1="${c.hi.toFixed(1)}" y2="${c.lo.toFixed(1)}" stroke="${col}" stroke-width="2.2"/><rect x="${x - 7.5}" y="${y.toFixed(1)}" width="15" height="${h.toFixed(1)}" rx="2" fill="${col}"/></g>`;
+      const org = ((c.open - c.hi) / (c.lo - c.hi) * 100).toFixed(1); // ochilish narxidan yuqoriga/pastga o'sadi
+      return `<g class="cd" data-i="${c.i}" style="animation-delay:${delay}ms;transform-origin:50% ${org}%"><line x1="${x}" x2="${x}" y1="${c.hi.toFixed(1)}" y2="${c.lo.toFixed(1)}" stroke="${col}" stroke-width="2.2"/><rect x="${x - 7.5}" y="${y.toFixed(1)}" width="15" height="${h.toFixed(1)}" rx="2" fill="${col}"/></g>`;
     };
     for (let k = 0; k < 17; k++) cs.push(next());
     g.innerHTML = '<path class="ma" fill="none"></path>' + cs.map((c, k) => el(c, 250 + k * 45)).join("");
