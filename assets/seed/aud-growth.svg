@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320"><style>
+text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
+@keyframes grow{from{transform:scaleY(.05);opacity:0}to{transform:none;opacity:1}}
+@keyframes live{0%,100%{transform:none}50%{transform:scaleY(1.4)}}
+@keyframes flo{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes br{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes march{to{stroke-dashoffset:-60}}
+@keyframes draw{0%{stroke-dashoffset:1;opacity:1}38%{stroke-dashoffset:0}86%{stroke-dashoffset:0;opacity:1}96%{opacity:0}100%{stroke-dashoffset:1;opacity:0}}
+@keyframes bob{0%,100%{transform:none}50%{transform:scaleY(.72)}}
+@keyframes dp{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes hl{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes rin{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes bobx{0%,100%{transform:none}50%{transform:scaleX(.78)}}
+.row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
+.barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
+.cd,.bar,.dot,.glow{transform-box:fill-box}
+@keyframes form{0%{transform:scaleY(0);opacity:0}2%{opacity:1}9%{transform:scaleY(1);opacity:1}88%{transform:scaleY(1);opacity:1}96%,100%{transform:scaleY(1);opacity:0}}
+.cd{animation:form 9s cubic-bezier(.25,.8,.25,1) infinite both}
+@keyframes stream{to{transform:translateX(-640px)}}
+.stream{animation:stream 8s linear infinite}
+@keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(570px)}}
+.scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
+.chip{animation:flo 4.5s ease-in-out infinite}
+.glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
+.dash{animation:march 3.2s linear infinite}
+.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 8s cubic-bezier(.4,0,.2,1) .3s infinite}
+.bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
+.dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
+.hl{animation:hl 2.2s ease-in-out infinite}
+@keyframes needle{0%,100%{transform:rotate(-62deg)}45%{transform:rotate(58deg)}70%{transform:rotate(20deg)}}
+.needle{transform-origin:240px 280px;animation:needle 3.6s cubic-bezier(.5,0,.5,1) infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
+</style><clipPath id="vb"><rect width="480" height="320"/></clipPath><g clip-path="url(#vb)"><defs>
+    <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
+    <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
+    </defs>
+  <rect width="480" height="320" fill="url(#bg)"/>
+  <line x1="62" y1="0" x2="62" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="124" y1="0" x2="124" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="186" y1="0" x2="186" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="248" y1="0" x2="248" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="310" y1="0" x2="310" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="372" y1="0" x2="372" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="434" y1="0" x2="434" y2="320" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="62" x2="480" y2="62" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="124" x2="480" y2="124" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="186" x2="480" y2="186" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="248" x2="480" y2="248" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="310" x2="480" y2="310" stroke="#fff" stroke-opacity=".035"/>
+      <circle class="glow" cx="380" cy="90" r="150" fill="url(#glow)"/>
+      <path d="M40 270 C 120 250, 160 230, 220 200 S 330 150, 440 70 L440 300 L40 300 Z" fill="url(#fadeUp)"/>
+      <g opacity=".8"><g class="cd" style="transform-origin:50% 78.0%;animation-duration:7.13s;animation-delay:0ms"><line x1="40" x2="40" y1="247.9" y2="266.0" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="33" y="254.1" width="14" height="7.9" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 60.1%;animation-duration:7.13s;animation-delay:260ms"><line x1="64" x2="64" y1="240.6" y2="263.0" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="57" y="253.4" width="14" height="4.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 64.7%;animation-duration:7.13s;animation-delay:520ms"><line x1="88" x2="88" y1="233.6" y2="264.2" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="81" y="240.2" width="14" height="13.1" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 26.6%;animation-duration:7.13s;animation-delay:780ms"><line x1="112" x2="112" y1="234.9" y2="254.9" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="105" y="239.8" width="14" height="4.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 67.9%;animation-duration:7.13s;animation-delay:1040ms"><line x1="136" x2="136" y1="211.2" y2="253.3" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="129" y="223.6" width="14" height="16.2" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 58.6%;animation-duration:7.13s;animation-delay:1300ms"><line x1="160" x2="160" y1="206.1" y2="235.9" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="153" y="216.3" width="14" height="7.3" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 79.6%;animation-duration:7.13s;animation-delay:1560ms"><line x1="184" x2="184" y1="200.2" y2="220.4" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="177" y="203.5" width="14" height="12.8" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 67.7%;animation-duration:7.13s;animation-delay:1820ms"><line x1="208" x2="208" y1="191.1" y2="209.4" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="201" y="199.9" width="14" height="4.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 63.4%;animation-duration:7.13s;animation-delay:2080ms"><line x1="232" x2="232" y1="181.5" y2="210.6" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="225" y="189.0" width="14" height="10.9" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 61.9%;animation-duration:7.13s;animation-delay:2340ms"><line x1="256" x2="256" y1="170.6" y2="200.3" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="249" y="175.1" width="14" height="13.8" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 57.1%;animation-duration:7.13s;animation-delay:2600ms"><line x1="280" x2="280" y1="157.8" y2="188.2" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="273" y="162.7" width="14" height="12.4" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 70.0%;animation-duration:7.13s;animation-delay:2860ms"><line x1="304" x2="304" y1="142.5" y2="171.4" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="297" y="156.1" width="14" height="6.7" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 90.8%;animation-duration:7.13s;animation-delay:3120ms"><line x1="328" x2="328" y1="123.5" y2="159.4" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="321" y="135.1" width="14" height="21.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 63.5%;animation-duration:7.13s;animation-delay:3380ms"><line x1="352" x2="352" y1="110.9" y2="149.0" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="345" y="114.7" width="14" height="20.3" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 67.2%;animation-duration:7.13s;animation-delay:3640ms"><line x1="376" x2="376" y1="95.3" y2="124.2" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="369" y="102.7" width="14" height="12.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 76.9%;animation-duration:7.13s;animation-delay:3900ms"><line x1="400" x2="400" y1="79.3" y2="109.8" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="393" y="82.6" width="14" height="20.1" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 65.6%;animation-duration:7.13s;animation-delay:4160ms"><line x1="424" x2="424" y1="60.7" y2="94.2" stroke="#bba5fa" stroke-width="3"/>
+      <rect x="417" y="69.2" width="14" height="13.5" rx="3" fill="#bba5fa"/></g></g>
+      <path class="draw" pathLength="1" d="M40 270 C 120 250, 160 230, 220 200 S 330 150, 440 70" fill="none" stroke="#58e0a0" stroke-width="4" stroke-linecap="round"/><g class="mdot"><circle r="13" fill="#bba5fa" opacity=".3"><animateMotion dur="5.5s" repeatCount="indefinite" path="M40 270 C 120 250, 160 230, 220 200 S 330 150, 440 70"/></circle><circle r="6" fill="#fff"><animateMotion dur="5.5s" repeatCount="indefinite" path="M40 270 C 120 250, 160 230, 220 200 S 330 150, 440 70"/></circle></g>
+      <g class="chip" style="animation-delay:-3s"><rect x="40" y="22" width="257" height="38" rx="19" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
+    <text x="168.5" y="53" text-anchor="middle" font-size="22" font-weight="700" fill="#211a35" letter-spacing="1">BARQAROR O‘SISH</text></g><g class="scan"><rect x="-70" y="0" width="70" height="320" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="320" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>

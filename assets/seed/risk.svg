@@ -27,8 +27,10 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
+@keyframes needle{0%,100%{transform:rotate(-62deg)}45%{transform:rotate(58deg)}70%{transform:rotate(20deg)}}
+.needle{transform-origin:240px 280px;animation:needle 3.6s cubic-bezier(.5,0,.5,1) infinite}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
-</style><defs>
+</style><clipPath id="vb"><rect width="620" height="1000"/></clipPath><g clip-path="url(#vb)"><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
     <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
@@ -72,4 +74,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
     <text x="86.6" y="545" text-anchor="middle" font-size="16" font-weight="700" fill="#211a35" letter-spacing="1">KIRISH</text></g>
       <g transform="translate(440 230)"><rect x="-110" y="-56" width="220" height="104" rx="26" fill="#efeaff"/>
         <text x="0" y="-16" text-anchor="middle" font-size="18" font-weight="700" fill="#6d6577" letter-spacing="2">RISK : FOYDA</text>
-        <text x="0" y="34" text-anchor="middle" font-size="46" font-weight="800" fill="#211a35">1 : 2</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>
+        <text x="0" y="34" text-anchor="middle" font-size="46" font-weight="800" fill="#211a35">1 : 2</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>

@@ -203,11 +203,23 @@ const norm = (t) => String(t || "").toLowerCase().replace(/[‘’ʻʼ`´]/g, "'
 const esc = (k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const hit = (text, k) => (k.length <= 3 ? new RegExp(`(^|[^a-z0-9'])${esc(k)}([^a-z0-9']|$)`).test(text) : text.includes(k));
 const scoreOf = (l, kws) => { const t = norm(l.t), d = norm(l.d); return kws.reduce((s, k) => s + (hit(t, k) ? 2 : hit(d, k) ? 1 : 0) * k.length, 0); };
-// Avtomatik rasmli (yoki rasmsiz) darslarga nomiga eng mos rasmni tanlaydi; takrorlanmaslikka harakat qiladi
-function autoLessonImages() {
-  const pool = LESSON_POOL.map(([n, kw]) => ({ url: seedUrl(n), kw })).filter((x) => x.url);
-  const targets = db.lessons.filter((l) => isAutoImage(l.image));
-  const used = new Set(db.lessons.filter((l) => !isAutoImage(l.image)).map((l) => l.image));
+// "Kimga mos" kartalari uchun: [fayl, kalit so'zlar]
+const AUD_POOL = [
+  ["aud-start", ["noldan", "boshla", "qayerdan", "yangi boshlov", "birinchi qadam"]],
+  ["aud-loss", ["yo'qot", "depozit", "zarar", "kuydir", "sababini"]],
+  ["aud-signals", ["signal", "boshqalar", "ko'r-ko'rona", "ishonch", "kanal"]],
+  ["aud-entry", ["kirish", "chiqish", "bitimga", "belgila"]],
+  ["aud-risk", ["risk", "stop", "qancha"]],
+  ["aud-emotions", ["hissiyot", "qo'rquv", "ochko'z", "emotsi", "rejadan chetga", "asab"]],
+  ["aud-system", ["tizim", "o'rgandingiz", "yig'a", "ishlaydigan", "strategiya"]],
+  ["aud-growth", ["barqaror", "kapital", "himoya", "tez boyish", "uzoq muddat", "o'sish"]],
+];
+// Avtomatik rasmli (yoki rasmsiz) kartalarga matniga eng mos rasmni tanlaydi; takrorlanmaslikka harakat qiladi
+function autoImages(list, POOL) {
+  const pool = POOL.map(([n, kw]) => ({ url: seedUrl(n), kw })).filter((x) => x.url);
+  if (!pool.length) return 0;
+  const targets = list.filter((l) => isAutoImage(l.image));
+  const used = new Set(list.filter((l) => !isAutoImage(l.image)).map((l) => l.image));
   const pairs = [];
   targets.forEach((l) => pool.forEach((p, i) => { const sc = scoreOf(l, p.kw); if (sc > 0) pairs.push({ l, i, sc }); }));
   pairs.sort((a, b) => b.sc - a.sc);
@@ -226,15 +238,15 @@ function autoLessonImages() {
   if (count) save();
   return count;
 }
+const autoLessonImages = () => autoImages(db.lessons, LESSON_POOL);
+const autoAudienceImages = () => autoImages(db.audience, AUD_POOL);
 function autoPlanImages() {
   const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual" }, order = ["plan-mini", "plan-pro", "plan-individual"];
   db.plans.forEach((p, i) => { if (!isAutoImage(p.image)) return; const n = byId[p.id] || order[i]; if (n) p.image = seedUrl(n); });
 }
 function seedImages() {
-  if (db.seededImages3) return;
-  autoLessonImages(); autoPlanImages();
-  db.seededImages3 = true;
-  save();
+  if (!db.seededImages3) { autoLessonImages(); autoPlanImages(); db.seededImages3 = true; save(); }
+  if (!db.seededAudience1) { autoAudienceImages(); db.seededAudience1 = true; save(); }
 }
 let saving = false, dirty = false;
 function save() {
@@ -409,7 +421,7 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience });
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })) });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -531,6 +543,7 @@ async function api(req, res, url) {
     db.audience = a.map((x) => (typeof x === "string" ? { t: str(x, 300), image: "" } : { t: str(x?.t, 300), image: cleanImg(x?.image) })).filter((x) => x.t).slice(0, 16);
     save(); return send(res, 200, db.audience);
   }
+  if (m === "POST" && p === "/api/admin/audience/auto-images") { const count = autoAudienceImages(); return send(res, 200, { count, audience: db.audience }); }
   if (m === "POST" && p === "/api/admin/lessons/auto-images") { const count = autoLessonImages(); return send(res, 200, { count, lessons: db.lessons }); }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
 

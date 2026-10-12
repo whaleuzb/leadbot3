@@ -583,6 +583,10 @@ header nav a:hover::after { transform: scaleX(1); }
 .lesson-bars i:nth-child(3n) { animation-duration: .6s; animation-delay: -.4s; }
 .lesson-bars i:nth-child(3n+1) { animation-duration: 1s; animation-delay: -.9s; }
 .lesson-bars i:nth-child(4n) { animation-duration: .7s; animation-delay: -.2s; }
+/* "Kimga mos" kartalari rasm bilan */
+.audience-grid li.has-img { grid-template-columns: 42px minmax(0, 1fr) 210px; align-items: center; }
+.audience-grid li.has-img .aud-img { width: 210px; max-width: 100%; aspect-ratio: 3 / 2; margin: 0; border-radius: 14px; object-fit: cover; }
+@media (max-width: 1100px) { .audience-grid li.has-img { grid-template-columns: 42px minmax(0, 1fr); align-items: start; } .audience-grid li.has-img .aud-img { grid-column: 2 / -1; width: 100%; max-width: 340px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }

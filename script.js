@@ -186,7 +186,7 @@ function renderAudience() {
   if (!ol || !AUDIENCE) return;
   ol.innerHTML = AUDIENCE.map((a, i) => {
     const t = typeof a === "string" ? a : a.t, img = typeof a === "string" ? "" : a.image;
-    return `<li><span>${String(i + 1).padStart(2, "0")}</span><div><p>${esc(t)}</p>${img ? `<img class="aud-img" src="${esc(img)}" alt="" loading="lazy">` : ""}</div></li>`;
+    return `<li${img ? ' class="has-img"' : ""}><span>${String(i + 1).padStart(2, "0")}</span><div><p>${esc(t)}</p></div>${img ? `<img class="aud-img" src="${esc(img)}" alt="" loading="lazy">` : ""}</li>`;
   }).join("");
 }
 

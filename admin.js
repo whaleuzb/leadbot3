@@ -337,6 +337,11 @@ $("#aud-editor").addEventListener("click", (e) => {
   renderAudience();
 });
 $("#add-aud").addEventListener("click", () => { CONTENT.audience.push({ t: "", image: "" }); renderAudience(); $$("#aud-editor textarea").at(-1)?.focus(); });
+$("#auto-aud").addEventListener("click", () => guard(async () => {
+  const r = await api("/audience/auto-images", { method: "POST", body: {} });
+  CONTENT.audience = r.audience; renderAudience();
+  toast(r.count ? `${r.count} ta kartaga matniga mos rasm qo‘yildi (o‘zingiz yuklagan rasmlar o‘zgarmadi)` : "Hammasi allaqachon mos");
+}));
 $("#save-aud").addEventListener("click", () => guard(async () => { CONTENT.audience = await api("/audience", { method: "PUT", body: { audience: CONTENT.audience } }); renderAudience(); }, "Kartalar saqlandi — saytda yangilandi"));
 
 /* Sozlamalar */

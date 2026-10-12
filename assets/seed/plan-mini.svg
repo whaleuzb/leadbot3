@@ -27,8 +27,10 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
+@keyframes needle{0%,100%{transform:rotate(-62deg)}45%{transform:rotate(58deg)}70%{transform:rotate(20deg)}}
+.needle{transform-origin:240px 280px;animation:needle 3.6s cubic-bezier(.5,0,.5,1) infinite}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
-</style><defs>
+</style><clipPath id="vb"><rect width="1200" height="675"/></clipPath><g clip-path="url(#vb)"><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
     <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
@@ -69,4 +71,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-3s"><rect x="954.3" y="205" width="145.7" height="35" rx="17.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
     <text x="1027.1499999999999" y="233" text-anchor="middle" font-size="19" font-weight="700" fill="#efeaff" letter-spacing="1">01  Bozor</text></g><g class="chip" style="animation-delay:-1.6s"><rect x="941" y="267" width="159" height="35" rx="17.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
     <text x="1020.5" y="295" text-anchor="middle" font-size="19" font-weight="700" fill="#efeaff" letter-spacing="1">02  Daraja</text></g><g class="chip" style="animation-delay:-0.2s"><rect x="967.6" y="329" width="132.39999999999998" height="35" rx="17.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
-    <text x="1033.8" y="357" text-anchor="middle" font-size="19" font-weight="700" fill="#efeaff" letter-spacing="1">03  Risk</text></g><g class="scan"><rect x="-70" y="0" width="70" height="675" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="675" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>
+    <text x="1033.8" y="357" text-anchor="middle" font-size="19" font-weight="700" fill="#efeaff" letter-spacing="1">03  Risk</text></g><g class="scan"><rect x="-70" y="0" width="70" height="675" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="675" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
