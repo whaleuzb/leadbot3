@@ -375,7 +375,7 @@ async function loadTelegram() {
   pill.className = "pill " + (t.configured ? "paid" : "rejected");
   pill.textContent = t.configured ? "Ulangan" : "Ulanmagan";
   $("#tg-text").textContent = t.configured
-    ? "Yangi arizalar Telegramga yuboriladi. Sinab ko‘rish uchun test xabar yuboring."
+    ? `Yangi arizalar Telegramga yuboriladi (chat: ${t.chatId}). Sinab ko‘rish uchun test xabar yuboring.`
     : `Hozircha ulanmagan: ${!t.hasToken ? "TELEGRAM_BOT_TOKEN" : ""}${!t.hasToken && !t.hasChat ? " va " : ""}${!t.hasChat ? "TELEGRAM_CHAT_ID" : ""} yo‘q. Quyidagi yo‘riqnomaga qarang.`;
   $("#tg-test").disabled = !t.configured; $("#tg-chats").disabled = !t.hasToken;
 }
@@ -383,9 +383,14 @@ $("#tg-test").addEventListener("click", () => guard(() => api("/telegram/test", 
 $("#tg-chats").addEventListener("click", () => guard(async () => {
   const { chats } = await api("/telegram/chats"), ul = $("#tg-chat-list");
   ul.hidden = false;
-  ul.innerHTML = chats.length ? chats.map((c) => `<li><code>${esc(c.id)}</code> <span>${esc(c.name || "(nomsiz)")} · ${esc(c.type)}</span></li>`).join("")
+  ul.innerHTML = chats.length ? chats.map((c) => `<li><code>${esc(c.id)}</code> <span>${esc(c.name || "(nomsiz)")} · ${esc(c.type)}</span> <button class="btn sm" data-chat="${esc(c.id)}" type="button">Shuni tanlash</button></li>`).join("")
     : `<li>Chat topilmadi. Botga Telegramda biror xabar yozing (yoki guruhga qo‘shing) va qayta bosing.</li>`;
 }));
+
+$("#tg-chat-list").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-chat]"); if (!b) return;
+  guard(async () => { await api("/telegram/chat", { method: "PUT", body: { id: b.dataset.chat } }); await loadTelegram(); }, "Chat tanlandi. Endi “Test xabar yuborish” ni bosing.");
+});
 
 /* ---------- Xavfsizlik ---------- */
 $("#pw-form").addEventListener("submit", async (e) => {

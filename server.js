@@ -22,7 +22,7 @@ const IMG_MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", gif:
 /* ---------- Telegram bot ---------- */
 // Muhit o'zgaruvchilari: TELEGRAM_BOT_TOKEN (@BotFather), TELEGRAM_CHAT_ID (ariza yuboriladigan chat/guruh)
 const tgToken = () => process.env.TELEGRAM_BOT_TOKEN || "";
-const tgChat = () => process.env.TELEGRAM_CHAT_ID || "";
+const tgChat = () => process.env.TELEGRAM_CHAT_ID || db.settings.tgChatId || ""; // env ustun, bo'lmasa admin paneldan tanlangan
 const tgConfigured = () => !!(tgToken() && tgChat());
 const htmlEsc = (v) => String(v ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 async function tgCall(method, body) {
@@ -82,6 +82,7 @@ function defaults() {
       enrollStart: "2026-09-30T00:00:00+05:00",
       enrollEnd: "2026-10-10T23:59:00+05:00",
       enrollmentOpen: true,
+      tgChatId: "",
       stats: [
         { value: "3+ yil", label: "bozor tajribasi" },
         { value: "1:2", label: "minimal risk / foyda nisbati" },
@@ -252,6 +253,7 @@ function cleanSettings(s = {}) {
     enrollStart: isDate(s.enrollStart) ? s.enrollStart : cur.enrollStart,
     enrollEnd: isDate(s.enrollEnd) ? s.enrollEnd : cur.enrollEnd,
     enrollmentOpen: typeof s.enrollmentOpen === "boolean" ? s.enrollmentOpen : cur.enrollmentOpen,
+    tgChatId: cur.tgChatId || "",
     stats,
     riskNote: str(s.riskNote, 1200) || cur.riskNote,
     hero: cleanHero(s.hero, cur.hero),
@@ -359,7 +361,13 @@ async function api(req, res, url) {
   if (!isAuthed(req)) return send(res, 401, { error: "Kirish kerak" });
 
   if (m === "GET" && p === "/api/admin/me") return send(res, 200, { ok: true, defaultPassword: !db.auth.passwordHash && !process.env.ADMIN_PASSWORD });
-  if (m === "GET" && p === "/api/admin/telegram") return send(res, 200, { hasToken: !!tgToken(), hasChat: !!tgChat(), configured: tgConfigured() });
+  if (m === "GET" && p === "/api/admin/telegram") return send(res, 200, { hasToken: !!tgToken(), hasChat: !!tgChat(), chatId: tgChat(), fromEnv: !!process.env.TELEGRAM_CHAT_ID, configured: tgConfigured() });
+  if (m === "PUT" && p === "/api/admin/telegram/chat") {
+    const id = str(String((await readJson(req)).id ?? ""), 30);
+    if (!/^-?\d{3,20}$/.test(id)) return send(res, 400, { error: "Noto‘g‘ri chat ID" });
+    db.settings.tgChatId = id; save();
+    return send(res, 200, { ok: true });
+  }
   if (m === "POST" && p === "/api/admin/telegram/test") {
     if (!tgConfigured()) return send(res, 400, { error: "Bot sozlanmagan: TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID kerak" });
     try { await tgCall("sendMessage", { chat_id: tgChat(), text: "✅ Test xabar: " + db.settings.brand + " admin paneli botga ulangan." }); return send(res, 200, { ok: true }); }
