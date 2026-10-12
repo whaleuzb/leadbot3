@@ -197,7 +197,7 @@ const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) ret
 
 /* ---------- Rasm yuklash (umumiy) ---------- */
 const imgField = (url) => `<div class="img-field">
-  ${url ? `<img class="img-thumb" src="${esc(url)}" alt="Yuklangan rasm" />` : `<span class="img-thumb empty">Rasm yo‘q</span>`}
+  ${url ? `<img class="img-thumb" src="${esc(url)}${url.startsWith("/seed/") ? "?t=" + Date.now() : ""}" alt="Yuklangan rasm" />` : `<span class="img-thumb empty">Rasm yo‘q</span>`}
   <button class="btn sm" data-act="img" type="button">${url ? "Rasmni almashtirish" : "Rasm yuklash"}</button>
   ${url ? `<button class="btn sm danger" data-act="imgdel" type="button">Olib tashlash</button>` : ""}
   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-file hidden aria-label="Rasm tanlash" />

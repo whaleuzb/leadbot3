@@ -169,6 +169,15 @@ const LEGACY = new Set((() => {
   try { return fs.readdirSync(dir).map((f) => "/uploads/" + crypto.createHash("sha256").update(fs.readFileSync(path.join(dir, f))).digest("hex").slice(0, 16) + ".jpg"); }
   catch { return []; }
 })());
+// Kesh: fayl o'zgarsa yangi versiya darhol yetib borsin
+const etags = new Map(); // jarayon davomida fayllar o'zgarmaydi; deploy = yangi jarayon
+const etagOf = (fp) => { if (!etags.has(fp)) etags.set(fp, `"${crypto.createHash("sha1").update(fs.readFileSync(fp)).digest("hex").slice(0, 16)}"`); return etags.get(fp); };
+const seedVer = new Map();
+const versioned = (u) => {
+  if (typeof u !== "string" || !SEED_RE.test(u)) return u;
+  if (!seedVer.has(u)) { try { seedVer.set(u, crypto.createHash("sha1").update(fs.readFileSync(path.join(SEED_DIR, u.slice(6)))).digest("hex").slice(0, 10)); } catch { seedVer.set(u, "0"); } }
+  return `${u}?v=${seedVer.get(u)}`;
+};
 const isAutoImage = (u) => !u || LEGACY.has(u) || SEED_RE.test(u);
 // [fayl, kalit so'zlar] — faqat spot: aksiyalar va kripto
 const LESSON_POOL = [
@@ -400,7 +409,7 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => rest), lessons: db.lessons, audience: db.audience });
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -548,7 +557,9 @@ http.createServer(async (req, res) => {
       if (req.method !== "GET" || !SEED_RE.test(url.pathname)) return send(res, 404, "Topilmadi");
       const fp = path.join(SEED_DIR, path.basename(url.pathname));
       if (!fs.existsSync(fp)) return send(res, 404, "Topilmadi");
-      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
+      const tag = etagOf(fp);
+      if (req.headers["if-none-match"] === tag) { res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" }); return res.end(); }
+      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "no-cache", ETag: tag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
       return fs.createReadStream(fp).pipe(res);
     }
     if (url.pathname.startsWith("/uploads/")) {
@@ -562,8 +573,11 @@ http.createServer(async (req, res) => {
     if (!file || req.method !== "GET") return send(res, 404, "Topilmadi");
     const headers = { "Content-Type": MIME[path.extname(file)], "X-Content-Type-Options": "nosniff", "Cache-Control": "no-cache" };
     if (file === "admin.html") { headers["X-Frame-Options"] = "DENY"; headers["Referrer-Policy"] = "no-referrer"; headers["X-Robots-Tag"] = "noindex"; }
+    const fp = path.join(__dirname, file), tag = etagOf(fp);
+    headers.ETag = tag;
+    if (req.headers["if-none-match"] === tag) { res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" }); return res.end(); }
     res.writeHead(200, headers);
-    fs.createReadStream(path.join(__dirname, file)).pipe(res);
+    fs.createReadStream(fp).pipe(res);
   } catch (e) {
     const code = e.code >= 400 && e.code < 600 ? e.code : 500;
     if (code === 500) console.error(e);
