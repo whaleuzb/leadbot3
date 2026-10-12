@@ -141,6 +141,12 @@ function load() {
   db.settings = { ...d.settings, ...db.settings }; // yangi sozlamalar eski bazada ham paydo bo'ladi
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
+  // Parolni tiklash: RESET_ADMIN_PASSWORD qiymati o'zgarganda saqlangan parol o'chadi va ADMIN_PASSWORD amal qiladi (bir martalik)
+  const rt = process.env.RESET_ADMIN_PASSWORD;
+  if (rt && db.auth.resetToken !== rt) {
+    db.auth.passwordHash = null; db.auth.secret = crypto.randomBytes(32).toString("hex"); db.auth.resetToken = rt; save();
+    console.warn("Admin paroli tiklandi: endi ADMIN_PASSWORD amal qiladi.");
+  }
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
   if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
 }
