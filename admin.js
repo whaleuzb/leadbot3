@@ -149,10 +149,10 @@ function renderLeads() {
   const rows = filteredLeads();
   $("#leads-sub").textContent = `${rows.length} ta ariza ko‘rsatilyapti · jami ${LEADS.length}`;
   $("#leads-table").innerHTML = rows.length
-    ? `<tr><th>Mijoz</th><th>Kapital / Shahar</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
+    ? `<tr><th>Mijoz</th><th>Kapital / Shahar / Format</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
       <tr data-id="${l.id}">
         <td><div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.username ? `<div class="lead-meta"><a href="https://t.me/${esc(l.username)}" target="_blank" rel="noopener noreferrer">@${esc(l.username)}</a></div>` : ""}${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
-        <td>${esc(l.capital || l.plan || "—")}<div class="lead-meta">${esc(l.city || "")}</div></td>
+        <td>${esc(l.capital || l.plan || "—")}<div class="lead-meta">${esc(l.city || "")}${l.format ? ` · <b>${esc(l.format)}</b>` : ""}</div></td>
         <td class="lead-meta">${fmtDate(l.createdAt)}</td>
         <td><div class="lead-tools">
           <select data-act="status" aria-label="Holat">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${l.status === k ? " selected" : ""}>${v}</option>`).join("")}</select>
@@ -183,7 +183,7 @@ $("#leads-table").addEventListener("click", (e) => {
 });
 $("#export-csv").addEventListener("click", () => {
   const cell = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
-  const rows = [["Sana", "Ism", "Telefon", "Telegram", "Kapital", "Shahar", "Holat", "Bot", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.username || "", l.capital || l.plan || "", l.city || "", STATUS[l.status], l.tg || "", l.adminNote])];
+  const rows = [["Sana", "Ism", "Telefon", "Telegram", "Kapital", "Shahar", "Format", "Holat", "Bot", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.username || "", l.capital || l.plan || "", l.city || "", l.format || "", STATUS[l.status], l.tg || "", l.adminNote])];
   const blob = new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "arizalar.csv" });
   a.click(); URL.revokeObjectURL(a.href);

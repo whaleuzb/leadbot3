@@ -210,6 +210,12 @@
         <div class="lf-field"><label for="lf-capital">Savdo uchun kapitalingiz</label><select id="lf-capital" name="capital" required><option value="">Tanlang</option><option>1.000$ gacha</option><option>1.000$ - 5.000$</option><option>5.000$ - 10.000$</option><option>10.000$ dan yuqori</option></select></div>
         <div class="lf-field"><label for="lf-city">Shahar</label><input id="lf-city" name="city" autocomplete="address-level2" list="uz-cities" placeholder="Masalan: Toshkent" maxlength="60" required /><datalist id="uz-cities"><option>Toshkent</option><option>Samarqand</option><option>Buxoro</option><option>Andijon</option><option>Farg‘ona</option><option>Namangan</option><option>Qarshi</option><option>Navoiy</option><option>Jizzax</option><option>Guliston</option><option>Termiz</option><option>Urganch</option><option>Nukus</option></datalist></div>
         <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <fieldset class="lf-field lf-format"><legend>O‘qish formati</legend>
+          <div class="seg">
+            <label><input type="radio" name="format" value="Online" required /><span>Online</span></label>
+            <label><input type="radio" name="format" value="Offlayn" /><span>Offlayn</span></label>
+          </div>
+        </fieldset>
         <label class="lf-consent"><input type="checkbox" id="lf-consent" name="consent" required /><span>Kiritgan ma’lumotlarimni men bilan bog‘lanish maqsadida qayta ishlashga roziman.</span></label>
         <p class="lf-msg" id="lf-msg" role="status"></p>
         <button class="button" type="submit">Ariza yuborish<svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg></button>

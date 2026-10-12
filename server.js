@@ -46,7 +46,7 @@ function leadText(l) {
   const line = "━━━━━━━━━━━━━━";
   return [`🆕 Yangi lid — ${htmlEsc(db.settings.brand)} Community kurs`, line,
     `👤 Ism: ${htmlEsc(l.name)}`, `📞 Tel: ${htmlEsc(l.phone)}`, `💬 Telegram: ${htmlEsc(l.username || "—")}`,
-    `💰 Kapital: ${htmlEsc(l.capital || "—")}`, `🏙 Shahar: ${htmlEsc(l.city || "—")}`, `🕐 Vaqt: ${tashkentFull(l.createdAt)}`, line].join("\n");
+    `💰 Kapital: ${htmlEsc(l.capital || "—")}`, `🏙 Shahar: ${htmlEsc(l.city || "—")}`, `🎓 Format: ${htmlEsc(l.format || "—")}`, `🕐 Vaqt: ${tashkentFull(l.createdAt)}`, line].join("\n");
 }
 async function notifyLead(lead) {
   if (!tgConfigured()) { lead.tg = "off"; save(); return; }
@@ -461,7 +461,9 @@ async function api(req, res, url) {
     if (!db.settings.capitals.includes(capital)) return send(res, 400, { error: "Kapital miqdorini tanlang" });
     const city = str(b.city, 60);
     if (city.length < 2) return send(res, 400, { error: "Shaharni kiriting" });
-    const lead = { id: uid(), name, phone: fmtPhone(b.phone), username, capital, city, status: "new", adminNote: "", consent: true, tg: "pending", createdAt: new Date().toISOString() };
+    const format = ["Online", "Offlayn"].includes(b.format) ? b.format : "";
+    if (!format) return send(res, 400, { error: "O‘qish formatini tanlang: Online yoki Offlayn" });
+    const lead = { id: uid(), name, phone: fmtPhone(b.phone), username, capital, city, format, status: "new", adminNote: "", consent: true, tg: "pending", createdAt: new Date().toISOString() };
     db.leads.unshift(lead);
     if (db.leads.length > 5000) db.leads.length = 5000;
     save();

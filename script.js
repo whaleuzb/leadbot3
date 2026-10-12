@@ -247,7 +247,7 @@ function initLeadForm() {
     msg.className = "lf-msg"; msg.textContent = "";
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), username: fd.get("username"), capital: fd.get("capital"), city: fd.get("city"), website: fd.get("website"), consent: fd.get("consent") === "on" });
+      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), username: fd.get("username"), capital: fd.get("capital"), city: fd.get("city"), format: fd.get("format"), website: fd.get("website"), consent: fd.get("consent") === "on" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
       form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
     } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }

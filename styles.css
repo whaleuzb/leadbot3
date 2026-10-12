@@ -641,6 +641,18 @@ body { transition: background-color .35s, color .35s; }
 [data-theme="dark"] .topbar nav a.on { color: var(--foreground); }
 [data-theme="dark"] .hero-shell::before { background: radial-gradient(circle, rgba(166,151,235,.28), transparent 65%); }
 [data-theme="dark"] .stats-card, [data-theme="dark"] .enrollment-ticket { border: 1px solid #2e2838; }
+/* O'qish formati: Online / Offlayn tanlovi */
+.lf-format { border: 0; margin: 0; padding: 0; min-width: 0; }
+.lf-format legend { display: block; margin-bottom: 6px; padding: 0; font-size: 13px; font-weight: 700; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg label { position: relative; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span { display: flex; align-items: center; justify-content: center; min-height: 50px; border: 1px solid var(--border); border-radius: 16px; background: #fff; font-weight: 700; transition: background .2s, border-color .2s, color .2s; }
+.seg label:hover span { border-color: var(--primary); }
+.seg input:checked + span { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.seg input:focus-visible + span { outline: 2px solid var(--ring); outline-offset: 2px; }
+[data-theme="dark"] .seg span { background: #15121c; }
+[data-theme="dark"] .seg input:checked + span { background: var(--primary); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }
