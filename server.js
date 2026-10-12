@@ -99,9 +99,9 @@ function defaults() {
       ],
       hero: {
         eyebrow: "TREYDING BO‘YICHA COMMUNITY",
-        title1: "TREYDING —",
-        accent: "QUMORDAN",
-        title3: "FARQI BOR",
+        title1: "TASODIF EMAS —",
+        accent: "TIZIM",
+        title3: "ISHLAYDI",
         intro: "Tasodifiy bitimlarsiz va “signal”larga ko‘r-ko‘rona ishonmasdan — o‘z strategiyang, aniq riskni boshqarish va sovuqqon qaror qabul qilish.",
         note: "Telefondan yoki kompyuterdan. O‘zingizga qulay ritmda.",
         captionLabel: "TREYDING TIZIMI",
@@ -157,6 +157,12 @@ function load() {
     const i = (db.settings.stats || []).findIndex((x) => /daromad/i.test(x.label || "") || /^65\s*%$/.test((x.value || "").trim()));
     if (i >= 0) db.settings.stats[i] = { value: "1000+", label: "o‘quvchilar" };
     db.statsFix1 = true; save();
+  }
+  // Bir martalik: eski hero sarlavhasi yangisiga (admin o'zgartirgan bo'lsa tegilmaydi)
+  if (!db.heroFix1) {
+    const h = db.settings.hero;
+    if (h.title1 === "TREYDING —" && h.accent === "QUMORDAN" && h.title3 === "FARQI BOR") Object.assign(h, { title1: d.settings.hero.title1, accent: d.settings.hero.accent, title3: d.settings.hero.title3 });
+    db.heroFix1 = true; save();
   }
   // Parolni tiklash: RESET_ADMIN_PASSWORD qiymati o'zgarganda saqlangan parol o'chadi va ADMIN_PASSWORD amal qiladi (bir martalik)
   const rt = process.env.RESET_ADMIN_PASSWORD;
