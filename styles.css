@@ -586,6 +586,9 @@ header nav a:hover::after { transform: scaleX(1); }
 .audience-grid li.has-img { grid-template-columns: 42px minmax(0, 1fr) 210px; align-items: center; }
 .audience-grid li.has-img .aud-img { width: 210px; max-width: 100%; aspect-ratio: 3 / 2; margin: 0; border-radius: 14px; object-fit: cover; }
 @media (max-width: 1100px) { .audience-grid li.has-img { grid-template-columns: 42px minmax(0, 1fr); align-items: start; } .audience-grid li.has-img .aud-img { grid-column: 2 / -1; width: 100%; max-width: 340px; } }
+/* "Oldin / Keyin" yorliqlari: to'q kartada o'qiladigan rang */
+.stats-card figcaption span { background: #efeaff; color: #211a35; }
+.stats-card figcaption span:last-child { background: #bba5fa; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }
