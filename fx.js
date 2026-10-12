@@ -92,13 +92,7 @@
       return `<g class="cd" data-i="${c.i}" style="animation-delay:${delay}ms;transform-origin:50% ${org}%"><line x1="${x}" x2="${x}" y1="${c.hi.toFixed(1)}" y2="${c.lo.toFixed(1)}" stroke="${col}" stroke-width="2.2"/><rect x="${x - 7.5}" y="${y.toFixed(1)}" width="15" height="${h.toFixed(1)}" rx="2" fill="${col}"/></g>`;
     };
     for (let k = 0; k < 17; k++) cs.push(next());
-    g.innerHTML = '<path class="ma" fill="none"></path>' + cs.map((c, k) => el(c, 250 + k * 45)).join("");
-    const ma = $(".ma", g);
-    const drawMA = () => {
-      const pts = cs.map((c) => `${X0 + c.i * W},${c.close.toFixed(1)}`);
-      ma.setAttribute("d", "M" + pts.join("L"));
-    };
-    drawMA();
+    g.innerHTML = cs.map((c, k) => el(c, 250 + k * 45)).join("");
 
     if (reduce) return;
     let visible = true;
@@ -110,7 +104,6 @@
       shift++;
       g.style.transform = `translateX(${-shift * W}px)`;
       while (cs.length > KEEP) { const o = cs.shift(); $(`.cd[data-i="${o.i}"]`, g)?.remove(); }
-      drawMA();
     }, 750);
   }
 

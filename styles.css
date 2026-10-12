@@ -515,7 +515,6 @@ header nav a:hover::after { transform: scaleX(1); }
 .hero-image { transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
 .hero-chart #candles { transition: transform .65s cubic-bezier(.4,0,.2,1); }
 .cd { transform-box: fill-box; transform-origin: 50% 100%; animation: candleIn .7s cubic-bezier(.25,.8,.25,1) both; }
-.ma { stroke: #e9e2ff; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; opacity: .55; }
 .demo-chip { position: absolute; z-index: 2; top: 18px; left: 20px; display: flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 99px; background: rgba(255,255,255,.13); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font: 700 11px/1 var(--body); letter-spacing: 1.6px; }
 .demo-chip i { width: 8px; height: 8px; border-radius: 50%; background: #58e0a0; animation: pulse 1.8s infinite; }
 
