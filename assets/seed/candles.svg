@@ -14,8 +14,10 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
 .barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
 .cd,.bar,.dot,.glow{transform-box:fill-box}
-@keyframes wave{0%,100%{transform:none}50%{transform:scaleY(.78)}}
-.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,wave 2.8s ease-in-out infinite}
+@keyframes tick{0%,100%{transform:scaleY(1)}35%{transform:scaleY(var(--a,.7))}70%{transform:scaleY(var(--b,1.12))}}
+.cd{transform-origin:50% 55%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,tick 2s ease-in-out infinite}
+@keyframes stream{to{transform:translateX(-640px)}}
+.stream{animation:stream 16s linear infinite}
 .cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
 @keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
 .scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
