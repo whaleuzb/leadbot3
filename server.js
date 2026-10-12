@@ -64,7 +64,7 @@ async function notifyLead(lead) {
 }
 const cleanImg = (v) => (typeof v === "string" && IMG_RE.test(v) ? v : "");
 const STATIC = {
-  "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js",
+  "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js", "/fx.js": "fx.js",
   "/admin": "admin.html", "/admin.html": "admin.html", "/admin.css": "admin.css", "/admin.js": "admin.js",
 };
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };

@@ -126,99 +126,22 @@ function renderPlans() {
   });
 }
 
-/* ---------- 3) Community galereyasi ---------- */
+/* ---------- 3) Community galereyasi (coverflow slayder, fx.js) ---------- */
 function initGallery() {
-  const track = document.getElementById("galleryTrack");
-  const gallery = track?.closest(".community-gallery");
-  if (!track || !gallery) return;
-
+  const stage = document.getElementById("galleryTrack");
+  if (!stage || !window.FX) return;
   const bars = (seed) => {
     let x = seed, out = "";
-    for (let i = 0; i < 14; i++) {
-      x = (x * 9301 + 49297) % 233280;
-      const h = 20 + Math.round((x / 233280) * 70);
-      out += `<i style="height:${h}%"></i>`;
-    }
+    for (let i = 0; i < 14; i++) { x = (x * 9301 + 49297) % 233280; out += `<i style="height:${20 + Math.round((x / 233280) * 70)}%"></i>`; }
     return out;
   };
-  const group = (hidden) =>
-    `<div class="gallery-group"${hidden ? ' aria-hidden="true"' : ""}>` +
-    LESSONS.map((l, i) =>
-      `<figure class="community-shot lesson-card${l.image ? " has-img" : ""}">
-         ${l.image ? `<img class="lesson-img" src="${esc(l.image)}" alt="" loading="lazy" draggable="false">` : ""}
-         <span class="lesson-n">${esc(l.n)}</span>
-         <div class="lesson-bars" aria-hidden="true">${bars(i + 3)}</div>
-         <figcaption><strong>${esc(l.t)}</strong><span>${esc(l.d)}</span></figcaption>
-       </figure>`).join("") + "</div>";
-
-  track.innerHTML = group(true) + group(false) + group(true);
-
-  const groupWidth = () => track.firstElementChild.getBoundingClientRect().width;
-  // Kasr qiymatni o'zimiz yuritamiz: ba'zi brauzerlar (iOS Safari) scrollLeft ni butun songa yaxlitlaydi
-  let pos = 0, lastSet = 0, paused = false, userPaused = false, dragging = false, startX = 0, startScroll = 0, resumeTimer;
-  const SPEED = 0.045; // px/ms (~45px/soniya)
-
-  requestAnimationFrame(() => { pos = lastSet = gallery.scrollLeft = groupWidth(); });
-
-  const wrapPos = () => {
-    const w = groupWidth();
-    if (pos >= w * 2) pos -= w; else if (pos <= 0) pos += w;
-  };
-  const wrap = () => {
-    const w = groupWidth();
-    if (gallery.scrollLeft >= w * 2) gallery.scrollLeft -= w;
-    else if (gallery.scrollLeft <= 0) gallery.scrollLeft += w;
-    pos = lastSet = gallery.scrollLeft;
-  };
-
-  const pause = () => { paused = true; clearTimeout(resumeTimer); };
-  const resume = (ms = 1500) => { clearTimeout(resumeTimer); resumeTimer = setTimeout(() => (paused = false), ms); };
-
-  let last = performance.now();
-  const tick = (now) => {
-    const dt = Math.min(now - last, 100); last = now;
-    if (!paused && !userPaused && !dragging) {
-      // foydalanuvchi o'zi surgan bo'lsa — joyni qayta olamiz
-      if (Math.abs(gallery.scrollLeft - lastSet) > 2) pos = gallery.scrollLeft;
-      pos += dt * SPEED; wrapPos();
-      gallery.scrollLeft = pos;
-      lastSet = gallery.scrollLeft;
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-
-  // To'xtatish / davom ettirish tugmasi (harakatni boshqarish uchun)
-  const toggle = document.getElementById("gallery-toggle");
-  toggle?.addEventListener("click", () => {
-    userPaused = !userPaused;
-    toggle.setAttribute("aria-pressed", String(userPaused));
-    toggle.textContent = userPaused ? "▶ Davom ettirish" : "❚❚ To‘xtatish";
-    if (!userPaused) pos = lastSet = gallery.scrollLeft;
-  });
-
-  gallery.addEventListener("pointerdown", (e) => {
-    if (e.pointerType !== "mouse") return;
-    dragging = true; startX = e.clientX; startScroll = gallery.scrollLeft;
-    gallery.setPointerCapture(e.pointerId);
-  });
-  gallery.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    gallery.scrollLeft = startScroll - (e.clientX - startX);
-    wrap();
-  });
-  const endDrag = () => { if (dragging) { dragging = false; resume(); } };
-  gallery.addEventListener("pointerup", endDrag);
-  gallery.addEventListener("pointercancel", endDrag);
-  gallery.addEventListener("mouseenter", pause);
-  gallery.addEventListener("mouseleave", () => resume(300));
-  gallery.addEventListener("touchstart", pause, { passive: true });
-  gallery.addEventListener("touchend", () => resume(2000), { passive: true });
-  gallery.addEventListener("scroll", wrap, { passive: true });
-  gallery.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight") { gallery.scrollBy({ left: 300, behavior: "smooth" }); pause(); resume(); }
-    if (e.key === "ArrowLeft")  { gallery.scrollBy({ left: -300, behavior: "smooth" }); pause(); resume(); }
-  });
+  stage.innerHTML = LESSONS.map((l, i) => `<figure class="community-shot lesson-card${l.image ? " has-img" : ""}">
+      ${l.image ? `<img class="lesson-img" src="${esc(l.image)}" alt="" loading="lazy" draggable="false">` : ""}
+      <span class="lesson-n">${esc(l.n)}</span>
+      <div class="lesson-bars" aria-hidden="true">${bars(i + 3)}</div>
+      <figcaption><strong>${esc(l.t)}</strong><span>${esc(l.d)}</span></figcaption>
+    </figure>`).join("");
+  FX.coverflow({ root: stage.closest(".community-gallery"), stage, slides: [...stage.children], toggle: document.getElementById("gallery-toggle") });
 }
 
 /* ---------- 4) Countdown ---------- */
@@ -256,28 +179,6 @@ function initCountdown() {
   update();
   clearInterval(cdTimer);
   cdTimer = setInterval(update, 1000);
-}
-
-/* ---------- 5) Hero sham grafigi (bezak) ---------- */
-function initCandles() {
-  const g = document.getElementById("candles");
-  if (!g) return;
-  let x = 7, price = 230, out = "";
-  const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
-  for (let i = 0; i < 22; i++) {
-    const cx = 22 + i * 17;
-    const open = price;
-    const close = price - 4 - (rnd() - 0.32) * 26; // umumiy o'sish trendi
-    const hi = Math.min(open, close) - rnd() * 12 - 3;
-    const lo = Math.max(open, close) + rnd() * 12 + 3;
-    price = close;
-    const up = close < open;
-    const col = up ? "#bba5fa" : "#6d6577";
-    const y = Math.min(open, close), hgt = Math.max(3, Math.abs(open - close));
-    out += `<line x1="${cx}" x2="${cx}" y1="${hi.toFixed(1)}" y2="${lo.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>` +
-           `<rect x="${cx - 5}" y="${y.toFixed(1)}" width="10" height="${hgt.toFixed(1)}" rx="2" fill="${col}"/>`;
-  }
-  g.innerHTML = out;
 }
 
 function renderAudience() {
@@ -362,7 +263,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderAudience();
   initGallery();
   initCountdown();
-  initCandles();
   initTracking();
   initLeadForm();
+  if (window.FX) FX.init();
 });

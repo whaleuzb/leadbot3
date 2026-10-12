@@ -5,13 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>trademove — Treydingni tizim bilan o‘rgan</title>
   <meta name="description" content="Treyding bo‘yicha yopiq community. Noldan boshlab: texnik tahlil, risk-menejment va treyder psixologiyasi — amaliy dastur bilan." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23292331%27/%3E%3Cpath d=%27M9 21V13M16 24V8M23 19V11%27 stroke=%27%23bba5fa%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    (function () {
+      var d = document.documentElement;
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) d.classList.add("fx");
+      setTimeout(function () { if (!d.dataset.fxReady) d.classList.remove("fx"); }, 5000);
+    })();
+  </script>
 </head>
 <body>
 <main>
 
   <!-- ========== HERO ========== -->
-  <div class="hero-shell">
+  <div class="hero-shell" id="top">
     <header>
       <a class="brand js-brand" href="/">trademove</a>
       <nav>
@@ -210,6 +218,7 @@
   </footer>
 </main>
 
+<script src="fx.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
