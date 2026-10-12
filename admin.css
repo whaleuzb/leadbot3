@@ -167,3 +167,11 @@ span.img-thumb { display: grid; place-items: center; color: var(--muted); font-s
 .tg-help summary { cursor: pointer; font-weight: 700; }
 .tg-help ol { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; color: #4f4a56; }
 .lead-tools .pill { justify-self: start; }
+
+/* Shogirtlar natijalari */
+.res-hint { margin: -6px 0 16px; color: var(--muted); font-size: 13px; }
+.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.res-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+.res-item img { width: 100%; height: 220px; object-fit: contain; background: #0d0f14; border-radius: 10px; border: 1px solid var(--border); }
+.res-item input[data-f] { width: 100%; }
+.res-item .editor-tools { align-items: center; }

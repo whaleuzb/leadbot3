@@ -45,13 +45,13 @@ $("#login-form").addEventListener("submit", async (e) => {
 $("#logout").addEventListener("click", async () => { await api("/logout", { method: "POST" }).catch(() => {}); showLogin(); });
 
 /* ---------- Marshrutlash ---------- */
-const TABS = ["dashboard", "leads", "plans", "lessons", "audience", "settings", "security"];
+const TABS = ["dashboard", "leads", "plans", "lessons", "audience", "results", "settings", "security"];
 const loaded = {};
 function route() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.tab === tab));
-  const loader = { dashboard: loadDashboard, leads: loadLeads, settings: async () => { await loadContent(); await loadTelegram(); }, plans: loadContent, lessons: loadContent, audience: loadContent }[tab];
+  const loader = { dashboard: loadDashboard, leads: loadLeads, settings: async () => { await loadContent(); await loadTelegram(); }, plans: loadContent, lessons: loadContent, audience: loadContent, results: loadContent }[tab];
   if (loader) guard(loader);
   window.scrollTo(0, 0);
 }
@@ -192,7 +192,7 @@ $("#export-csv").addEventListener("click", () => {
 /* ---------- Kontent (tariflar, darslar, sozlamalar) ---------- */
 let CONTENT = null;
 async function ensureContent() { if (!CONTENT) CONTENT = await api("/all"); }
-async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderSettings(); }
+async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderResults(); renderSettings(); }
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
 
 /* ---------- Rasm yuklash (umumiy) ---------- */
@@ -344,6 +344,40 @@ $("#auto-aud").addEventListener("click", () => guard(async () => {
 }));
 $("#save-aud").addEventListener("click", () => guard(async () => { CONTENT.audience = await api("/audience", { method: "PUT", body: { audience: CONTENT.audience } }); renderAudience(); }, "Kartalar saqlandi — saytda yangilandi"));
 
+/* Shogirtlar natijalari */
+function renderResults() {
+  const r = CONTENT.results || (CONTENT.results = []);
+  $("#res-editor").innerHTML = r.length ? `<div class="res-grid">` + r.map((x, i) => `
+    <div class="card res-item" data-i="${i}">
+      <img src="${esc(x.image)}" alt="Natija ${i + 1}" loading="lazy" />
+      <input data-f="caption" value="${esc(x.caption)}" maxlength="80" placeholder="Masalan: DOT/USDT · +13%" aria-label="Natija ${i + 1} izohi" />
+      <span class="editor-tools"><span class="lead-meta">${String(i + 1).padStart(2, "0")}</span><button class="btn sm" data-act="up" type="button" ${i === 0 ? "disabled" : ""} aria-label="Oldinga">←</button><button class="btn sm" data-act="down" type="button" ${i === r.length - 1 ? "disabled" : ""} aria-label="Orqaga">→</button><button class="btn sm" data-act="img" type="button">Almashtirish</button><button class="btn sm danger" data-act="del" type="button">×</button></span>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-file hidden aria-label="Rasm tanlash" />
+    </div>`).join("") + `</div>` : `<div class="card empty">Natijalar yo‘q — saytda bu bo‘lim yashirin. “+ Natija qo‘shish” tugmasini bosing.</div>`;
+}
+$("#res-editor").addEventListener("input", (e) => { const r = e.target.closest("[data-i]"); if (r && e.target.dataset.f) CONTENT.results[r.dataset.i].caption = e.target.value; });
+$("#res-editor").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"), r = e.target.closest("[data-i]"); if (!b || !r || b.dataset.act.startsWith("img")) return;
+  const i = +r.dataset.i;
+  if (b.dataset.act === "up") move(CONTENT.results, i, -1);
+  if (b.dataset.act === "down") move(CONTENT.results, i, 1);
+  if (b.dataset.act === "del") CONTENT.results.splice(i, 1);
+  renderResults();
+});
+$("#add-res").addEventListener("click", () => $("#res-files").click());
+$("#res-files").addEventListener("change", async (e) => {
+  const files = [...e.target.files]; e.target.value = ""; if (!files.length) return;
+  let ok = 0;
+  for (const [k, f] of files.entries()) {
+    toast(`Yuklanmoqda… ${k + 1}/${files.length}`);
+    try { CONTENT.results.push({ image: await uploadImage(f), caption: "" }); ok++; }
+    catch (err) { toast(err.message, true); }
+  }
+  renderResults();
+  if (ok) { toast(`${ok} ta rasm qo‘shildi. Izoh yozib, “Saqlash” bosing.`); $$("#res-editor input[data-f]").at(-ok)?.focus(); }
+});
+$("#save-res").addEventListener("click", () => guard(async () => { CONTENT.results = await api("/results", { method: "PUT", body: { results: CONTENT.results } }); renderResults(); }, "Natijalar saqlandi — saytda yangilandi"));
+
 /* Sozlamalar */
 function heroPreview() {
   $("#hero-preview").innerHTML = "Ko‘rinishi: <b>" + [$("#h-t1").value, "<span style='color:var(--accent)'>" + esc($("#h-acc").value) + "</span>", $("#h-t3").value].map((x, i) => i === 1 ? x : esc(x)).join(" / ") + "</b>";
@@ -415,6 +449,7 @@ $("#pw-form").addEventListener("submit", async (e) => {
 wireImages($("#plans-editor"), () => CONTENT.plans, renderPlans);
 wireImages($("#lessons-editor"), () => CONTENT.lessons, renderLessons);
 wireImages($("#aud-editor"), () => CONTENT.audience, renderAudience);
+wireImages($("#res-editor"), () => CONTENT.results, renderResults);
 
 /* ---------- Boshlash ---------- */
 (async () => {

@@ -32,6 +32,7 @@
       <a href="#plans" data-tab="plans">Tariflar</a>
       <a href="#lessons" data-tab="lessons">Darslar</a>
       <a href="#audience" data-tab="audience">Kimga mos</a>
+      <a href="#results" data-tab="results">Natijalar</a>
       <a href="#settings" data-tab="settings">Sozlamalar</a>
       <a href="#security" data-tab="security">Xavfsizlik</a>
     </nav>
@@ -105,6 +106,17 @@
         <div class="actions"><button class="btn" id="auto-aud" type="button">Mavzuga mos rasmlarni qayta tanlash</button><button class="btn" id="add-aud" type="button">+ Karta qo‘shish</button><button class="btn primary" id="save-aud" type="button">Saqlash</button></div>
       </header>
       <div id="aud-editor" class="stack"></div>
+    </section>
+
+    <!-- Shogirtlar natijalari -->
+    <section class="tab" id="tab-results" hidden>
+      <header class="page-head row">
+        <div><h1>Natijalar</h1><p>“Shogirtlar natijalari” bo‘limidagi skrinshot kartalari. Bir nechta rasmni birdaniga tanlash mumkin.</p></div>
+        <div class="actions"><button class="btn" id="add-res" type="button">+ Natija qo‘shish</button><button class="btn primary" id="save-res" type="button">Saqlash</button></div>
+        <input type="file" id="res-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden aria-label="Natija rasmlarini tanlash" />
+      </header>
+      <p class="hint res-hint">Maslahat: skrinshotda shogirtning ismi, rasmi va shaxsiy ma’lumotlari ko‘rinmasin. Saqlamaguncha saytda o‘zgarmaydi.</p>
+      <div id="res-editor"></div>
     </section>
 
     <!-- Sozlamalar -->

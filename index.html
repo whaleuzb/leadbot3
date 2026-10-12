@@ -48,6 +48,7 @@
       <nav>
         <a href="#community">Community</a>
         <a href="#for-whom">Kimga mos</a>
+        <a href="#natijalar">Natijalar</a>
         <a href="#results">Mening yo‘lim</a>
         <a href="#plans">Tariflar</a>
       </nav>
@@ -155,6 +156,36 @@
       <p class="audience-conclusion">Agar o‘zingizni shu holatlarning birida tanigan bo‘lsangiz — Community aynan siz uchun.</p>
     </div>
   </section>
+
+  <!-- ========== SHOGIRTLAR NATIJALARI (JS render qiladi) ========== -->
+  <section class="results-section" id="natijalar" hidden>
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">SHOGIRTLAR NATIJALARI</p>
+          <h2>Real savdolar,<br><em>real natijalar</em></h2>
+        </div>
+        <p>Community a’zolarining spot savdolaridan skrinshotlar. Kattaroq ko‘rish uchun kartani bosing.</p>
+      </div>
+      <div class="res-wrap">
+        <div class="res-track" id="res-track" tabindex="0" role="region" aria-label="Shogirtlar natijalari — chapga yoki o‘ngga suring"></div>
+      </div>
+      <div class="res-ctl">
+        <button class="res-btn" type="button" data-res="prev" aria-label="Oldingi natijalar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="res-bar" aria-hidden="true"><i id="res-bar"></i></div>
+        <span class="res-count" id="res-count" aria-live="polite"></span>
+        <button class="res-btn" type="button" data-res="next" aria-label="Keyingi natijalar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <p class="res-note">Shogirtlar maxfiyligi uchun ism va shaxsiy ma’lumotlar yashirilgan. Natijalar shaxsiy — o‘tgan natijalar kelajakdagi daromadni kafolatlamaydi.</p>
+    </div>
+  </section>
+
+  <div class="res-lb" id="res-lb" hidden role="dialog" aria-modal="true" aria-label="Natijani ko‘rish">
+    <button class="lb-btn lb-close" type="button" data-lb="close" aria-label="Yopish"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <button class="lb-btn lb-prev" type="button" data-lb="prev" aria-label="Oldingi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <figure class="lb-fig"><img id="lb-img" alt="" /><figcaption id="lb-cap"></figcaption></figure>
+    <button class="lb-btn lb-next" type="button" data-lb="next" aria-label="Keyingi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
 
   <!-- ========== TARIFLAR (JS render qiladi) ========== -->
   <section id="plans" class="tariff-section">

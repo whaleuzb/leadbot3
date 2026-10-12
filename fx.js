@@ -22,7 +22,7 @@
     const top = document.createElement("header");
     top.className = "topbar";
     top.innerHTML = `<a class="brand" href="#top">${brand.replace(/[<>&]/g, "")}</a>
-      <nav aria-label="Bo‘limlar"><a href="#community">Community</a><a href="#for-whom">Kimga mos</a><a href="#results">Mening yo‘lim</a><a href="#plans">Tariflar</a></nav>
+      <nav aria-label="Bo‘limlar"><a href="#community">Community</a><a href="#for-whom">Kimga mos</a><a href="#natijalar">Natijalar</a><a href="#results">Mening yo‘lim</a><a href="#plans">Tariflar</a></nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Qorong‘i mavzu" aria-pressed="false" title="Mavzuni almashtirish"><svg class="ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="ico-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
       <a class="topbar-cta" href="#apply">Ariza qoldirish</a>`;
     document.body.prepend(top);
@@ -30,7 +30,8 @@
     $$("[data-theme-toggle]", top).forEach((b) => { b.setAttribute("aria-pressed", String(dark)); b.setAttribute("aria-label", dark ? "Yorug‘ mavzu" : "Qorong‘i mavzu"); });
 
     const links = $$("nav a", top);
-    const secs = links.map((a) => $(a.getAttribute("href"))).filter(Boolean);
+    // sahifadagi tartib bo'yicha (menyu tartibi boshqacha bo'lishi mumkin)
+    const secs = links.map((a) => $(a.getAttribute("href"))).filter(Boolean).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     let ticking = false;
     const update = () => {
       ticking = false;
@@ -114,7 +115,7 @@
   const GROUPS = [
     [".personal-result .result-copy > *", 90], [".result-photo", 0],
     [".community-intro > *", 80], [".community-copy > *", 70], [".community-gallery", 0], [".community-caption", 0], [".gallery-ctl", 0],
-    [".audience-heading > *", 90], [".audience-grid li", 60], [".audience-conclusion", 0],
+    [".audience-heading > *", 90], [".audience-grid li", 60], [".audience-conclusion", 0], [".res-wrap", 0], [".res-ctl", 0], [".res-note", 0],
     [".section-head > *", 90], [".plan", 110], [".enrollment-ticket", 0], [".lead-card", 0], [".contact", 0], [".risk-note", 0], ["footer", 0],
   ];
   let io;

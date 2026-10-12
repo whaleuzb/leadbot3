@@ -131,6 +131,7 @@ function defaults() {
       "Ko‘p narsani o‘rgandingiz, lekin bitta ishlaydigan tizim yig‘a olmadingizmi?",
       "“Tez boyish” emas, kapitalni himoya qiladigan va barqaror yondashuvni xohlaysizmi?",
     ],
+    results: [], // shogirtlar natijalari: { image, caption }
     leads: [],
     stats: { views: {}, clicks: {} }, // views: {sana: n}, clicks: {sana: {tarif: n}}
     auth: { secret: crypto.randomBytes(32).toString("hex"), passwordHash: null },
@@ -150,6 +151,7 @@ function load() {
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
   db.auth.secret = db.auth.secret || d.auth.secret;
   seedImages();
+  seedResults();
   // Bir martalik: "o'rtacha oylik daromad" statistikasi o'rniga o'quvchilar soni (daromad va'dasi bo'lmasin)
   if (!db.statsFix1) {
     const i = (db.settings.stats || []).findIndex((x) => /daromad/i.test(x.label || "") || /^65\s*%$/.test((x.value || "").trim()));
@@ -253,6 +255,27 @@ function autoPlanImages() {
 function seedImages() {
   if (!db.seededImages3) { autoLessonImages(); autoPlanImages(); db.seededImages3 = true; save(); }
   if (!db.seededAudience1) { autoAudienceImages(); db.seededAudience1 = true; save(); }
+}
+/* Shogirtlar natijalari: assets/results/*.jpg bir marta uploads'ga ko'chiriladi (admin paneldan tahrirlanadi) */
+const RESULT_CAPTIONS = {
+  "r01-mina": "MINA/USDT · +17.02%", "r02-dot": "DOT/USDT · +13.39%", "r03-o": "O/USDT · +11.08%",
+  "r04-pnl": "Spot PnL · 7 kun: +11 698 USDT", "r16-mexc": "MEXC · spot bitim", "r17-binance": "Binance · spot bitim",
+};
+function seedResults() {
+  if (db.seededResults1) return;
+  const dir = path.join(__dirname, "assets", "results");
+  let files = [];
+  try { files = fs.readdirSync(dir).filter((f) => /\.jpg$/.test(f)).sort(); } catch {}
+  if (!db.results.length) for (const f of files) {
+    const buf = fs.readFileSync(path.join(dir, f));
+    const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
+    const dest = path.join(UPLOAD_DIR, name);
+    if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
+    const key = f.slice(0, -4);
+    const pair = (key.split("-")[1] || "").toUpperCase();
+    db.results.push({ image: "/uploads/" + name, caption: RESULT_CAPTIONS[key] || `${pair}/USDT · spot bitim` });
+  }
+  db.seededResults1 = true; save();
 }
 let saving = false, dirty = false;
 function save() {
@@ -391,6 +414,10 @@ function cleanPlans(arr) {
     };
   });
 }
+function cleanResults(arr) {
+  if (!Array.isArray(arr)) throw Object.assign(new Error("Noto‘g‘ri ro‘yxat"), { code: 400 });
+  return arr.slice(0, 60).map((r) => ({ image: cleanImg(r?.image), caption: str(r?.caption, 80) })).filter((r) => r.image);
+}
 function cleanLessons(arr) {
   if (!Array.isArray(arr)) throw Object.assign(new Error("Noto‘g‘ri ro‘yxat"), { code: 400 });
   return arr.slice(0, 20).map((l, i) => ({ n: String(i + 1).padStart(2, "0"), t: str(l.t, 50) || "Dars", d: str(l.d, 100), image: cleanImg(l.image) }));
@@ -427,7 +454,7 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })) });
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -515,7 +542,7 @@ async function api(req, res, url) {
   }
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
-  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience });
+  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results });
 
   const lead = /^\/api\/admin\/leads\/(\w+)$/.exec(p);
   if (lead) {
@@ -553,6 +580,7 @@ async function api(req, res, url) {
   }
   if (m === "POST" && p === "/api/admin/audience/auto-images") { const count = autoAudienceImages(); return send(res, 200, { count, audience: db.audience }); }
   if (m === "POST" && p === "/api/admin/lessons/auto-images") { const count = autoLessonImages(); return send(res, 200, { count, lessons: db.lessons }); }
+  if (m === "PUT" && p === "/api/admin/results") { db.results = cleanResults((await readJson(req)).results); save(); return send(res, 200, db.results); }
   if (m === "PUT" && p === "/api/admin/lessons") { db.lessons = cleanLessons((await readJson(req)).lessons); save(); return send(res, 200, db.lessons); }
 
   if (m === "POST" && p === "/api/admin/password") {

@@ -8,7 +8,7 @@ ADMIN_PASSWORD='kuchli-parol' npm start     # http://localhost:3000  ·  admin: 
 
 ## Nima bor
 - `/` — landing (tariflar, darslar, sozlamalar serverdan olinadi; narxsiz — faqat ariza formasi; tashrif/klik hisobi)
-- `/admin` — admin panel: umumiy ko‘rinish (KPI, grafik), arizalar (holat, izoh, qidiruv, CSV), tariflar, darslar, sozlamalar, Telegram bot holati, parol
+- `/admin` — admin panel: umumiy ko‘rinish (KPI, grafik), arizalar (holat, izoh, qidiruv, CSV), tariflar, darslar, “Kimga mos” kartalari, shogirtlar natijalari (skrinshotlar), sozlamalar, Telegram bot holati, parol
 - `server.js` — API va statik fayllar. Ma’lumotlar `DATA_DIR/db.json` da saqlanadi
 
 ## Muhit o‘zgaruvchilari
