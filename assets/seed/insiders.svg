@@ -14,8 +14,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
 .barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
 .cd,.bar,.dot,.glow{transform-box:fill-box}
-.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
-.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.8s ease-in-out 1.6s infinite}
+@keyframes wave{0%,100%{transform:none}50%{transform:scaleY(.78)}}
+.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,wave 2.8s ease-in-out infinite}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
+@keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
+.scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
 .chip{animation:flo 4.5s ease-in-out infinite}
 .glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
 .dash{animation:march 3.2s linear infinite}
@@ -23,48 +26,49 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
 </style><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
     <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
     </defs>
   <rect width="620" height="1000" fill="url(#bg)"/>
   <line x1="62" y1="0" x2="62" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="124" y1="0" x2="124" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="186" y1="0" x2="186" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="248" y1="0" x2="248" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="310" y1="0" x2="310" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="372" y1="0" x2="372" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="434" y1="0" x2="434" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="496" y1="0" x2="496" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="558" y1="0" x2="558" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="62" x2="620" y2="62" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="124" x2="620" y2="124" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="186" x2="620" y2="186" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="248" x2="620" y2="248" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="310" x2="620" y2="310" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="372" x2="620" y2="372" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="434" x2="620" y2="434" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="496" x2="620" y2="496" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="558" x2="620" y2="558" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="620" x2="620" y2="620" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="682" x2="620" y2="682" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="744" x2="620" y2="744" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="806" x2="620" y2="806" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="868" x2="620" y2="868" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="930" x2="620" y2="930" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="992" x2="620" y2="992" stroke="#fff" stroke-opacity=".035"/>
       <rect class="dash" x="90" y="530" width="250" height="100" rx="14" fill="#bba5fa" opacity=".1" stroke="#bba5fa" stroke-opacity=".4" stroke-dasharray="6 6"/>
-      <g class="cd" style="animation-delay:200ms"><line x1="40" x2="40" y1="548.6" y2="567.2" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="35.5" y="560.0" width="9" height="3.3" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:235ms"><line x1="57" x2="57" y1="553.9" y2="582.7" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="52.5" y="563.3" width="9" height="5.3" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:270ms"><line x1="74" x2="74" y1="560.4" y2="584.3" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="69.5" y="568.7" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:305ms"><line x1="91" x2="91" y1="557.2" y2="581.2" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="86.5" y="569.8" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:340ms"><line x1="108" x2="108" y1="567.3" y2="582.6" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="103.5" y="570.9" width="9" height="5.2" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:375ms"><line x1="125" x2="125" y1="565.9" y2="587.5" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="120.5" y="576.1" width="9" height="3.5" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:410ms"><line x1="142" x2="142" y1="566.1" y2="593.3" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="137.5" y="579.6" width="9" height="6.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:445ms"><line x1="159" x2="159" y1="579.2" y2="599.0" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="154.5" y="585.7" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:480ms"><line x1="176" x2="176" y1="582.3" y2="601.8" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="171.5" y="588.3" width="9" height="3.5" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:515ms"><line x1="193" x2="193" y1="583.8" y2="602.4" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="188.5" y="589.0" width="9" height="3.0" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:550ms"><line x1="210" x2="210" y1="580.0" y2="595.6" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="205.5" y="589.0" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:585ms"><line x1="227" x2="227" y1="573.8" y2="601.8" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="222.5" y="584.4" width="9" height="5.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:620ms"><line x1="244" x2="244" y1="561.5" y2="594.7" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="239.5" y="576.2" width="9" height="8.2" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:655ms"><line x1="261" x2="261" y1="561.8" y2="585.8" stroke="#e88aa6" stroke-width="2"/>
-      <rect x="256.5" y="576.2" width="9" height="3.4" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:690ms"><line x1="278" x2="278" y1="554.1" y2="584.0" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="273.5" y="568.9" width="9" height="10.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:725ms"><line x1="295" x2="295" y1="552.5" y2="578.7" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="290.5" y="561.3" width="9" height="7.5" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:760ms"><line x1="312" x2="312" y1="519.1" y2="564.9" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="307.5" y="532.6" width="9" height="28.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:795ms"><line x1="329" x2="329" y1="502.4" y2="547.3" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="324.5" y="512.2" width="9" height="20.4" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:830ms"><line x1="346" x2="346" y1="469.5" y2="524.2" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="341.5" y="484.2" width="9" height="27.9" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:865ms"><line x1="363" x2="363" y1="461.7" y2="497.0" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="358.5" y="471.0" width="9" height="13.2" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:900ms"><line x1="380" x2="380" y1="440.3" y2="480.8" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="375.5" y="450.9" width="9" height="20.1" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:935ms"><line x1="397" x2="397" y1="424.3" y2="459.0" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="392.5" y="435.8" width="9" height="15.1" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:970ms"><line x1="414" x2="414" y1="414.9" y2="448.5" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="409.5" y="419.8" width="9" height="16.0" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1005ms"><line x1="431" x2="431" y1="399.1" y2="424.4" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="426.5" y="407.1" width="9" height="12.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1040ms"><line x1="448" x2="448" y1="379.5" y2="419.9" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="443.5" y="393.4" width="9" height="13.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1075ms"><line x1="465" x2="465" y1="379.5" y2="399.7" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="460.5" y="382.8" width="9" height="10.6" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1110ms"><line x1="482" x2="482" y1="362.7" y2="397.0" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="477.5" y="368.0" width="9" height="14.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1145ms"><line x1="499" x2="499" y1="340.2" y2="373.3" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="494.5" y="353.2" width="9" height="14.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1180ms"><line x1="516" x2="516" y1="335.2" y2="362.0" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="511.5" y="342.6" width="9" height="10.6" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1215ms"><line x1="533" x2="533" y1="324.9" y2="348.1" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="528.5" y="330.2" width="9" height="12.3" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1250ms"><line x1="550" x2="550" y1="308.4" y2="342.8" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="545.5" y="320.4" width="9" height="9.9" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1285ms"><line x1="567" x2="567" y1="298.9" y2="331.3" stroke="#bba5fa" stroke-width="2"/>
-      <rect x="562.5" y="307.2" width="9" height="13.2" rx="2" fill="#bba5fa"/></g><g class="cd live" style="animation-delay:1320ms"><line x1="584" x2="584" y1="286.6" y2="312.7" stroke="#bba5fa" stroke-width="2"/>
+      <g class="cd" style="animation-delay:200ms,1100ms"><line x1="40" x2="40" y1="548.6" y2="567.2" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="35.5" y="560.0" width="9" height="3.3" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:235ms,1220ms"><line x1="57" x2="57" y1="553.9" y2="582.7" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="52.5" y="563.3" width="9" height="5.3" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:270ms,1340ms"><line x1="74" x2="74" y1="560.4" y2="584.3" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="69.5" y="568.7" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:305ms,1460ms"><line x1="91" x2="91" y1="557.2" y2="581.2" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="86.5" y="569.8" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:340ms,1580ms"><line x1="108" x2="108" y1="567.3" y2="582.6" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="103.5" y="570.9" width="9" height="5.2" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:375ms,1700ms"><line x1="125" x2="125" y1="565.9" y2="587.5" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="120.5" y="576.1" width="9" height="3.5" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:410ms,1820ms"><line x1="142" x2="142" y1="566.1" y2="593.3" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="137.5" y="579.6" width="9" height="6.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:445ms,1940ms"><line x1="159" x2="159" y1="579.2" y2="599.0" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="154.5" y="585.7" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:480ms,2060ms"><line x1="176" x2="176" y1="582.3" y2="601.8" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="171.5" y="588.3" width="9" height="3.5" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:515ms,2180ms"><line x1="193" x2="193" y1="583.8" y2="602.4" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="188.5" y="589.0" width="9" height="3.0" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:550ms,2300ms"><line x1="210" x2="210" y1="580.0" y2="595.6" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="205.5" y="589.0" width="9" height="3.0" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:585ms,2420ms"><line x1="227" x2="227" y1="573.8" y2="601.8" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="222.5" y="584.4" width="9" height="5.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:620ms,2540ms"><line x1="244" x2="244" y1="561.5" y2="594.7" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="239.5" y="576.2" width="9" height="8.2" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:655ms,2660ms"><line x1="261" x2="261" y1="561.8" y2="585.8" stroke="#e88aa6" stroke-width="2"/>
+      <rect x="256.5" y="576.2" width="9" height="3.4" rx="2" fill="#e88aa6"/></g><g class="cd" style="animation-delay:690ms,2780ms"><line x1="278" x2="278" y1="554.1" y2="584.0" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="273.5" y="568.9" width="9" height="10.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:725ms,2900ms"><line x1="295" x2="295" y1="552.5" y2="578.7" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="290.5" y="561.3" width="9" height="7.5" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:760ms,3020ms"><line x1="312" x2="312" y1="519.1" y2="564.9" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="307.5" y="532.6" width="9" height="28.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:795ms,3140ms"><line x1="329" x2="329" y1="502.4" y2="547.3" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="324.5" y="512.2" width="9" height="20.4" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:830ms,3260ms"><line x1="346" x2="346" y1="469.5" y2="524.2" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="341.5" y="484.2" width="9" height="27.9" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:865ms,3380ms"><line x1="363" x2="363" y1="461.7" y2="497.0" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="358.5" y="471.0" width="9" height="13.2" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:900ms,3500ms"><line x1="380" x2="380" y1="440.3" y2="480.8" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="375.5" y="450.9" width="9" height="20.1" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:935ms,3620ms"><line x1="397" x2="397" y1="424.3" y2="459.0" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="392.5" y="435.8" width="9" height="15.1" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:970ms,3740ms"><line x1="414" x2="414" y1="414.9" y2="448.5" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="409.5" y="419.8" width="9" height="16.0" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1005ms,3860ms"><line x1="431" x2="431" y1="399.1" y2="424.4" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="426.5" y="407.1" width="9" height="12.7" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1040ms,3980ms"><line x1="448" x2="448" y1="379.5" y2="419.9" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="443.5" y="393.4" width="9" height="13.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1075ms,4100ms"><line x1="465" x2="465" y1="379.5" y2="399.7" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="460.5" y="382.8" width="9" height="10.6" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1110ms,4220ms"><line x1="482" x2="482" y1="362.7" y2="397.0" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="477.5" y="368.0" width="9" height="14.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1145ms,4340ms"><line x1="499" x2="499" y1="340.2" y2="373.3" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="494.5" y="353.2" width="9" height="14.8" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1180ms,4460ms"><line x1="516" x2="516" y1="335.2" y2="362.0" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="511.5" y="342.6" width="9" height="10.6" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1215ms,4580ms"><line x1="533" x2="533" y1="324.9" y2="348.1" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="528.5" y="330.2" width="9" height="12.3" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1250ms,4700ms"><line x1="550" x2="550" y1="308.4" y2="342.8" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="545.5" y="320.4" width="9" height="9.9" rx="2" fill="#bba5fa"/></g><g class="cd" style="animation-delay:1285ms,4820ms"><line x1="567" x2="567" y1="298.9" y2="331.3" stroke="#bba5fa" stroke-width="2"/>
+      <rect x="562.5" y="307.2" width="9" height="13.2" rx="2" fill="#bba5fa"/></g><g class="cd live" style="animation-delay:1320ms,4940ms"><line x1="584" x2="584" y1="286.6" y2="312.7" stroke="#bba5fa" stroke-width="2"/>
       <rect x="579.5" y="297.8" width="9" height="9.4" rx="2" fill="#bba5fa"/></g>
       <circle class="dot" cx="180" cy="600" r="46" fill="#58e0a0" fill-opacity=".2" stroke="#58e0a0" stroke-width="2.5"/><circle class="dot" cx="240" cy="585" r="34" fill="#58e0a0" fill-opacity=".2" stroke="#58e0a0" stroke-width="2.5"/><circle class="dot" cx="300" cy="575" r="58" fill="#58e0a0" fill-opacity=".2" stroke="#58e0a0" stroke-width="2.5"/><circle class="dot" cx="470" cy="395" r="26" fill="#58e0a0" fill-opacity=".2" stroke="#58e0a0" stroke-width="2.5"/><circle class="dot" cx="120" cy="575" r="22" fill="#58e0a0" fill-opacity=".2" stroke="#58e0a0" stroke-width="2.5"/>
       <g class="chip" style="animation-delay:-3.4s"><rect x="213.5" y="477" width="173" height="31" rx="15.5" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
@@ -72,4 +76,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-1.5s"><rect x="123.25" y="669" width="183.5" height="31" rx="15.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
     <text x="215" y="693" text-anchor="middle" font-size="15" font-weight="700" fill="#efeaff" letter-spacing="1">TO‘PLASH ZONASI</text></g>
       <g class="chip" style="animation-delay:-3s"><rect x="195.85000000000002" y="197" width="228.29999999999998" height="33" rx="16.5" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
-    <text x="310" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">KATTA O‘YINCHILAR</text></g></svg>
+    <text x="310" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">KATTA O‘YINCHILAR</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>

@@ -14,8 +14,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
 .barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
 .cd,.bar,.dot,.glow{transform-box:fill-box}
-.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
-.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.8s ease-in-out 1.6s infinite}
+@keyframes wave{0%,100%{transform:none}50%{transform:scaleY(.78)}}
+.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,wave 2.8s ease-in-out infinite}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
+@keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
+.scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
 .chip{animation:flo 4.5s ease-in-out infinite}
 .glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
 .dash{animation:march 3.2s linear infinite}
@@ -23,17 +26,18 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
 </style><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
     <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
     </defs>
   <rect width="620" height="1000" fill="url(#bg)"/>
   <line x1="62" y1="0" x2="62" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="124" y1="0" x2="124" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="186" y1="0" x2="186" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="248" y1="0" x2="248" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="310" y1="0" x2="310" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="372" y1="0" x2="372" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="434" y1="0" x2="434" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="496" y1="0" x2="496" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="558" y1="0" x2="558" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="62" x2="620" y2="62" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="124" x2="620" y2="124" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="186" x2="620" y2="186" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="248" x2="620" y2="248" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="310" x2="620" y2="310" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="372" x2="620" y2="372" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="434" x2="620" y2="434" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="496" x2="620" y2="496" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="558" x2="620" y2="558" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="620" x2="620" y2="620" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="682" x2="620" y2="682" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="744" x2="620" y2="744" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="806" x2="620" y2="806" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="868" x2="620" y2="868" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="930" x2="620" y2="930" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="992" x2="620" y2="992" stroke="#fff" stroke-opacity=".035"/>
       <circle class="glow" cx="430" cy="400" r="240" fill="url(#glow)"/>
       <path d="M40 690 L110 640 L160 660 L230 580 L290 610 L350 500 L400 540 L470 430 L520 450 L590 330 L590 760 L40 760 Z" fill="url(#fadeUp)"/>
-      <path class="draw" pathLength="1" d="M40 690 L110 640 L160 660 L230 580 L290 610 L350 500 L400 540 L470 430 L520 450 L590 330" fill="none" stroke="#bba5fa" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="draw" pathLength="1" d="M40 690 L110 640 L160 660 L230 580 L290 610 L350 500 L400 540 L470 430 L520 450 L590 330" fill="none" stroke="#bba5fa" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><g class="mdot"><circle r="13" fill="#bba5fa" opacity=".3"><animateMotion dur="5.5s" repeatCount="indefinite" path="M40 690 L110 640 L160 660 L230 580 L290 610 L350 500 L400 540 L470 430 L520 450 L590 330"/></circle><circle r="6" fill="#fff"><animateMotion dur="5.5s" repeatCount="indefinite" path="M40 690 L110 640 L160 660 L230 580 L290 610 L350 500 L400 540 L470 430 L520 450 L590 330"/></circle></g>
       <rect x="350" y="500" width="50" height="40" fill="#e88aa6" opacity=".25"/>
       <g class="chip" style="animation-delay:-2.3s"><rect x="346.25" y="565" width="57.5" height="31" rx="15.5" fill="#e88aa6" stroke="#fff" stroke-opacity=".12"/>
     <text x="375" y="589" text-anchor="middle" font-size="15" font-weight="700" fill="#2a1020" letter-spacing="1">−3%</text></g>
@@ -41,4 +45,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-2s"><rect x="433.2" y="278" width="126.8" height="32" rx="16" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
     <text x="496.59999999999997" y="303" text-anchor="middle" font-size="16" font-weight="700" fill="#06261a" letter-spacing="1">DEPOZIT ↑</text></g>
       <g class="chip" style="animation-delay:-2s"><rect x="40" y="197" width="240.2" height="33" rx="16.5" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
-    <text x="160.1" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">KAPITAL BOSHQARUVI</text></g></svg>
+    <text x="160.1" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">KAPITAL BOSHQARUVI</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>

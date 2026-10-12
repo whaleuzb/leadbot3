@@ -14,8 +14,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
 .barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
 .cd,.bar,.dot,.glow{transform-box:fill-box}
-.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
-.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.8s ease-in-out 1.6s infinite}
+@keyframes wave{0%,100%{transform:none}50%{transform:scaleY(.78)}}
+.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,wave 2.8s ease-in-out infinite}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
+@keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
+.scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
 .chip{animation:flo 4.5s ease-in-out infinite}
 .glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
 .dash{animation:march 3.2s linear infinite}
@@ -23,10 +26,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
 </style><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
     <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
     </defs>
   <rect width="620" height="1000" fill="url(#bg)"/>
@@ -44,9 +48,9 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
           <text x="22" y="38" font-size="20" font-weight="700" fill="#efeaff">Avto jurnal</text>
           <rect x="356" y="16" width="60" height="30" rx="15" fill="#58e0a0"/><circle cx="401" cy="31" r="11" fill="#fff"/></g></g><g transform="translate(32 322)"><g class="row" style="animation-delay:620ms"><rect width="436" height="60" rx="18" fill="#efeaff" fill-opacity="0.04"/>
           <text x="22" y="38" font-size="20" font-weight="700" fill="#efeaff">Bozor skaneri</text>
-          <rect x="356" y="16" width="60" height="30" rx="15" fill="#4a4458"/><circle cx="371" cy="31" r="11" fill="#fff"/></g></g>
+          <rect x="356" y="16" width="60" height="30" rx="15" fill="#4a4458"><animate attributeName="fill" values="#4a4458;#58e0a0;#58e0a0;#4a4458;#4a4458" keyTimes="0;.15;.6;.75;1" dur="4s" repeatCount="indefinite"/></rect><circle cx="371" cy="31" r="11" fill="#fff"><animate attributeName="cx" values="371;401;401;371;371" keyTimes="0;.15;.6;.75;1" dur="4s" repeatCount="indefinite"/></circle></g></g>
         <g transform="translate(32 410)"><rect width="436" height="118" rx="20" fill="#0f0c15" stroke="#fff" stroke-opacity=".12"/>
           <text x="22" y="42" font-size="16" font-weight="700" fill="#9a90ad" letter-spacing="2">POZITSIYA HAJMI</text>
           <text x="22" y="92" font-size="34" font-weight="800" fill="#efeaff">250 USDT</text>
           <text x="414" y="92" text-anchor="end" font-size="18" fill="#9a90ad">risk 1%</text></g>
-      </g></svg>
+      </g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>

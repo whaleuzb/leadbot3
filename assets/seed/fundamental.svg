@@ -14,8 +14,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
 .barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
 .cd,.bar,.dot,.glow{transform-box:fill-box}
-.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
-.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.8s ease-in-out 1.6s infinite}
+@keyframes wave{0%,100%{transform:none}50%{transform:scaleY(.78)}}
+.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,wave 2.8s ease-in-out infinite}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
+@keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
+.scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
 .chip{animation:flo 4.5s ease-in-out infinite}
 .glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
 .dash{animation:march 3.2s linear infinite}
@@ -23,10 +26,11 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 .bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
 .hl{animation:hl 2.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}.scan,.mdot{display:none}}
 </style><defs>
     <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="scanG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bba5fa" stop-opacity="0"/><stop offset="1" stop-color="#bba5fa" stop-opacity=".2"/></linearGradient>
     <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
     </defs>
   <rect width="620" height="1000" fill="url(#bg)"/>
@@ -50,4 +54,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
           <g transform="translate(400 27)"><rect class="hl" style="animation-delay:-0s" x="0" y="0" width="10" height="22" rx="3" fill="#bba5fa" fill-opacity="1"/><rect class="" style="animation-delay:-0.3s" x="14" y="0" width="10" height="22" rx="3" fill="#fff" fill-opacity="0.12"/><rect class="" style="animation-delay:-0.6s" x="28" y="0" width="10" height="22" rx="3" fill="#fff" fill-opacity="0.12"/></g></g></g>
       </g>
       <g class="chip" style="animation-delay:-0s"><rect x="189.9" y="147" width="240.2" height="33" rx="16.5" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
-    <text x="310" y="173" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">FUNDAMENTAL TAHLIL</text></g></svg>
+    <text x="310" y="173" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">FUNDAMENTAL TAHLIL</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></svg>

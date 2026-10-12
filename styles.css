@@ -571,11 +571,11 @@ header nav a:hover::after { transform: scaleX(1); }
   .hero-shell::before { width: 360px; height: 360px; }
 }
 /* Rasmlardagi harakat (Ken Burns) */
-@keyframes kb { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.09) translate(-1.5%, -1.2%); } }
+@keyframes kb { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.13) translate(-2.5%, -2%); } }
 .plan-media { overflow: hidden; border-radius: 18px; margin-bottom: 18px; aspect-ratio: 16 / 9; }
-.plan-media .plan-img { margin: 0; border-radius: 0; height: 100%; animation: kb 16s ease-in-out infinite alternate; }
-.lesson-img { animation: kb 14s ease-in-out infinite alternate; }
-.cf .community-shot:nth-child(2n) .lesson-img { animation-duration: 17s; animation-direction: alternate-reverse; }
+.plan-media .plan-img { margin: 0; border-radius: 0; height: 100%; animation: kb 11s ease-in-out infinite alternate; }
+.lesson-img { animation: kb 10s ease-in-out infinite alternate; }
+.cf .community-shot:nth-child(2n) .lesson-img { animation-duration: 12s; animation-direction: alternate-reverse; }
 .aud-img { animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
