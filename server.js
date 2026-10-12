@@ -256,26 +256,33 @@ function seedImages() {
   if (!db.seededImages3) { autoLessonImages(); autoPlanImages(); db.seededImages3 = true; save(); }
   if (!db.seededAudience1) { autoAudienceImages(); db.seededAudience1 = true; save(); }
 }
-/* Shogirtlar natijalari: assets/results/*.jpg bir marta uploads'ga ko'chiriladi (admin paneldan tahrirlanadi) */
+/* Shogirtlar natijalari: assets/results/*.jpg uploads'ga ko'chiriladi (admin paneldan tahrirlanadi).
+   Har bir fayl bir marta qo'shiladi — admin o'chirgan natija qaytib kelmaydi, yangi fayllar oxiriga qo'shiladi. */
 const RESULT_CAPTIONS = {
   "r01-mina": "MINA/USDT · +17.02%", "r02-dot": "DOT/USDT · +13.39%", "r03-o": "O/USDT · +11.08%",
   "r04-pnl": "Spot PnL · 7 kun: +11 698 USDT", "r16-mexc": "MEXC · spot bitim", "r17-binance": "Binance · spot bitim",
+  "r18-acu": "ACU/USDT · +31.97%", "r20-binance": "Binance · spot bitim", "r23-bitget": "Bitget · spot bitim", "r24-bitget": "Bitget · spot bitim",
+  "r27-gtc": "GTC/USDT · +30%", "r28-gtc": "Shogird fikri · TP 0.16", "r29-gtc": "GTC/USDT · +14.33%", "r30-gtc": "GTC/USDT · +52.96%", "r31-gtc": "GTC/USDT · +28.53%",
 };
 function seedResults() {
-  if (db.seededResults1) return;
   const dir = path.join(__dirname, "assets", "results");
   let files = [];
-  try { files = fs.readdirSync(dir).filter((f) => /\.jpg$/.test(f)).sort(); } catch {}
-  if (!db.results.length) for (const f of files) {
+  try { files = fs.readdirSync(dir).filter((f) => /^r\d+-[a-z0-9-]+\.jpg$/.test(f)).sort(); } catch {}
+  // eski bazada birinchi to'plam (r01–r17) allaqachon qo'shilgan
+  if (!Array.isArray(db.seededResultFiles)) db.seededResultFiles = db.seededResults1 ? files.filter((f) => parseInt(f.slice(1), 10) <= 17) : [];
+  const done = new Set(db.seededResultFiles);
+  let added = 0;
+  for (const f of files) {
+    if (done.has(f)) continue;
     const buf = fs.readFileSync(path.join(dir, f));
     const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
     const dest = path.join(UPLOAD_DIR, name);
     if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
-    const key = f.slice(0, -4);
-    const pair = (key.split("-")[1] || "").toUpperCase();
-    db.results.push({ image: "/uploads/" + name, caption: RESULT_CAPTIONS[key] || `${pair}/USDT · spot bitim` });
+    const key = f.slice(0, -4), pair = (key.split("-")[1] || "").toUpperCase();
+    if (!db.results.some((r) => r.image === "/uploads/" + name)) db.results.push({ image: "/uploads/" + name, caption: RESULT_CAPTIONS[key] || `${pair}/USDT · spot bitim` });
+    db.seededResultFiles.push(f); added++;
   }
-  db.seededResults1 = true; save();
+  if (added || !db.seededResults1) { db.seededResults1 = true; save(); }
 }
 let saving = false, dirty = false;
 function save() {
@@ -609,6 +616,15 @@ http.createServer(async (req, res) => {
       const tag = etagOf(fp);
       if (req.headers["if-none-match"] === tag) { res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" }); return res.end(); }
       res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "no-cache", ETag: tag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
+      return fs.createReadStream(fp).pipe(res);
+    }
+    if (url.pathname.startsWith("/photos/")) { // sayt suratlari (assets/photos)
+      if (req.method !== "GET" || !/^\/photos\/[a-z0-9-]+\.jpg$/.test(url.pathname)) return send(res, 404, "Topilmadi");
+      const fp = path.join(__dirname, "assets", "photos", path.basename(url.pathname));
+      if (!fs.existsSync(fp)) return send(res, 404, "Topilmadi");
+      const tag = etagOf(fp);
+      if (req.headers["if-none-match"] === tag) { res.writeHead(304, { ETag: tag, "Cache-Control": "public, max-age=86400" }); return res.end(); }
+      res.writeHead(200, { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=86400", ETag: tag, "X-Content-Type-Options": "nosniff" });
       return fs.createReadStream(fp).pipe(res);
     }
     if (url.pathname.startsWith("/uploads/")) {

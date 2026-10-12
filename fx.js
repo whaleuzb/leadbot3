@@ -113,7 +113,7 @@
 
   /* ---------- Skroll bilan paydo bo'lish ---------- */
   const GROUPS = [
-    [".personal-result .result-copy > *", 90], [".result-photo", 0],
+    [".personal-result .result-copy > *", 90], [".result-photo", 0], [".desk-photo", 0], [".meet-grid figure", 70], [".mentor-chip", 0],
     [".community-intro > *", 80], [".community-copy > *", 70], [".community-gallery", 0], [".community-caption", 0], [".gallery-ctl", 0],
     [".audience-heading > *", 90], [".audience-grid li", 60], [".audience-conclusion", 0], [".res-wrap", 0], [".res-ctl", 0], [".res-note", 0],
     [".section-head > *", 90], [".plan", 110], [".enrollment-ticket", 0], [".lead-card", 0], [".contact", 0], [".risk-note", 0], ["footer", 0],
