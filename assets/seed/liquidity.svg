@@ -72,4 +72,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-0s"><rect x="40" y="659" width="246.5" height="31" rx="15.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
     <text x="163.25" y="683" text-anchor="middle" font-size="15" font-weight="700" fill="#efeaff" letter-spacing="1">STOPLAR · LIKVIDLIK ↓</text></g>
       <g class="chip" style="animation-delay:-3s"><rect x="178" y="197" width="264" height="33" rx="16.5" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
-    <text x="310" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">LIKVIDLIK DARAJALARI</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="310" y="223" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">LIKVIDLIK DARAJALARI</text></g></g></svg>

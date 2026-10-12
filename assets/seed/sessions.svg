@@ -68,4 +68,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <rect x="547" y="545.4" width="14" height="6.8" rx="3" fill="#bba5fa"/></g></g>
       <g class="chip" style="animation-delay:-3.166666666666606s"><rect x="380.41666666666663" y="779" width="162.5" height="31" rx="15.5" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
     <text x="461.66666666666663" y="803" text-anchor="middle" font-size="15" font-weight="700" fill="#06261a" letter-spacing="1">ENG FAOL VAQT</text></g>
-      <text x="310" y="850" text-anchor="middle" font-size="15" fill="#9a90ad" letter-spacing="1">Toshkent vaqti (UTC+5)</text><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+      <text x="310" y="850" text-anchor="middle" font-size="15" fill="#9a90ad" letter-spacing="1">Toshkent vaqti (UTC+5)</text></g></svg>

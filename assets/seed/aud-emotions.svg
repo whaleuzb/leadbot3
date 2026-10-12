@@ -65,4 +65,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-1.6s"><rect x="34" y="20" width="124" height="36" rx="18" fill="#e88aa6" stroke="#fff" stroke-opacity=".12"/>
     <text x="96" y="49" text-anchor="middle" font-size="20" font-weight="700" fill="#2a1020" letter-spacing="1">QO‘RQUV</text></g>
       <g class="chip" style="animation-delay:-2s"><rect x="280" y="20" width="166" height="36" rx="18" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
-    <text x="363" y="49" text-anchor="middle" font-size="20" font-weight="700" fill="#06261a" letter-spacing="1">OCHKO‘ZLIK</text></g><g class="scan"><rect x="-70" y="0" width="70" height="320" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="320" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="363" y="49" text-anchor="middle" font-size="20" font-weight="700" fill="#06261a" letter-spacing="1">OCHKO‘ZLIK</text></g></g></svg>

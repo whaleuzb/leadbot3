@@ -53,4 +53,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <rect x="150" y="45.6" width="12" height="28.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 80.6%;animation-duration:6.50s;animation-delay:2080ms"><line x1="176" x2="176" y1="31.2" y2="49.1" stroke="#bba5fa" stroke-width="3"/>
       <rect x="170" y="41.9" width="12" height="4.0" rx="3" fill="#bba5fa"/></g></g></g>
       <g class="chip" style="animation-delay:-1.5s"><rect x="309" y="266" width="96" height="36" rx="18" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
-    <text x="357" y="295" text-anchor="middle" font-size="20" font-weight="700" fill="#06261a" letter-spacing="1">TIZIM</text></g><g class="scan"><rect x="-70" y="0" width="70" height="320" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="320" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="357" y="295" text-anchor="middle" font-size="20" font-weight="700" fill="#06261a" letter-spacing="1">TIZIM</text></g></g></svg>

@@ -99,4 +99,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <rect x="472" y="50.2" width="16" height="15.1" rx="3" fill="#e88aa6"/></g></g><g class="chip" style="animation-delay:-1s"><rect x="477" y="13" width="47" height="31" rx="15.5" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/>
     <text x="500.5" y="37" text-anchor="middle" font-size="15" font-weight="700" fill="#efeaff" letter-spacing="1">1H</text></g></g>
       <g class="chip" style="animation-delay:-3s"><rect x="207.75" y="117" width="204.5" height="33" rx="16.5" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
-    <text x="310" y="143" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">VAQT ORALIQLARI</text></g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="310" y="143" text-anchor="middle" font-size="17" font-weight="700" fill="#211a35" letter-spacing="1">VAQT ORALIQLARI</text></g></g></svg>

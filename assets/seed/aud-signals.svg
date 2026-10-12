@@ -63,4 +63,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-0s"><rect x="175" y="220" width="110" height="40" rx="20" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
     <text x="230" y="253" text-anchor="middle" font-size="24" font-weight="700" fill="#211a35" letter-spacing="1">HOLD?</text></g>
       <circle class="dot" cx="240" cy="160" r="34" fill="#2c2440" stroke="#bba5fa" stroke-width="3"/>
-      <text x="240" y="176" text-anchor="middle" font-size="46" font-weight="800" fill="#bba5fa">?</text><g class="scan"><rect x="-70" y="0" width="70" height="320" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="320" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+      <text x="240" y="176" text-anchor="middle" font-size="46" font-weight="800" fill="#bba5fa">?</text></g></svg>

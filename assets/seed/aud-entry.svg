@@ -62,4 +62,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
       <g class="chip" style="animation-delay:-1s"><rect x="40" y="242" width="118.39999999999999" height="38" rx="19" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
     <text x="99.19999999999999" y="273" text-anchor="middle" font-size="22" font-weight="700" fill="#06261a" letter-spacing="1">KIRISH</text></g>
       <g class="chip" style="animation-delay:-1s"><rect x="306.2" y="42" width="133.8" height="38" rx="19" fill="#bba5fa" stroke="#fff" stroke-opacity=".12"/>
-    <text x="373.1" y="73" text-anchor="middle" font-size="22" font-weight="700" fill="#211a35" letter-spacing="1">CHIQISH</text></g><g class="scan"><rect x="-70" y="0" width="70" height="320" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="320" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="373.1" y="73" text-anchor="middle" font-size="22" font-weight="700" fill="#211a35" letter-spacing="1">CHIQISH</text></g></g></svg>

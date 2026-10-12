@@ -75,4 +75,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
             <rect width="408" height="46" rx="14" fill="#efeaff" fill-opacity="0.08"/>
             <circle cx="26" cy="23" r="13" fill="#bba5fa"/><path class="draw" pathLength="1" d="M19.5 23.5l4.5 4.5 8-9" fill="none" stroke="#211a35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
             <text x="54" y="30" font-size="21" font-weight="700" fill="#efeaff">Risk ≤ 1%</text></g>
-      </g><g class="scan"><rect x="-70" y="0" width="70" height="1000" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="1000" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+      </g></g></svg>

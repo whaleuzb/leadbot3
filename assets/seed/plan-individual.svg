@@ -84,4 +84,4 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
         <circle cx="180" cy="30" r="30" fill="#e88aa6"/><rect x="164" y="26" width="32" height="9" rx="4" fill="#2a1020"/>
       </g>
       <g class="chip" style="animation-delay:-0s"><rect x="110" y="25" width="198.89999999999998" height="35" rx="17.5" fill="#bba5fa" stroke="#fff" stroke-opacity=".12"/>
-    <text x="209.45" y="53" text-anchor="middle" font-size="19" font-weight="700" fill="#211a35" letter-spacing="1">1 : 1 SESSIYA</text></g><g class="scan"><rect x="-70" y="0" width="70" height="675" fill="url(#scanG)"/><line x1="0" y1="0" x2="0" y2="675" stroke="#bba5fa" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 7"/></g></g></svg>
+    <text x="209.45" y="53" text-anchor="middle" font-size="19" font-weight="700" fill="#211a35" letter-spacing="1">1 : 1 SESSIYA</text></g></g></svg>
