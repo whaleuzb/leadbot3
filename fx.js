@@ -72,14 +72,14 @@
     const holder = svg.closest(".hero-image");
     if (holder && !$(".demo-chip", holder)) holder.insertAdjacentHTML("beforeend", '<span class="demo-chip"><i></i>DEMO GRAFIK</span>');
 
-    const W = 17, X0 = 20, KEEP = 40;
+    const W = 23, X0 = 20, KEEP = 34;
     let seed = 11, price = 190, idx = 0, shift = 0;
     const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
     const cs = [];
     const next = () => {
       const open = price;
-      const drift = (150 - price) * 0.05 - 0.7;               // asta-sekin yuqoriga, o'rtacha qaytish bilan
-      const close = clamp(open + drift + (rnd() - 0.5) * 30, 48, 262);
+      const goal = 155 + Math.sin(idx / 5) * 75 + Math.sin(idx / 13) * 25; // katta to'lqinlar: ko'tarilish va tushish
+      const close = clamp(open + (goal - open) * 0.32 + (rnd() - 0.5) * 34, 40, 268);
       const hi = Math.min(open, close) - rnd() * 11 - 2, lo = Math.max(open, close) + rnd() * 11 + 2;
       price = close;
       return { i: idx++, open, close, hi, lo };
@@ -88,9 +88,9 @@
       const up = c.close < c.open, col = up ? "#bba5fa" : "#6d6577";
       const y = Math.min(c.open, c.close), h = Math.max(3, Math.abs(c.open - c.close));
       const x = X0 + c.i * W;
-      return `<g class="cd" data-i="${c.i}" style="animation-delay:${delay}ms"><line x1="${x}" x2="${x}" y1="${c.hi.toFixed(1)}" y2="${c.lo.toFixed(1)}" stroke="${col}" stroke-width="1.5"/><rect x="${x - 5}" y="${y.toFixed(1)}" width="10" height="${h.toFixed(1)}" rx="2" fill="${col}"/></g>`;
+      return `<g class="cd" data-i="${c.i}" style="animation-delay:${delay}ms"><line x1="${x}" x2="${x}" y1="${c.hi.toFixed(1)}" y2="${c.lo.toFixed(1)}" stroke="${col}" stroke-width="2.2"/><rect x="${x - 7.5}" y="${y.toFixed(1)}" width="15" height="${h.toFixed(1)}" rx="2" fill="${col}"/></g>`;
     };
-    for (let k = 0; k < 22; k++) cs.push(next());
+    for (let k = 0; k < 17; k++) cs.push(next());
     g.innerHTML = '<path class="ma" fill="none"></path>' + cs.map((c, k) => el(c, 250 + k * 45)).join("");
     const ma = $(".ma", g);
     const drawMA = () => {
@@ -110,7 +110,7 @@
       g.style.transform = `translateX(${-shift * W}px)`;
       while (cs.length > KEEP) { const o = cs.shift(); $(`.cd[data-i="${o.i}"]`, g)?.remove(); }
       drawMA();
-    }, 1250);
+    }, 750);
   }
 
   /* ---------- Skroll bilan paydo bo'lish ---------- */

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="620" height="1000" viewBox="0 0 620 1000"><style>
 text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 @keyframes grow{from{transform:scaleY(.05);opacity:0}to{transform:none;opacity:1}}
-@keyframes live{0%,100%{transform:none}50%{transform:scaleY(1.22)}}
+@keyframes live{0%,100%{transform:none}50%{transform:scaleY(1.4)}}
 @keyframes flo{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes br{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
 @keyframes march{to{stroke-dashoffset:-60}}
@@ -17,8 +17,8 @@ text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
 @keyframes tick{0%,100%{transform:scaleY(1)}35%{transform:scaleY(var(--a,.7))}70%{transform:scaleY(var(--b,1.12))}}
 .cd{transform-origin:50% 55%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,tick 2s ease-in-out infinite}
 @keyframes stream{to{transform:translateX(-640px)}}
-.stream{animation:stream 16s linear infinite}
-.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.6s ease-in-out infinite}
+.stream{animation:stream 8s linear infinite}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live .9s ease-in-out infinite}
 @keyframes scan{from{transform:translateX(-90px)}to{transform:translateX(710px)}}
 .scan{animation:scan 6.5s cubic-bezier(.45,0,.55,1) infinite}
 .chip{animation:flo 4.5s ease-in-out infinite}
