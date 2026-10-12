@@ -312,7 +312,7 @@ $("#add-lesson").addEventListener("click", () => { CONTENT.lessons.push({ n: "",
 $("#auto-img").addEventListener("click", () => guard(async () => {
   const r = await api("/lessons/auto-images", { method: "POST", body: {} });
   CONTENT.lessons = r.lessons; renderLessons();
-  toast(r.count ? `${r.count} ta kartaga mavzuga mos rasm qo‘yildi` : "Hamma kartalarda rasm bor");
+  toast(r.count ? `${r.count} ta kartaga nomiga mos rasm qo‘yildi (o‘zingiz yuklagan rasmlar o‘zgarmadi)` : "Hammasi allaqachon mos");
 }));
 $("#save-lessons").addEventListener("click", () => guard(async () => { CONTENT.lessons = await api("/lessons", { method: "PUT", body: { lessons: CONTENT.lessons } }); renderLessons(); }, "Darslar saqlandi"));
 

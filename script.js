@@ -95,7 +95,7 @@ function renderPlans() {
   grid.innerHTML = PLANS.map((p, i) => {
     return `
     <article class="plan ${p.featured ? "featured" : ""}">
-      ${p.image ? `<img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy">` : ""}
+      ${p.image ? `<div class="plan-media"><img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy"></div>` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
         ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}

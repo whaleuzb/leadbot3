@@ -62,7 +62,7 @@ async function notifyLead(lead) {
   console.warn("Telegramga yuborilmadi:", lead.tgError);
   save();
 }
-const cleanImg = (v) => (typeof v === "string" && IMG_RE.test(v) ? v : "");
+const cleanImg = (v) => (typeof v === "string" && (IMG_RE.test(v) || (/^\/seed\/[a-z0-9-]+\.svg$/.test(v) && fs.existsSync(path.join(__dirname, "assets", "seed", v.slice(6))))) ? v : "");
 const STATIC = {
   "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js", "/fx.js": "fx.js",
   "/admin": "admin.html", "/admin.html": "admin.html", "/admin.css": "admin.css", "/admin.js": "admin.js",
@@ -159,59 +159,73 @@ function load() {
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
   if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
 }
-/* Mavzuga mos rasmlar (assets/seed) */
+/* Mavzuga mos animatsiyali rasmlar (assets/seed/*.svg) */
 const SEED_DIR = path.join(__dirname, "assets", "seed");
-function seedFile(file) {
-  const fp = path.join(SEED_DIR, file);
-  if (!fs.existsSync(fp)) return "";
-  const buf = fs.readFileSync(fp);
-  const name = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16) + ".jpg";
-  const dest = path.join(UPLOAD_DIR, name);
-  if (!fs.existsSync(dest)) fs.writeFileSync(dest, buf);
-  return "/uploads/" + name;
-}
-// Dars nomidagi kalit so'zlar bo'yicha rasm tanlash
+const SEED_RE = /^\/seed\/[a-z0-9-]+\.svg$/;
+const seedUrl = (name) => (fs.existsSync(path.join(SEED_DIR, name + ".svg")) ? `/seed/${name}.svg` : "");
+// Avvalgi versiyada avtomatik qo'yilgan JPG'lar (ularni qayta tanlash mumkin, foydalanuvchi yuklaganlariga tegilmaydi)
+const LEGACY = new Set((() => {
+  const dir = path.join(SEED_DIR, "legacy");
+  try { return fs.readdirSync(dir).map((f) => "/uploads/" + crypto.createHash("sha256").update(fs.readFileSync(path.join(dir, f))).digest("hex").slice(0, 16) + ".jpg"); }
+  catch { return []; }
+})());
+const isAutoImage = (u) => !u || LEGACY.has(u) || SEED_RE.test(u);
+// [fayl, kalit so'zlar] — faqat spot: aksiyalar va kripto
 const LESSON_POOL = [
-  ["lesson1.jpg", ["bozor tuzil", "trend", "struktura", "structure", "yo'nalish"]],
-  ["lesson2.jpg", ["daraja", "zona", "support", "resistance", "tayanch", "qarshilik", "level"]],
-  ["lesson3.jpg", ["risk", "stop", "take profit", "foyda nisbat", "lot", "pozitsiya hajmi"]],
-  ["lesson4.jpg", ["reja", "plan", "strategiya", "strategy", "checklist", "kirish", "chiqish"]],
-  ["lesson5.jpg", ["psixolog", "emotsi", "hissiyot", "qo'rquv", "intizom", "mindset", "motivats"]],
-  ["lesson6.jpg", ["sham", "candle", "pattern", "formatsiya", "pin bar", "doji", "engulf", "yutish", "price action"]],
-  ["lesson7.jpg", ["indikator", "indicator", "rsi", "macd", "ema", "sma", "osillyator", "bollinger", "fibo"]],
-  ["lesson8.jpg", ["hajm", "volume", "likvid", "liquidity", "orderblok", "order block", "smart money", "smc"]],
-  ["lesson9.jpg", ["jurnal", "journal", "statistika", "natija", "backtest", "xatolar"]],
-  ["lesson10.jpg", ["fundamental", "yangilik", "news", "kalendar", "makro", "iqtisod", "inflyats", "foiz stavka"]],
-  ["lesson11.jpg", ["timeframe", "taymfreym", "vaqt oraliq", "multi"]],
-  ["lesson12.jpg", ["kapital", "depozit", "money", "mablag'", "equity", "pul boshqar", "moliya"]],
+  ["trend", ["bozor tuzil", "tuzilish", "trend", "struktura", "structure", "yo'nalish"]],
+  ["levels", ["daraja", "zona", "support", "resistance", "tayanch", "qarshilik", "level"]],
+  ["risk", ["risk", "stop-loss", "stop loss", "take profit", "foyda nisbat", "pozitsiya hajmi", "menejment"]],
+  ["plan", ["reja", "plan", "strategiya", "strategy", "checklist", "savdo rejasi", "shartlar"]],
+  ["psychology", ["psixolog", "emotsi", "hissiyot", "qo'rquv", "intizom", "mindset", "motivats", "ochko'z"]],
+  ["candles", ["sham", "candle", "pattern", "formatsiya", "pin bar", "doji", "engulf", "yutish", "price action"]],
+  ["indicators", ["indikator", "indicator", "rsi", "macd", "ema", "sma", "osillyator", "bollinger", "fibo", "o'rtacha"]],
+  ["volume", ["hajm", "volume", "vsa", "profil"]],
+  ["journal", ["jurnal", "journal", "statistika", "natija", "backtest", "xatolar"]],
+  ["fundamental", ["fundamental", "yangilik", "news", "kalendar", "makro", "iqtisod", "inflyats", "hisobot", "earnings"]],
+  ["timeframes", ["timeframe", "taymfreym", "vaqt oraliq", "multi", "tf"]],
+  ["capital", ["kapital", "depozit", "money", "mablag'", "equity", "pul boshqar", "moliya", "portfel", "portfolio"]],
+  ["orderflow", ["order flow", "orderflow", "oqim", "footprint", "stakan", "dom", "tape", "lenta", "delta"]],
+  ["insiders", ["insayder", "insider", "katta o'yinchi", "yirik o'yinchi", "kit", "whale", "market maker", "manipulyats", "smart money", "smc"]],
+  ["liquidity", ["likvid", "liquidity", "tugatil", "sweep", "stop-hunt", "orderblok", "order block"]],
+  ["sessions", ["sessiya", "session", "london", "nyu-york", "new york", "osiyo", "asia", "qaysi vaqt", "savdo vaqt", "soat"]],
+  ["tools", ["instrument", "asbob", "tool", "avtomat", "bot", "kalkulyator", "skaner", "dastur", "signal"]],
 ];
 const norm = (t) => String(t || "").toLowerCase().replace(/[‘’ʻʼ`´]/g, "'");
+const esc = (k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const hit = (text, k) => (k.length <= 3 ? new RegExp(`(^|[^a-z0-9'])${esc(k)}([^a-z0-9']|$)`).test(text) : text.includes(k));
+const scoreOf = (l, kws) => { const t = norm(l.t), d = norm(l.d); return kws.reduce((s, k) => s + (hit(t, k) ? 2 : hit(d, k) ? 1 : 0) * k.length, 0); };
+// Avtomatik rasmli (yoki rasmsiz) darslarga nomiga eng mos rasmni tanlaydi; takrorlanmaslikka harakat qiladi
 function autoLessonImages() {
-  const urls = LESSON_POOL.map(([f]) => seedFile(f));
-  const used = new Set(db.lessons.map((l) => l.image).filter(Boolean));
+  const pool = LESSON_POOL.map(([n, kw]) => ({ url: seedUrl(n), kw })).filter((x) => x.url);
+  const targets = db.lessons.filter((l) => isAutoImage(l.image));
+  const used = new Set(db.lessons.filter((l) => !isAutoImage(l.image)).map((l) => l.image));
+  const pairs = [];
+  targets.forEach((l) => pool.forEach((p, i) => { const sc = scoreOf(l, p.kw); if (sc > 0) pairs.push({ l, i, sc }); }));
+  pairs.sort((a, b) => b.sc - a.sc);
+  const done = new Map();
+  for (const { l, i } of pairs) if (!done.has(l) && !used.has(pool[i].url)) { done.set(l, pool[i].url); used.add(pool[i].url); }
   let count = 0;
-  for (const l of db.lessons) {
-    if (l.image) continue;
-    const text = norm(l.t + " " + l.d);
-    const ranked = LESSON_POOL.map(([, kw], i) => ({ i, score: kw.filter((k) => text.includes(k)).length }))
-      .filter((x) => urls[x.i]).sort((a, b) => b.score - a.score || a.i - b.i);
-    const pick = ranked.find((x) => x.score > 0 && !used.has(urls[x.i])) || ranked.find((x) => x.score > 0)
-      || ranked.find((x) => !used.has(urls[x.i])) || ranked[0];
-    if (!pick) continue;
-    l.image = urls[pick.i]; used.add(l.image); count++;
-  }
+  targets.forEach((l, k) => {
+    let url = done.get(l);
+    if (!url) {
+      const best = pairs.find((p) => p.l === l);
+      url = best ? pool[best.i].url : (pool.find((p) => !used.has(p.url)) || pool[k % pool.length]).url;
+      used.add(url);
+    }
+    if (l.image !== url) { l.image = url; count++; }
+  });
   if (count) save();
   return count;
 }
+function autoPlanImages() {
+  const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual" }, order = ["plan-mini", "plan-pro", "plan-individual"];
+  db.plans.forEach((p, i) => { if (!isAutoImage(p.image)) return; const n = byId[p.id] || order[i]; if (n) p.image = seedUrl(n); });
+}
 function seedImages() {
-  if (!db.seededImages) {
-    db.lessons.slice(0, 5).forEach((l, i) => { if (!l.image) l.image = seedFile(`lesson${i + 1}.jpg`); });
-    const byId = { mini: 1, pro: 2, individual: 3 };
-    db.plans.forEach((p, i) => { const n = byId[p.id] || (i < 3 ? i + 1 : 0); if (n && !p.image) p.image = seedFile(`plan${n}.jpg`); });
-    db.seededImages = true;
-    save();
-  }
-  if (!db.seededImages2) { autoLessonImages(); db.seededImages2 = true; save(); } // keyin qo'shilgan darslar uchun (bir martalik)
+  if (db.seededImages3) return;
+  autoLessonImages(); autoPlanImages();
+  db.seededImages3 = true;
+  save();
 }
 let saving = false, dirty = false;
 function save() {
@@ -530,6 +544,13 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");
     if (url.pathname.startsWith("/api/")) return await api(req, res, url);
+    if (url.pathname.startsWith("/seed/")) {
+      if (req.method !== "GET" || !SEED_RE.test(url.pathname)) return send(res, 404, "Topilmadi");
+      const fp = path.join(SEED_DIR, path.basename(url.pathname));
+      if (!fs.existsSync(fp)) return send(res, 404, "Topilmadi");
+      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" });
+      return fs.createReadStream(fp).pipe(res);
+    }
     if (url.pathname.startsWith("/uploads/")) {
       if (req.method !== "GET" || !IMG_RE.test(url.pathname)) return send(res, 404, "Topilmadi");
       const fp = path.join(UPLOAD_DIR, path.basename(url.pathname));

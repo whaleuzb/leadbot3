@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="1000" viewBox="0 0 620 1000"><style>
+text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
+@keyframes grow{from{transform:scaleY(.05);opacity:0}to{transform:none;opacity:1}}
+@keyframes live{0%,100%{transform:none}50%{transform:scaleY(1.22)}}
+@keyframes flo{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes br{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes march{to{stroke-dashoffset:-60}}
+@keyframes draw{0%{stroke-dashoffset:1;opacity:1}38%{stroke-dashoffset:0}86%{stroke-dashoffset:0;opacity:1}96%{opacity:0}100%{stroke-dashoffset:1;opacity:0}}
+@keyframes bob{0%,100%{transform:none}50%{transform:scaleY(.72)}}
+@keyframes dp{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes hl{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes rin{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes bobx{0%,100%{transform:none}50%{transform:scaleX(.78)}}
+.row{animation:rin .8s cubic-bezier(.2,.8,.2,1) both}
+.barx{transform-box:fill-box;animation:bobx 2.6s ease-in-out infinite}
+.cd,.bar,.dot,.glow{transform-box:fill-box}
+.cd{transform-origin:50% 100%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+.cd.live{transform-origin:50% 50%;animation:grow .7s cubic-bezier(.2,.8,.2,1) both,live 1.8s ease-in-out 1.6s infinite}
+.chip{animation:flo 4.5s ease-in-out infinite}
+.glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
+.dash{animation:march 3.2s linear infinite}
+.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 8s cubic-bezier(.4,0,.2,1) .3s infinite}
+.bar{transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
+.dot{transform-origin:50% 50%;animation:dp 2.2s ease-in-out infinite}
+.hl{animation:hl 2.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.draw{stroke-dasharray:none;stroke-dashoffset:0}}
+</style><defs>
+    <radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bba5fa" stop-opacity=".35"/><stop offset="1" stop-color="#bba5fa" stop-opacity="0"/></linearGradient>
+    </defs>
+  <rect width="620" height="1000" fill="url(#bg)"/>
+  <line x1="62" y1="0" x2="62" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="124" y1="0" x2="124" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="186" y1="0" x2="186" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="248" y1="0" x2="248" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="310" y1="0" x2="310" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="372" y1="0" x2="372" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="434" y1="0" x2="434" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="496" y1="0" x2="496" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="558" y1="0" x2="558" y2="1000" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="62" x2="620" y2="62" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="124" x2="620" y2="124" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="186" x2="620" y2="186" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="248" x2="620" y2="248" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="310" x2="620" y2="310" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="372" x2="620" y2="372" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="434" x2="620" y2="434" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="496" x2="620" y2="496" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="558" x2="620" y2="558" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="620" x2="620" y2="620" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="682" x2="620" y2="682" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="744" x2="620" y2="744" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="806" x2="620" y2="806" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="868" x2="620" y2="868" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="930" x2="620" y2="930" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="992" x2="620" y2="992" stroke="#fff" stroke-opacity=".035"/>
+      <circle class="glow" cx="310" cy="460" r="280" fill="url(#glow)"/>
+      <g transform="translate(60 230)">
+        <rect width="500" height="500" rx="30" fill="#efeaff" fill-opacity=".06" stroke="#fff" stroke-opacity=".16"/>
+        <text x="30" y="52" font-size="17" font-weight="700" fill="#9a90ad" letter-spacing="2">NARX</text>
+        <text x="215" y="52" text-anchor="middle" font-size="17" font-weight="700" fill="#e88aa6" letter-spacing="2">SOTISH</text>
+        <text x="390" y="52" text-anchor="middle" font-size="17" font-weight="700" fill="#bba5fa" letter-spacing="2">XARID</text>
+        <g transform="translate(0 74)"><g class="row" style="animation-delay:0ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.6</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-0s" x="286.2857142857143" y="6" width="7.7142857142857135" height="28" rx="6" fill="#e88aa6" opacity="0.31"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-0.3s" x="306" y="6" width="48" height="28" rx="6" fill="#bba5fa" opacity="0.49"/>
+            <text x="276.2857142857143" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">12</text>
+            <text x="364" y="27" font-size="15" font-weight="700" fill="#efeaff">48</text></g></g><g transform="translate(0 124)"><g class="row" style="animation-delay:90ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.5</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-0.4s" x="279.42857142857144" y="6" width="14.571428571428573" height="28" rx="6" fill="#e88aa6" opacity="0.33999999999999997"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-0.8500000000000001s" x="306" y="6" width="61" height="28" rx="6" fill="#bba5fa" opacity="0.5549999999999999"/>
+            <text x="269.42857142857144" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">18</text>
+            <text x="377" y="27" font-size="15" font-weight="700" fill="#efeaff">61</text></g></g><g transform="translate(0 174)"><g class="row" style="animation-delay:180ms">
+            <rect class="hl" x="14" y="-4" width="472" height="46" rx="12" fill="none" stroke="#58e0a0" stroke-width="2.5"/>
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.4</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-0.8s" x="271.42857142857144" y="6" width="22.571428571428573" height="28" rx="6" fill="#e88aa6" opacity="0.375"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-1.4000000000000001s" x="306" y="6" width="140" height="28" rx="6" fill="#bba5fa" opacity="0.95"/>
+            <text x="261.42857142857144" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">25</text>
+            <text x="456" y="27" font-size="15" font-weight="700" fill="#efeaff">140</text></g></g><g transform="translate(0 224)"><g class="row" style="animation-delay:270ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.3</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-1.2000000000000002s" x="254.28571428571428" y="6" width="39.714285714285715" height="28" rx="6" fill="#e88aa6" opacity="0.45"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-1.9500000000000002s" x="306" y="6" width="88" height="28" rx="6" fill="#bba5fa" opacity="0.69"/>
+            <text x="244.28571428571428" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">40</text>
+            <text x="404" y="27" font-size="15" font-weight="700" fill="#efeaff">88</text></g></g><g transform="translate(0 274)"><g class="row" style="animation-delay:360ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.2</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-1.6s" x="190.28571428571428" y="6" width="103.71428571428571" height="28" rx="6" fill="#e88aa6" opacity="0.73"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-2.5s" x="306" y="6" width="52" height="28" rx="6" fill="#bba5fa" opacity="0.51"/>
+            <text x="180.28571428571428" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">96</text>
+            <text x="368" y="27" font-size="15" font-weight="700" fill="#efeaff">52</text></g></g><g transform="translate(0 324)"><g class="row" style="animation-delay:450ms">
+            <rect class="hl" x="14" y="-4" width="472" height="46" rx="12" fill="none" stroke="#58e0a0" stroke-width="2.5"/>
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.1</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-2s" x="151.42857142857142" y="6" width="142.57142857142858" height="28" rx="6" fill="#e88aa6" opacity="0.9"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-3.05s" x="306" y="6" width="30" height="28" rx="6" fill="#bba5fa" opacity="0.4"/>
+            <text x="141.42857142857142" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">130</text>
+            <text x="346" y="27" font-size="15" font-weight="700" fill="#efeaff">30</text></g></g><g transform="translate(0 374)"><g class="row" style="animation-delay:540ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">101.0</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-2.4000000000000004s" x="215.42857142857144" y="6" width="78.57142857142857" height="28" rx="6" fill="#e88aa6" opacity="0.62"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-3.6s" x="306" y="6" width="22" height="28" rx="6" fill="#bba5fa" opacity="0.36"/>
+            <text x="205.42857142857144" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">74</text>
+            <text x="338" y="27" font-size="15" font-weight="700" fill="#efeaff">22</text></g></g><g transform="translate(0 424)"><g class="row" style="animation-delay:630ms">
+            
+            <text x="30" y="27" font-size="19" font-weight="700" fill="#efeaff">100.9</text>
+            <rect class="barx" style="transform-origin:100% 50%;animation-delay:-2.8000000000000003s" x="260" y="6" width="34" height="28" rx="6" fill="#e88aa6" opacity="0.425"/>
+            <rect class="barx" style="transform-origin:0 50%;animation-delay:-4.15s" x="306" y="6" width="15" height="28" rx="6" fill="#bba5fa" opacity="0.325"/>
+            <text x="250" y="27" text-anchor="end" font-size="15" font-weight="700" fill="#efeaff">35</text>
+            <text x="331" y="27" font-size="15" font-weight="700" fill="#efeaff">15</text></g></g>
+      </g>
+      <g class="chip" style="animation-delay:-2s"><rect x="234" y="166" width="152" height="34" rx="17" fill="#efeaff" stroke="#fff" stroke-opacity=".12"/>
+    <text x="310" y="193" text-anchor="middle" font-size="18" font-weight="700" fill="#211a35" letter-spacing="1">ORDER FLOW</text></g>
+      <g class="chip" style="animation-delay:-1s"><rect x="387" y="769" width="173" height="31" rx="15.5" fill="#58e0a0" stroke="#fff" stroke-opacity=".12"/>
+    <text x="473.5" y="793" text-anchor="middle" font-size="15" font-weight="700" fill="#06261a" letter-spacing="1">NOMUTANOSIBLIK</text></g></svg>
