@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
   <title>trademove — Treydingni tizim bilan o‘rgan</title>
   <meta name="description" content="Treyding bo‘yicha yopiq community. Noldan boshlab: texnik tahlil, risk-menejment va treyder psixologiyasi — amaliy dastur bilan." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23292331%27/%3E%3Cpath d=%27M9 21V13M16 24V8M23 19V11%27 stroke=%27%23bba5fa%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E" />
@@ -12,6 +13,28 @@
       var d = document.documentElement;
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) d.classList.add("fx");
       setTimeout(function () { if (!d.dataset.fxReady) d.classList.remove("fx"); }, 5000);
+      // Mavzu: yorug' / qorong'i (tanlov brauzerda eslab qolinadi)
+      var saved = null;
+      try { saved = localStorage.getItem("tm-theme"); } catch (e) {}
+      if (saved === "dark") d.setAttribute("data-theme", "dark");
+      var sync = function () {
+        var dark = d.getAttribute("data-theme") === "dark";
+        document.querySelectorAll("[data-theme-toggle]").forEach(function (b) {
+          b.setAttribute("aria-pressed", String(dark));
+          b.setAttribute("aria-label", dark ? "Yorug‘ mavzu" : "Qorong‘i mavzu");
+        });
+      };
+      window.tmToggleTheme = function () {
+        var dark = d.getAttribute("data-theme") !== "dark";
+        if (dark) d.setAttribute("data-theme", "dark"); else d.removeAttribute("data-theme");
+        try { localStorage.setItem("tm-theme", dark ? "dark" : "light"); } catch (e) {}
+        sync();
+      };
+      document.addEventListener("click", function (e) {
+        var b = e.target.closest && e.target.closest("[data-theme-toggle]");
+        if (b) window.tmToggleTheme();
+      });
+      document.addEventListener("DOMContentLoaded", sync);
     })();
   </script>
 </head>
@@ -28,9 +51,12 @@
         <a href="#results">Mening yo‘lim</a>
         <a href="#plans">Tariflar</a>
       </nav>
-      <a class="small-button icon-link" href="#plans">O‘zingizga mos tarifni tanlang
-        <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg>
-      </a>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Qorong‘i mavzu" aria-pressed="false" title="Mavzuni almashtirish"><svg class="ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="ico-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>
+        <a class="small-button icon-link" href="#plans">O‘zingizga mos tarifni tanlang
+          <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg>
+        </a>
+      </div>
     </header>
 
     <section class="hero">

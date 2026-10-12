@@ -589,6 +589,58 @@ header nav a:hover::after { transform: scaleX(1); }
 /* "Oldin / Keyin" yorliqlari: to'q kartada o'qiladigan rang */
 .stats-card figcaption span { background: #efeaff; color: #211a35; }
 .stats-card figcaption span:last-child { background: #bba5fa; }
+/* =========================================================
+   Qorong'i mavzu ([data-theme="dark"])
+   ========================================================= */
+body { transition: background-color .35s, color .35s; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.theme-toggle { flex: 0 0 auto; display: inline-grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid #cbc6d9; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; transition: background .2s, transform .3s cubic-bezier(.2,.8,.2,1); }
+.theme-toggle:hover { background: rgba(166,151,235,.18); transform: rotate(-18deg); }
+.theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle .ico-sun { display: none; }
+.topbar .theme-toggle { width: 38px; height: 38px; }
+:root[data-theme="dark"] .theme-toggle .ico-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .ico-moon { display: none; }
+@media (max-width: 480px) { header .small-button { display: none; } }
+
+:root[data-theme="dark"] {
+  --background: #110e16; --foreground: #ece8f4;
+  --accent: #b39ff5; --accent-hero: #b39ff5;
+  --shell: #1a1622; --shell-2: #17131e; --lilac: #2a2340;
+  --dark: #efeaff; --dark-hover: #ffffff; --ticket: #221c2c;
+  --muted: #a59db3; --border: #2e2838; --ring: #b39ff5;
+  color-scheme: dark;
+}
+[data-theme="dark"] .theme-toggle, [data-theme="dark"] .small-button { border-color: #3a3346; }
+[data-theme="dark"] .hero .intro, [data-theme="dark"] .result-story p, [data-theme="dark"] .community-copy,
+[data-theme="dark"] .contact p:not(.eyebrow), [data-theme="dark"] .lead-card p:not(.eyebrow):not(.lf-msg), [data-theme="dark"] .lf-consent { color: #b8b0c6; }
+[data-theme="dark"] .fine, [data-theme="dark"] .community-caption, [data-theme="dark"] footer > span, [data-theme="dark"] footer > a:last-child,
+[data-theme="dark"] .section-head > p, [data-theme="dark"] .duration, [data-theme="dark"] .risk-note { color: #a59db3; }
+[data-theme="dark"] .result-story strong { color: #c9b8ff; }
+[data-theme="dark"] .result-story .result-lead { color: var(--foreground); }
+[data-theme="dark"] .result-story .result-note { background: #2a2340; color: #d9cff5; }
+[data-theme="dark"] .result-signature { color: #b39ff5; }
+[data-theme="dark"] .strike { text-decoration-color: var(--foreground); }
+[data-theme="dark"] .audience-grid li, [data-theme="dark"] .plan, [data-theme="dark"] .lead-card { background: #1c1826; }
+[data-theme="dark"] .audience-grid p { color: #cfc8dc; }
+[data-theme="dark"] .audience-conclusion { background: #2a2340; }
+[data-theme="dark"] .plan.featured { background: #2a2340; border-color: #4a3d6e; }
+[data-theme="dark"] .badge { background: #3a2f58; color: #d9cff5; }
+[data-theme="dark"] .plan ul { border-top-color: #2e2838; }
+[data-theme="dark"] .plan li span { color: #b39ff5; }
+[data-theme="dark"] .plan li.excluded { color: #8f879d; }
+[data-theme="dark"] .plan::after { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.07), transparent 55%); }
+[data-theme="dark"] .plan:not(.featured) .button, [data-theme="dark"] .button.dark { color: #211a35; }
+[data-theme="dark"] .features-toggle { border-top-color: #2e2838; color: #d9cff5; }
+[data-theme="dark"] footer { border-top-color: #2e2838; }
+[data-theme="dark"] .lf-field input, [data-theme="dark"] .lf-field select { background: #15121c; color: var(--foreground); }
+[data-theme="dark"] .gallery-ctl button, [data-theme="dark"] .cf-btn { background: #1c1826; color: #cfc8dc; }
+[data-theme="dark"] .cf-dots button:not(.on) { background: #3a3346; }
+[data-theme="dark"] .topbar { background: rgba(28,24,38,.8); border-color: rgba(58,51,70,.9); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+[data-theme="dark"] .topbar nav a { color: #cfc8dc; }
+[data-theme="dark"] .topbar nav a.on { color: var(--foreground); }
+[data-theme="dark"] .hero-shell::before { background: radial-gradient(circle, rgba(166,151,235,.28), transparent 65%); }
+[data-theme="dark"] .stats-card, [data-theme="dark"] .enrollment-ticket { border: 1px solid #2e2838; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }
