@@ -38,8 +38,15 @@ const tashkent = (iso) => {
   const d = new Date(new Date(iso).getTime() + 5 * 36e5), p = (n) => String(n).padStart(2, "0");
   return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 };
+const tashkentFull = (iso) => {
+  const d = new Date(new Date(iso).getTime() + 5 * 36e5), p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+};
 function leadText(l) {
-  return `🆕 <b>Yangi ariza</b> · ${htmlEsc(db.settings.brand)}\n\n👤 <b>Ism:</b> ${htmlEsc(l.name)}\n📞 <b>Telefon:</b> ${htmlEsc(l.phone)}\n📦 <b>Tarif:</b> ${htmlEsc(l.plan || "—")}\n🕒 ${tashkent(l.createdAt)} (Toshkent)`;
+  const line = "━━━━━━━━━━━━━━";
+  return [`🆕 Yangi lid — ${htmlEsc(db.settings.brand)} Community kurs`, line,
+    `👤 Ism: ${htmlEsc(l.name)}`, `📞 Tel: ${htmlEsc(l.phone)}`, `💬 Telegram: ${htmlEsc(l.username || "—")}`,
+    `💰 Kapital: ${htmlEsc(l.capital || "—")}`, `🏙 Shahar: ${htmlEsc(l.city || "—")}`, `🕐 Vaqt: ${tashkentFull(l.createdAt)}`, line].join("\n");
 }
 async function notifyLead(lead) {
   if (!tgConfigured()) { lead.tg = "off"; save(); return; }
@@ -83,6 +90,7 @@ function defaults() {
       enrollEnd: "2026-10-10T23:59:00+05:00",
       enrollmentOpen: true,
       tgChatId: "",
+      capitals: ["1.000$ gacha", "1.000$ - 5.000$", "5.000$ - 10.000$", "10.000$ dan yuqori"],
       stats: [
         { value: "3+ yil", label: "bozor tajribasi" },
         { value: "1:2", label: "minimal risk / foyda nisbati" },
@@ -200,6 +208,11 @@ function sniffImage(b) {
   if (b.length > 6 && b.slice(0, 4).toString() === "GIF8") return "gif";
   return null;
 }
+function fmtPhone(raw) {
+  const d = String(raw).replace(/\D/g, "");
+  const n = d.length === 9 ? "998" + d : d;
+  return /^998\d{9}$/.test(n) ? `+998 (${n.slice(3, 5)}) ${n.slice(5, 8)}-${n.slice(8, 10)}-${n.slice(10, 12)}` : str(raw, 30);
+}
 const clientIp = (req) => (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
 
 /* ---------- Parol va sessiya ---------- */
@@ -260,6 +273,7 @@ function cleanSettings(s = {}) {
     enrollEnd: isDate(s.enrollEnd) ? s.enrollEnd : cur.enrollEnd,
     enrollmentOpen: typeof s.enrollmentOpen === "boolean" ? s.enrollmentOpen : cur.enrollmentOpen,
     tgChatId: cur.tgChatId || "",
+    capitals: Array.isArray(s.capitals) && s.capitals.some((x) => str(x, 40)) ? s.capitals.map((x) => str(x, 40)).filter(Boolean).slice(0, 8) : cur.capitals,
     stats,
     riskNote: str(s.riskNote, 1200) || cur.riskNote,
     hero: cleanHero(s.hero, cur.hero),
@@ -296,7 +310,7 @@ function dashboard() {
   const byPlan = {};
   for (const l of db.leads) {
     byStatus[l.status] = (byStatus[l.status] || 0) + 1;
-    byPlan[l.plan || "—"] = (byPlan[l.plan || "—"] || 0) + 1;
+    const k = l.capital || l.plan || "—"; byPlan[k] = (byPlan[k] || 0) + 1;
   }
   const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
   const clicksByPlan = {};
@@ -316,8 +330,8 @@ async function api(req, res, url) {
   const m = req.method, p = url.pathname;
 
   if (m === "GET" && p === "/api/config") {
-    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => rest), lessons: db.lessons, audience: db.audience });
+    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => rest), lessons: db.lessons, audience: db.audience });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -342,10 +356,16 @@ async function api(req, res, url) {
     if (limited("l:" + clientIp(req), 5, 36e5)) return send(res, 429, { error: "Juda ko‘p ariza. Keyinroq urinib ko‘ring." });
     if (b.website) return send(res, 204); // honeypot
     if (b.consent !== true) return send(res, 400, { error: "Davom etish uchun shaxsiy ma’lumotlarni qayta ishlashga rozilik bering" });
-    const name = str(b.name, 80), phone = str(b.phone, 30), plan = str(b.plan, 40);
+    const name = str(b.name, 80), digits = String(b.phone ?? "").replace(/\D/g, "");
     if (name.length < 2) return send(res, 400, { error: "Ismingizni kiriting" });
-    if (phone.replace(/\D/g, "").length < 9) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });
-    const lead = { id: uid(), name, phone, plan, status: "new", adminNote: "", consent: true, tg: "pending", createdAt: new Date().toISOString() };
+    if (digits.length < 9 || digits.length > 15) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });
+    const username = str(b.username, 80).replace(/^(https?:\/\/)?(t\.me\/|telegram\.me\/)/i, "").replace(/^@/, "");
+    if (username && !/^[A-Za-z0-9_]{3,32}$/.test(username)) return send(res, 400, { error: "Telegram username noto‘g‘ri (faqat lotin harf, raqam va _ )" });
+    const capital = str(b.capital, 40);
+    if (!db.settings.capitals.includes(capital)) return send(res, 400, { error: "Kapital miqdorini tanlang" });
+    const city = str(b.city, 60);
+    if (city.length < 2) return send(res, 400, { error: "Shaharni kiriting" });
+    const lead = { id: uid(), name, phone: fmtPhone(b.phone), username, capital, city, status: "new", adminNote: "", consent: true, tg: "pending", createdAt: new Date().toISOString() };
     db.leads.unshift(lead);
     if (db.leads.length > 5000) db.leads.length = 5000;
     save();

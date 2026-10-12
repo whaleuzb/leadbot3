@@ -89,14 +89,13 @@ async function loadDashboard() {
   $("#status-bars").innerHTML = Object.keys(STATUS).map((k) =>
     `<div class="bar-row"><span>${STATUS[k]}</span><div class="track"><i style="width:${(d.byStatus[k] || 0) / total * 100}%;background:${STATUS_COLOR[k]}"></i></div><b>${d.byStatus[k] || 0}</b></div>`).join("");
 
-  const names = [...new Set([...Object.keys(d.byPlan), ...Object.keys(d.clicksByPlan)])];
+  const names = Object.keys(d.byPlan).sort((x, y) => d.byPlan[y] - d.byPlan[x]);
   $("#plan-table").innerHTML = names.length
-    ? `<tr><th>Tarif</th><th class="num">Bosildi</th><th class="num">Ariza</th></tr>` +
-      names.map((n) => `<tr><td>${esc(n)}</td><td class="num">${d.clicksByPlan[n] || 0}</td><td class="num">${d.byPlan[n] || 0}</td></tr>`).join("")
+    ? `<tr><th>Kapital</th><th class="num">Ariza</th></tr>` + names.map((n) => `<tr><td>${esc(n)}</td><td class="num">${d.byPlan[n]}</td></tr>`).join("")
     : `<tr><td class="empty">Hali ma’lumot yo‘q</td></tr>`;
 
   $("#recent").innerHTML = leads.length
-    ? leads.slice(0, 6).map((l) => `<div class="recent-item"><div><div class="lead-name">${esc(l.name)}</div><div class="lead-meta">${esc(l.plan || "—")} · ${fmtDate(l.createdAt)}</div></div><span class="pill ${l.status}">${STATUS[l.status]}</span></div>`).join("")
+    ? leads.slice(0, 6).map((l) => `<div class="recent-item"><div><div class="lead-name">${esc(l.name)}</div><div class="lead-meta">${esc(l.capital || l.plan || "—")} · ${fmtDate(l.createdAt)}</div></div><span class="pill ${l.status}">${STATUS[l.status]}</span></div>`).join("")
     : `<p class="empty">Hali ariza yo‘q. Saytdagi forma orqali kelgan arizalar shu yerda ko‘rinadi.</p>`;
 }
 function drawChart(series) {
@@ -130,14 +129,14 @@ async function loadLeads() {
   LEADS = (await api("/leads")).leads;
   await ensureContent();
   const cur = $("#lead-plan").value;
-  $("#lead-plan").innerHTML = `<option value="">Barcha tariflar</option>` + CONTENT.plans.map((p) => `<option>${esc(p.name)}</option>`).join("");
+  $("#lead-plan").innerHTML = `<option value="">Barcha kapital</option>` + [...new Set([...CONTENT.settings.capitals, ...LEADS.map((l) => l.capital).filter(Boolean)])].map((c) => `<option>${esc(c)}</option>`).join("");
   $("#lead-plan").value = cur;
   renderLeads();
   refreshBadge();
 }
 function filteredLeads() {
   const q = $("#lead-search").value.trim().toLowerCase(), st = $("#lead-status").value, pl = $("#lead-plan").value;
-  return LEADS.filter((l) => (!st || l.status === st) && (!pl || l.plan === pl) &&
+  return LEADS.filter((l) => (!st || l.status === st) && (!pl || l.capital === pl) &&
     (!q || l.name.toLowerCase().includes(q) || l.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "") || "\u0000") || l.phone.toLowerCase().includes(q)));
 }
 const tgPill = (l) => ({
@@ -150,10 +149,10 @@ function renderLeads() {
   const rows = filteredLeads();
   $("#leads-sub").textContent = `${rows.length} ta ariza ko‘rsatilyapti · jami ${LEADS.length}`;
   $("#leads-table").innerHTML = rows.length
-    ? `<tr><th>Mijoz</th><th>Tarif</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
+    ? `<tr><th>Mijoz</th><th>Kapital / Shahar</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
       <tr data-id="${l.id}">
-        <td><div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
-        <td>${esc(l.plan || "—")}</td>
+        <td><div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.username ? `<div class="lead-meta"><a href="https://t.me/${esc(l.username)}" target="_blank" rel="noopener noreferrer">@${esc(l.username)}</a></div>` : ""}${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
+        <td>${esc(l.capital || l.plan || "—")}<div class="lead-meta">${esc(l.city || "")}</div></td>
         <td class="lead-meta">${fmtDate(l.createdAt)}</td>
         <td><div class="lead-tools">
           <select data-act="status" aria-label="Holat">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${l.status === k ? " selected" : ""}>${v}</option>`).join("")}</select>
@@ -184,7 +183,7 @@ $("#leads-table").addEventListener("click", (e) => {
 });
 $("#export-csv").addEventListener("click", () => {
   const cell = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
-  const rows = [["Sana", "Ism", "Telefon", "Tarif", "Holat", "Telegram", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.plan, STATUS[l.status], l.tg || "", l.adminNote])];
+  const rows = [["Sana", "Ism", "Telefon", "Telegram", "Kapital", "Shahar", "Holat", "Bot", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.username || "", l.capital || l.plan || "", l.city || "", STATUS[l.status], l.tg || "", l.adminNote])];
   const blob = new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "arizalar.csv" });
   a.click(); URL.revokeObjectURL(a.href);
@@ -347,7 +346,7 @@ function renderSettings() {
   $("#s-brand").value = s.brand; $("#s-author").value = s.authorName; $("#s-tg").value = s.telegram;
   $("#s-open").value = String(s.enrollmentOpen);
   $("#s-start").value = toLocalInput(s.enrollStart); $("#s-end").value = toLocalInput(s.enrollEnd);
-  $("#s-risk").value = s.riskNote;
+  $("#s-risk").value = s.riskNote; $("#s-capitals").value = (s.capitals || []).join("\n");
   const H = s.hero;
   $("#h-eyebrow").value = H.eyebrow; $("#h-t1").value = H.title1; $("#h-acc").value = H.accent; $("#h-t3").value = H.title3;
   $("#h-intro").value = H.intro; $("#h-note").value = H.note; $("#h-clabel").value = H.captionLabel; $("#h-caption").value = H.caption;
@@ -360,7 +359,7 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
   const body = {
     brand: $("#s-brand").value, authorName: $("#s-author").value, telegram: $("#s-tg").value,
     enrollmentOpen: $("#s-open").value === "true", enrollStart: fromLocalInput($("#s-start").value), enrollEnd: fromLocalInput($("#s-end").value),
-    riskNote: $("#s-risk").value,
+    riskNote: $("#s-risk").value, capitals: $("#s-capitals").value.split("\n").map((x) => x.trim()).filter(Boolean),
     hero: { eyebrow: $("#h-eyebrow").value, title1: $("#h-t1").value, accent: $("#h-acc").value, title3: $("#h-t3").value,
       intro: $("#h-intro").value, note: $("#h-note").value, captionLabel: $("#h-clabel").value, caption: $("#h-caption").value },
     stats: $$("#stats-editor div").map((d) => ({ value: $("[data-k=value]", d).value, label: $("[data-k=label]", d).value })),

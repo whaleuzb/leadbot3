@@ -476,3 +476,5 @@ footer > span, footer > a:last-child { color: #736d7c; font-size: 14px; }
 .lesson-card.has-img > *:not(img) { position: relative; z-index: 1; }
 .lesson-card.has-img .lesson-bars { visibility: hidden; }
 .aud-img { display: block; width: 100%; max-width: 300px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; margin-top: 12px; }
+
+.lf-field .opt { color: #8b8494; font-weight: 400; }

@@ -76,6 +76,7 @@ let LESSONS = [
 
 let ENROLL_OPEN = true;
 let AUDIENCE = null;
+let CAPITALS = null;
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function telegramLink(text) {
@@ -306,7 +307,7 @@ async function loadConfig() {
     const r = await fetch("/api/config", { cache: "no-store" });
     if (!r.ok) throw new Error();
     const { settings: s, plans, lessons, audience } = await r.json();
-    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false;
+    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; if (Array.isArray(s.capitals) && s.capitals.length) CAPITALS = s.capitals;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
     if (Array.isArray(audience) && audience.length) AUDIENCE = audience;
@@ -330,23 +331,22 @@ function initTracking() {
     const a = e.target.closest("a[data-plan]");
     if (!a) return;
     post("/api/track", { type: "click", plan: a.dataset.plan }).catch(() => {});
-    const sel = document.getElementById("lf-plan");
-    if (sel) { sel.value = a.dataset.plan; setTimeout(() => document.getElementById("lf-name")?.focus({ preventScroll: true }), 600); }
+    setTimeout(() => document.getElementById("lf-name")?.focus({ preventScroll: true }), 600);
   });
 }
 
 function initLeadForm() {
   const form = document.getElementById("lead-form");
   if (!form) return;
-  const sel = document.getElementById("lf-plan"), msg = document.getElementById("lf-msg");
-  sel.innerHTML = PLANS.map((p) => `<option>${esc(p.name)}</option>`).join("");
+  const msg = document.getElementById("lf-msg"), cap = document.getElementById("lf-capital");
+  if (CAPITALS) cap.innerHTML = `<option value="">Tanlang</option>` + CAPITALS.map((c) => `<option>${esc(c)}</option>`).join("");
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = form.querySelector("button"), fd = new FormData(form);
     msg.className = "lf-msg"; msg.textContent = "";
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), plan: fd.get("plan"), website: fd.get("website"), consent: fd.get("consent") === "on" });
+      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), username: fd.get("username"), capital: fd.get("capital"), city: fd.get("city"), website: fd.get("website"), consent: fd.get("consent") === "on" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
       form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
     } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }
