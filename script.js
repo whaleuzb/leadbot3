@@ -200,67 +200,90 @@ function initResults() {
     const [head, ...rest] = String(c || "").split(" · "), tail = rest.join(" · ");
     return `<b>${esc(head || "Natija")}</b>${tail ? `<small class="${/\+\d/.test(tail) ? "up" : ""}">${esc(tail)}</small>` : ""}`;
   };
-  track.innerHTML = RESULTS.map((r, i) => `<button class="res-card" type="button" data-i="${i}" aria-label="${esc(r.caption || "Natija " + (i + 1))} — kattalashtirish">
-      <span class="res-shot"><img src="${esc(r.image)}" alt="${esc(r.caption || "Shogird natijasi")}" loading="lazy" draggable="false"></span>
+  const card = (r, i, clone) => `<button class="res-card" type="button" data-i="${i}"${clone ? ' tabindex="-1" aria-hidden="true"' : ""} aria-label="${esc(r.caption || "Natija " + (i + 1))} — kattalashtirish">
+      <span class="res-shot"><img src="${esc(r.image)}" alt="${clone ? "" : esc(r.caption || "Shogird natijasi")}" loading="lazy" draggable="false"></span>
       <span class="res-cap"><span class="res-num">${pad(i + 1)}</span>${capHtml(r.caption)}</span>
-    </button>`).join("");
+    </button>`;
+  const set = (clone) => RESULTS.map((r, i) => card(r, i, clone)).join("");
+  // tartib: nusxa | asl (fokus shu yerda) | nusxa… — chap chetda ham har doim karta bo'ladi
+  track.innerHTML = `<div class="res-rail">${set(true)}${set(false)}</div>`;
   sec.hidden = false;
-  const cards = [...track.children], bar = document.getElementById("res-bar"), count = document.getElementById("res-count");
-  const step = () => (cards[1] ? cards[1].offsetLeft - cards[0].offsetLeft : track.clientWidth);
-  const maxX = () => track.scrollWidth - track.clientWidth;
-  const sync = () => {
-    const vis = Math.max(1, Math.round(track.clientWidth / step()));
-    const first = Math.min(N - 1, Math.round(track.scrollLeft / step()));
-    count.textContent = `${pad(Math.min(N, first + vis))} / ${pad(N)}`;
-    bar.style.width = (maxX() > 0 ? Math.max(vis / N, track.scrollLeft / maxX()) * 100 : 100) + "%";
-  };
-  const go = (dir) => {
-    const atEnd = track.scrollLeft >= maxX() - 4, atStart = track.scrollLeft <= 4;
-    const x = dir > 0 && atEnd ? 0 : dir < 0 && atStart ? maxX() : track.scrollLeft + dir * step();
-    track.scrollTo({ left: x, behavior: "smooth" });
-  };
-  track.addEventListener("scroll", () => requestAnimationFrame(sync), { passive: true });
-  window.addEventListener("resize", sync);
-  sync();
-  sec.querySelectorAll("[data-res]").forEach((b) => b.addEventListener("click", () => { go(b.dataset.res === "next" ? 1 : -1); hold(); }));
-  track.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); go(e.key === "ArrowRight" ? 1 : -1); hold(); } });
+  const rail = track.firstElementChild, bar = document.getElementById("res-bar"), count = document.getElementById("res-count");
 
-  // Avtomatik aylanish: sichqoncha ustida, teginishda yoki ko'rinmaganda to'xtaydi
+  // Uzluksiz lenta: kartalar nusxalanadi, siljish bitta to'plam kengligiga yetganda boshiga qaytadi (sezilmaydi)
+  let W = 0, STEP = 0;
+  const measure = () => {
+    const cs = rail.children, old = W;
+    STEP = cs[1] ? cs[1].offsetLeft - cs[0].offsetLeft : cs[0].offsetWidth;
+    W = STEP * N;
+    const need = Math.ceil((2 * W + track.clientWidth) / W); // ekranni har doim to'ldirish uchun to'plamlar soni
+    while (rail.children.length < need * N) rail.insertAdjacentHTML("beforeend", set(true));
+    if (old) x = (x / old) * W;
+  };
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let paused = false, visible = false, holdUntil = 0;
-  const hold = () => { holdUntil = Date.now() + 6000; };
-  track.addEventListener("mouseenter", () => (paused = true));
-  track.addEventListener("mouseleave", () => (paused = false));
-  track.addEventListener("focusin", () => (paused = true));
-  track.addEventListener("focusout", () => (paused = false));
-  track.addEventListener("touchstart", hold, { passive: true });
-  if ("IntersectionObserver" in window) new IntersectionObserver((es) => (visible = es[0].isIntersecting), { threshold: 0.3 }).observe(track);
-  if (!reduce) setInterval(() => { if (visible && !paused && !lb.open && Date.now() > holdUntil && !document.hidden) go(1); }, 3200);
-
-  // Sichqoncha bilan sudrash (teginishda brauzerning o'z skroli ishlaydi)
-  let drag = null, moved = false;
-  track.addEventListener("pointerdown", (e) => {
-    if (e.pointerType !== "mouse" || e.button !== 0) return;
-    drag = { x: e.clientX, left: track.scrollLeft }; moved = false;
-  });
-  window.addEventListener("pointermove", (e) => {
-    if (!drag) return;
-    const dx = e.clientX - drag.x;
-    if (!moved && Math.abs(dx) > 6) { moved = true; track.classList.add("dragging"); }
-    if (moved) track.scrollLeft = drag.left - dx;
-  });
-  window.addEventListener("pointerup", () => {
-    if (!drag) return;
-    drag = null;
-    if (moved) {
-      track.classList.remove("dragging");
-      const x = Math.round(track.scrollLeft / step()) * step();
-      track.scrollTo({ left: Math.min(x, maxX()), behavior: "smooth" }); hold();
+  const BASE = () => (innerWidth < 760 ? 38 : 52); // px/soniya
+  let x = 0, vel = 0, hover = false, visible = true, nudge = 0, drag = null, moved = false, last = 0, shown = "";
+  const wrap = (v) => ((v % W) + W) % W;
+  measure();
+  addEventListener("resize", measure);
+  if ("IntersectionObserver" in window) new IntersectionObserver((es) => (visible = es[0].isIntersecting), { rootMargin: "100px" }).observe(track);
+  const paint = () => {
+    rail.style.transform = `translate3d(${-(x + W)}px,0,0)`;
+    bar.style.width = ((x / W) * 100).toFixed(2) + "%";
+    const t = `${pad((Math.round(x / STEP) % N) + 1)} / ${pad(N)}`;
+    if (t !== shown) count.textContent = shown = t;
+  };
+  const frame = (now) => {
+    const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+    if (visible && !drag) {
+      const target = reduce || lb.open ? 0 : BASE() * (hover ? 0.35 : 1);
+      vel += (target - vel) * Math.min(1, dt * 3); // inersiyadan doimiy tezlikka silliq qaytadi
+      x += vel * dt;
+      if (nudge) { const d = Math.abs(nudge) < 0.5 ? nudge : nudge * Math.min(1, dt * 9); x += d; nudge -= d; }
+      x = wrap(x); paint();
     }
+    requestAnimationFrame(frame);
+  };
+  paint(); requestAnimationFrame(frame);
+
+  const go = (dir) => { nudge += dir * STEP; };
+  sec.querySelectorAll("[data-res]").forEach((b) => b.addEventListener("click", () => go(b.dataset.res === "next" ? 1 : -1)));
+  track.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); go(e.key === "ArrowRight" ? 1 : -1); } });
+  track.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") hover = true; });
+  track.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hover = false; });
+  // Tab bilan fokus: brauzer o'zi skroll qilmasin, kartani ko'rinadigan joyga olib kelamiz
+  track.addEventListener("scroll", () => { if (track.scrollLeft) track.scrollLeft = 0; });
+  track.addEventListener("focusin", (e) => { const c = e.target.closest(".res-card"); if (c && e.target.matches(":focus-visible")) { x = wrap(+c.dataset.i * STEP); paint(); } });
+
+  // Sudrash (sichqoncha va barmoq): qo'yib yuborilganda inersiya bilan davom etadi
+  track.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    drag = { sx: e.clientX, sy: e.clientY, x0: x, lx: e.clientX, lt: performance.now(), v: 0, id: e.pointerId }; moved = false;
   });
+  track.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx;
+    if (!moved) {
+      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(e.clientY - drag.sy)) return;
+      moved = true; track.classList.add("dragging");
+      try { track.setPointerCapture(e.pointerId); } catch {}
+    }
+    const now = performance.now(), dtm = Math.max(1, now - drag.lt);
+    drag.v = 0.8 * ((drag.lx - e.clientX) / dtm) * 1000 + 0.2 * drag.v; drag.lx = e.clientX; drag.lt = now;
+    x = wrap(drag.x0 - dx); nudge = 0; paint();
+  });
+  const end = (e) => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    if (moved) { vel = Math.max(-2500, Math.min(2500, performance.now() - drag.lt > 120 ? 0 : drag.v)); track.classList.remove("dragging"); }
+    drag = null; last = 0;
+  };
+  track.addEventListener("pointerup", end);
+  track.addEventListener("pointercancel", end);
+  track.addEventListener("lostpointercapture", (e) => { if (e.target === track) end(e); });
   track.addEventListener("click", (e) => {
     if (moved) { e.preventDefault(); moved = false; return; }
-    const c = e.target.closest(".res-card"); if (c) lb.show(+c.dataset.i, c);
+    const c = e.target.closest(".res-card");
+    if (c) lb.show(+c.dataset.i, c.hasAttribute("aria-hidden") ? rail.querySelector(`.res-card:not([aria-hidden])[data-i="${c.dataset.i}"]`) : c);
   });
 
   // Lightbox
