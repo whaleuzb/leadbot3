@@ -278,7 +278,7 @@
     if (toggle) toggle.addEventListener("click", () => {
       auto = !auto;
       toggle.setAttribute("aria-pressed", String(!auto));
-      toggle.textContent = auto ? "❚❚ To‘xtatish" : "▶ Davom ettirish";
+      toggle.textContent = auto ? "❚❚ To‘xtatish" : "\u25B6\uFE0E Davom ettirish";
       lastAuto = performance.now(); kick();
     });
     layout(); kick();

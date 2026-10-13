@@ -759,6 +759,9 @@ html.lb-on { overflow: hidden; }
 @media (max-width: 1240px) { .hero-shell header .brand { font-size: 30px; letter-spacing: -1.5px; } }
 @media (max-width: 1240px) and (min-width: 1001px) { header nav { gap: 14px; font-size: 13.5px; } }
 .topbar .brand { font-size: 22px; letter-spacing: -1px; }
+.ribbon i { display: inline-flex; line-height: 0; }
+.ribbon .star { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+@media (max-width: 760px) { .ribbon .star { width: 16px; height: 16px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }
