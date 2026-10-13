@@ -355,7 +355,6 @@ async function loadConfig() {
     if (lessons) LESSONS = lessons;
     if (Array.isArray(audience) && audience.length) AUDIENCE = audience;
     if (Array.isArray(results)) RESULTS = results;
-    document.title = `${s.brand} — Treydingni tizim bilan o‘rgan`;
     document.querySelectorAll(".js-brand").forEach((e) => (e.textContent = s.brand));
     document.querySelectorAll(".js-author").forEach((e) => (e.textContent = s.authorName));
     const grid = document.getElementById("stats-grid");

@@ -66,8 +66,9 @@ const cleanImg = (v) => (typeof v === "string" && (IMG_RE.test(v) || (/^\/seed\/
 const STATIC = {
   "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js", "/fx.js": "fx.js",
   "/admin": "admin.html", "/admin.html": "admin.html", "/admin.css": "admin.css", "/admin.js": "admin.js",
+  "/robots.txt": "robots.txt", "/sitemap.xml": "sitemap.xml",
 };
-const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
+const MIME = { ".txt": "text/plain; charset=utf-8", ".xml": "application/xml; charset=utf-8", ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
 
 /* ---------- Boshlang'ich ma'lumotlar ---------- */
 const BASE_FEATURES = [
@@ -84,7 +85,7 @@ function defaults() {
   return {
     settings: {
       brand: "Mamurjon | MT",
-      authorName: "[Ismingiz]",
+      authorName: "Mamurjon",
       telegram: "managermtuz",
       enrollStart: "2026-09-30T00:00:00+05:00",
       enrollEnd: "2026-10-10T23:59:00+05:00",
@@ -616,6 +617,11 @@ load();
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");
+    // Bitta asosiy manzil (SEO): www va *.up.railway.app -> https://mamurjon.com (API'ga tegilmaydi)
+    const host = String(req.headers.host || "").toLowerCase().split(":")[0], SITE = process.env.SITE_HOST || "mamurjon.com";
+    if ((host === "www." + SITE || host.endsWith(".up.railway.app")) && (req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/api/")) {
+      res.writeHead(301, { Location: `https://${SITE}${url.pathname}${url.search}`, "Cache-Control": "public, max-age=3600" }); return res.end();
+    }
     if (url.pathname.startsWith("/api/")) return await api(req, res, url);
     if (url.pathname.startsWith("/seed/")) {
       if (req.method !== "GET" || !SEED_RE.test(url.pathname)) return send(res, 404, "Topilmadi");
