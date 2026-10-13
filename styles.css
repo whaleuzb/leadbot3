@@ -762,6 +762,11 @@ html.lb-on { overflow: hidden; }
 .ribbon i { display: inline-flex; line-height: 0; }
 .ribbon .star { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 @media (max-width: 760px) { .ribbon .star { width: 16px; height: 16px; } }
+/* Ijtimoiy tarmoqlar */
+.socials { display: flex; gap: 10px; }
+.socials a { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 50%; color: var(--foreground); transition: background .2s, color .2s, border-color .2s, transform .2s; }
+.socials a:hover { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); transform: translateY(-2px); }
+.socials svg { width: 18px; height: 18px; fill: currentColor; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }
