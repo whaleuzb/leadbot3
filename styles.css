@@ -754,6 +754,11 @@ html.lb-on { overflow: hidden; }
   .mentor-chip { margin-top: 18px; }
 }
 [data-theme="dark"] .mentor-chip { background: rgba(28,24,38,.6); }
+/* Brend nomi bir qatorda */
+.brand { white-space: nowrap; }
+@media (max-width: 1240px) { .hero-shell header .brand { font-size: 30px; letter-spacing: -1.5px; } }
+@media (max-width: 1240px) and (min-width: 1001px) { header nav { gap: 14px; font-size: 13.5px; } }
+.topbar .brand { font-size: 22px; letter-spacing: -1px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .scroll-progress { display: none; }

@@ -1,5 +1,5 @@
 /* =========================================================
-   trademove — animatsiyalar va slayder (kutubxonasiz)
+   Mamurjon | MT — animatsiyalar va slayder (kutubxonasiz)
    FX.init()      — sahifa chrome'i, hero, ribbon, grafik, hisoblagichlar
    FX.refresh()   — dinamik render qilingan bloklarga reveal/tilt ulash
    FX.coverflow() — Swiper "coverflow" uslubidagi slayder
@@ -18,7 +18,7 @@
     const bar = Object.assign(document.createElement("div"), { className: "scroll-progress" });
     document.body.prepend(bar);
 
-    const brand = ($(".js-brand") || {}).textContent || "trademove";
+    const brand = ($(".js-brand") || {}).textContent || "Mamurjon | MT";
     const top = document.createElement("header");
     top.className = "topbar";
     top.innerHTML = `<a class="brand" href="#top">${brand.replace(/[<>&]/g, "")}</a>

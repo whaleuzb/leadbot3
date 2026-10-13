@@ -1,5 +1,5 @@
 /* =========================================================
-   trademove — interaktivlik
+   Mamurjon | MT — interaktivlik
    1) Tariflar  2) Mobil akkordeon  3) Galereya  4) Countdown  5) Hero sham grafigi
    ========================================================= */
 

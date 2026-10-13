@@ -1,4 +1,4 @@
-# trademove — treyding community sayti + admin panel
+# Mamurjon | MT — treyding community sayti + admin panel
 
 Tashqi kutubxonasiz (faqat Node >= 18).
 

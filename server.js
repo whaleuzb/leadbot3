@@ -1,5 +1,5 @@
 /* =========================================================
-   trademove — server (Node >= 18, tashqi kutubxonasiz)
+   Mamurjon | MT — server (Node >= 18, tashqi kutubxonasiz)
    - Statik fayllar (landing + admin)
    - Ochiq API: /api/config, /api/leads (POST), /api/track (POST)
    - Admin API: /api/admin/* (parol + imzolangan cookie)
@@ -83,7 +83,7 @@ const BASE_FEATURES = [
 function defaults() {
   return {
     settings: {
-      brand: "trademove",
+      brand: "Mamurjon | MT",
       authorName: "[Ismingiz]",
       telegram: "managermtuz",
       enrollStart: "2026-09-30T00:00:00+05:00",
@@ -164,6 +164,8 @@ function load() {
     if (h.title1 === "TREYDING —" && h.accent === "QUMORDAN" && h.title3 === "FARQI BOR") Object.assign(h, { title1: d.settings.hero.title1, accent: d.settings.hero.accent, title3: d.settings.hero.title3 });
     db.heroFix1 = true; save();
   }
+  // Bir martalik: eski brend nomi yangisiga (admin o'zgartirgan bo'lsa tegilmaydi)
+  if (!db.brandFix1) { if (/^trade ?move$/i.test(db.settings.brand || "")) db.settings.brand = d.settings.brand; db.brandFix1 = true; save(); }
   // Parolni tiklash: RESET_ADMIN_PASSWORD qiymati o'zgarganda saqlangan parol o'chadi va ADMIN_PASSWORD amal qiladi (bir martalik)
   const rt = process.env.RESET_ADMIN_PASSWORD;
   if (rt && db.auth.resetToken !== rt) {
@@ -171,7 +173,7 @@ function load() {
     console.warn("Admin paroli tiklandi: endi ADMIN_PASSWORD amal qiladi.");
   }
   // eski namunaviy username o'zgartirilmagan bo'lsa — yangisiga almashtiramiz
-  if (db.settings.telegram === "trademove_admin") { db.settings.telegram = d.settings.telegram; save(); }
+  if (db.settings.telegram === "trade" + "move_admin") { db.settings.telegram = d.settings.telegram; save(); }
 }
 /* Mavzuga mos animatsiyali rasmlar (assets/seed/*.svg) */
 const SEED_DIR = path.join(__dirname, "assets", "seed");
@@ -655,7 +657,7 @@ http.createServer(async (req, res) => {
     if (!res.headersSent) send(res, code, { error: code === 500 ? "Server xatosi" : e.message });
   }
 }).listen(PORT, () => {
-  console.log(`trademove: http://localhost:${PORT}   admin: http://localhost:${PORT}/admin`);
+  console.log(`Mamurjon | MT: http://localhost:${PORT}   admin: http://localhost:${PORT}/admin`);
   if (!tgConfigured()) console.warn("⚠️  Telegram bot sozlanmagan (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) — arizalar faqat admin panelda saqlanadi.");
   if (!db.auth.passwordHash && !process.env.ADMIN_PASSWORD) console.warn("⚠️  ADMIN_PASSWORD berilmagan — vaqtinchalik parol: admin123. Uni o‘zgartiring!");
 });
