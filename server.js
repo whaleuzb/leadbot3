@@ -472,10 +472,25 @@ function cleanPayments(p = {}) {
   return { usdtWallet: pay.normAddr(wallet), cardNumber: card.replace(/(\d{4})(?=\d)/g, "$1 "), cardHolder: str(p.cardHolder, 60), cardBank: str(p.cardBank, 40), usdRate: rate };
 }
 /* To'lov sozlamalari: env ustun */
+const envCard = () => { const d = String(process.env.PAY_CARD_NUMBER || "").replace(/\D/g, ""); return d.length >= 16 && d.length <= 19 ? d.replace(/(\d{4})(?=\d)/g, "$1 ") : ""; };
 const payCfg = () => {
   const p = db.settings.payments || {};
-  return { ...p, usdtWallet: pay.normAddr(process.env.USDT_WALLET) || p.usdtWallet || "", walletFromEnv: !!pay.normAddr(process.env.USDT_WALLET) };
+  const cbu = db.cbuRate && db.cbuRate.rate > 0 ? db.cbuRate : null;
+  return { ...p, usdtWallet: pay.normAddr(process.env.USDT_WALLET) || p.usdtWallet || "", walletFromEnv: !!pay.normAddr(process.env.USDT_WALLET),
+    cardNumber: envCard() || p.cardNumber || "", cardFromEnv: !!envCard(), cardHolder: p.cardHolder || str(process.env.PAY_CARD_HOLDER, 60), cardBank: p.cardBank || str(process.env.PAY_CARD_BANK, 40),
+    usdRate: p.usdRate > 0 ? p.usdRate : cbu ? cbu.rate : 0, rateManual: p.usdRate > 0, cbuRate: cbu };
 };
+/* Markaziy bank (cbu.uz) dollar kursi — admin kurs kiritmagan bo'lsa ishlatiladi, 6 soatda yangilanadi */
+async function refreshCbuRate() {
+  try {
+    const r = await fetch("https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/", { signal: AbortSignal.timeout(15000) });
+    const d = await r.json();
+    const row = Array.isArray(d) ? d.find((x) => x && x.Ccy === "USD") || d[0] : null;
+    const rate = Math.round(parseFloat(String(row?.Rate || "").replace(",", ".")));
+    if (rate >= 1000 && rate <= 100000) { db.cbuRate = { rate, date: str(row.Date, 20), at: new Date().toISOString() }; save(); }
+    else console.warn("CBU kursi noto‘g‘ri javob:", JSON.stringify(d).slice(0, 200));
+  } catch (e) { console.warn("CBU kursini olib bo‘lmadi:", e.message); }
+}
 const methodsOn = () => { const p = payCfg(); return { usdt: !!p.usdtWallet, card: !!(p.cardNumber && p.usdRate > 0) }; };
 const planLabel = (p) => `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}`;
 const strList = (a, n = 30) => (Array.isArray(a) ? a.map((x) => str(x, 200)).filter(Boolean).slice(0, n) : []);
@@ -544,7 +559,8 @@ function uniquePayCents(base) {
 }
 function payInfo(o) {
   const p = payCfg();
-  if (o.method === "usdt") return { network: "BEP20 (BNB Smart Chain)", token: "USDT", address: o.payAddress || p.usdtWallet, amount: (o.payCents / 100).toFixed(2), expiresAt: new Date(Date.parse(o.createdAt) + ORDER_TTL).toISOString() };
+  const raw = String(process.env.USDT_WALLET || "").trim(), shown = pay.normAddr(raw) === o.payAddress ? raw : o.payAddress;
+  if (o.method === "usdt") return { network: "BEP20 (BNB Smart Chain)", token: "USDT", address: shown || p.usdtWallet, amount: (o.payCents / 100).toFixed(2), expiresAt: new Date(Date.parse(o.createdAt) + ORDER_TTL).toISOString() };
   if (o.method === "card") return { card: p.cardNumber, holder: p.cardHolder, bank: p.cardBank, sum: o.paySom, rate: o.rate };
   return null;
 }
@@ -908,6 +924,7 @@ async function api(req, res, url) {
 
 load();
 setInterval(() => scanTick().catch(() => {}), (parseInt(process.env.BSC_SCAN_SECONDS, 10) || 20) * 1000).unref();
+refreshCbuRate(); setInterval(refreshCbuRate, 6 * 36e5).unref();
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");

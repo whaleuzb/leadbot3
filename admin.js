@@ -492,7 +492,9 @@ function renderSettings() {
   const P = CONTENT.payments || {};
   $("#p-wallet").value = P.usdtWallet || ""; $("#p-wallet").disabled = !!P.walletFromEnv;
   if (P.walletFromEnv) $("#p-wallet-hint").textContent = "Railway’dagi USDT_WALLET o‘zgaruvchisidan olinmoqda — o‘zgartirish uchun o‘sha yerda yangilang.";
-  $("#p-card").value = P.cardNumber || ""; $("#p-holder").value = P.cardHolder || ""; $("#p-bank").value = P.cardBank || ""; $("#p-rate").value = P.usdRate || "";
+  $("#p-card").value = P.cardNumber || ""; $("#p-card").disabled = !!P.cardFromEnv;
+  $("#p-holder").value = P.cardHolder || ""; $("#p-bank").value = P.cardBank || ""; $("#p-rate").value = P.rateManual ? P.usdRate : "";
+  $("#p-rate").placeholder = P.cbuRate ? `Avtomatik: ${P.cbuRate.rate} (Markaziy bank, ${P.cbuRate.date})` : "12700";
   $("#stats-editor").innerHTML = s.stats.map((x, i) => `<div><input data-i="${i}" data-k="value" value="${esc(x.value)}" maxlength="20" aria-label="Qiymat ${i + 1}" /><input data-i="${i}" data-k="label" value="${esc(x.label)}" maxlength="60" aria-label="Izoh ${i + 1}" /></div>`).join("");
 }
 $("#save-settings").addEventListener("click", () => guard(async () => {
@@ -511,7 +513,7 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
 
 $("#save-pay").addEventListener("click", () => guard(async () => {
   const cur = CONTENT.payments || {};
-  const body = { payments: { usdtWallet: cur.walletFromEnv ? (CONTENT.settings.payments?.usdtWallet || "") : $("#p-wallet").value.trim(), cardNumber: $("#p-card").value, cardHolder: $("#p-holder").value, cardBank: $("#p-bank").value, usdRate: Number($("#p-rate").value) || 0 } };
+  const body = { payments: { usdtWallet: cur.walletFromEnv ? (CONTENT.settings.payments?.usdtWallet || "") : $("#p-wallet").value.trim(), cardNumber: cur.cardFromEnv ? (CONTENT.settings.payments?.cardNumber || "") : $("#p-card").value, cardHolder: $("#p-holder").value, cardBank: $("#p-bank").value, usdRate: Number($("#p-rate").value) || 0 } };
   CONTENT.settings = await api("/settings", { method: "PUT", body: { ...CONTENT.settings, ...body } });
   CONTENT = await api("/all"); renderSettings();
 }, "To‘lov sozlamalari saqlandi"));
