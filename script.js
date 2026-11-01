@@ -339,7 +339,7 @@ async function loadConfig() {
     const { settings: s, plans, lessons, audience, results, payments, promos } = await r.json();
     if (payments) PAYMENTS = payments;
     HAS_PROMOS = !!promos;
-    TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; if (Array.isArray(s.capitals) && s.capitals.length) CAPITALS = s.capitals;
+    TELEGRAM = s.telegram; if (s.freeGuidesUrl) window.TM_FREE_URL = s.freeGuidesUrl; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; if (Array.isArray(s.capitals) && s.capitals.length) CAPITALS = s.capitals;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
     if (Array.isArray(audience) && audience.length) AUDIENCE = audience;

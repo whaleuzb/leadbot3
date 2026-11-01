@@ -129,6 +129,7 @@ function defaults() {
       brand: "Mamurjon | MT",
       authorName: "Mamurjon",
       telegram: "managermtuz",
+      freeGuidesUrl: "https://t.me/mamurjon_mt",
       enrollStart: "2026-09-30T00:00:00+05:00",
       enrollEnd: "2026-10-10T23:59:00+05:00",
       enrollmentOpen: true,
@@ -450,6 +451,7 @@ function cleanSettings(s = {}) {
     brand: str(s.brand, 30) || cur.brand,
     authorName: str(s.authorName, 60) || cur.authorName,
     telegram: str(s.telegram, 40).replace(/^@/, "").replace(/[^\w]/g, "") || cur.telegram,
+    freeGuidesUrl: s.freeGuidesUrl === undefined ? cur.freeGuidesUrl : /^https:\/\/[^\s"<>]{3,300}$/.test(str(s.freeGuidesUrl, 300)) ? str(s.freeGuidesUrl, 300) : cur.freeGuidesUrl,
     enrollStart: isDate(s.enrollStart) ? s.enrollStart : cur.enrollStart,
     enrollEnd: isDate(s.enrollEnd) ? s.enrollEnd : cur.enrollEnd,
     enrollmentOpen: typeof s.enrollmentOpen === "boolean" ? s.enrollmentOpen : cur.enrollmentOpen,
@@ -673,9 +675,9 @@ async function api(req, res, url) {
   const m = req.method, p = url.pathname;
 
   if (m === "GET" && p === "/api/config") {
-    const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
+    const { brand, authorName, telegram, freeGuidesUrl, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
     const pc = payCfg();
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, payments: { ...methodsOn(), usdRate: pc.usdRate || 0 }, promos: db.promos.some((x) => x.active), plans: db.plans.map((p) => ({ ...p, image: versioned(p.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
+    return send(res, 200, { settings: { brand, authorName, telegram, freeGuidesUrl, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, payments: { ...methodsOn(), usdRate: pc.usdRate || 0 }, promos: db.promos.some((x) => x.active), plans: db.plans.map((p) => ({ ...p, image: versioned(p.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
   }
 
   if (m === "POST" && p === "/api/track") {

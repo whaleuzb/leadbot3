@@ -497,7 +497,7 @@ const toLocalInput = (iso) => new Date(Date.parse(iso) + 5 * 36e5).toISOString()
 const fromLocalInput = (v) => v + ":00+05:00";
 function renderSettings() {
   const s = CONTENT.settings;
-  $("#s-brand").value = s.brand; $("#s-author").value = s.authorName; $("#s-tg").value = s.telegram;
+  $("#s-brand").value = s.brand; $("#s-author").value = s.authorName; $("#s-tg").value = s.telegram; $("#s-free").value = s.freeGuidesUrl || "";
   $("#s-open").value = String(s.enrollmentOpen);
   $("#s-start").value = toLocalInput(s.enrollStart); $("#s-end").value = toLocalInput(s.enrollEnd);
   $("#s-risk").value = s.riskNote; $("#s-capitals").value = (s.capitals || []).join("\n");
@@ -517,7 +517,7 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
   if (!$("#s-start").value || !$("#s-end").value) throw new Error("Sanalarni to‘ldiring");
   if ($("#s-end").value <= $("#s-start").value) throw new Error("Tugash sanasi boshlanishdan keyin bo‘lishi kerak");
   const body = {
-    brand: $("#s-brand").value, authorName: $("#s-author").value, telegram: $("#s-tg").value,
+    brand: $("#s-brand").value, authorName: $("#s-author").value, telegram: $("#s-tg").value, freeGuidesUrl: $("#s-free").value.trim(),
     enrollmentOpen: $("#s-open").value === "true", enrollStart: fromLocalInput($("#s-start").value), enrollEnd: fromLocalInput($("#s-end").value),
     riskNote: $("#s-risk").value, capitals: $("#s-capitals").value.split("\n").map((x) => x.trim()).filter(Boolean),
     hero: { eyebrow: $("#h-eyebrow").value, title1: $("#h-t1").value, accent: $("#h-acc").value, title3: $("#h-t3").value,

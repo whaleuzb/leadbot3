@@ -918,3 +918,9 @@ html.lb-on { overflow: hidden; }
   .pay-head { flex-direction: column; gap: 8px; }
 }
 @media (max-width: 720px) { .fmt-tabs { width: auto; } }
+@media (max-width: 480px) {
+  .topbar { width: calc(100% - 24px); justify-content: space-between; gap: 8px; padding-left: 16px; }
+  .topbar .brand { font-size: 19px; }
+  .topbar-cta { padding: 10px 14px; font-size: 13px; }
+}
+@media (max-width: 374px) { .topbar { gap: 5px; padding-left: 12px; } .topbar .brand { font-size: 16px; letter-spacing: -.8px; } .topbar .theme-toggle { width: 32px; height: 32px; } .topbar-cta { padding: 9px 10px; font-size: 12px; } }
