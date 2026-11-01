@@ -642,6 +642,12 @@ async function claimTx(o, txRaw) {
   markPaid(o, "USDT TxID", { txid: tx, paidCents: cents });
   return { status: "paid" };
 }
+function notifyReceipt(o, title) {
+  const fp = o.receipt && cleanReceipt(o.receipt);
+  let photo = null;
+  try { if (fp) { const buf = fs.readFileSync(fp), ext = path.extname(fp).slice(1); photo = { buf, type: IMG_MIME[ext], ext }; } } catch {}
+  tgNotify(`🧾 <b>${htmlEsc(title)}</b>\n${orderLine(o)}\nSumma: <b>${som(o.paySom)}</b>\n💬 @${htmlEsc(o.username)} · ${htmlEsc(o.phone)}\n\nAdmin panel → Arizalar’da tekshirib, “To‘lovni tasdiqlash” ni bosing.`, photo);
+}
 function cleanReceipt(name) { return RECEIPT_RE.test(name) ? path.join(RECEIPT_DIR, name) : null; }
 
 /* ---------- Dashboard ---------- */
@@ -770,7 +776,7 @@ async function api(req, res, url) {
     if (method === "usdt") setTimeout(() => scanTick(true), 1000);
     return send(res, 201, { ...publicOrder(o), token: o.token });
   }
-  const ord = /^\/api\/orders\/(\w+)(\/txid|\/receipt|\/cancel)?$/.exec(p);
+  const ord = /^\/api\/orders\/(\w+)(\/txid|\/receipt|\/paid|\/cancel)?$/.exec(p);
   if (ord) {
     const o = orderByToken(ord[1], url.searchParams.get("t") || "");
     if (!o) return send(res, 404, { error: "Buyurtma topilmadi" });
@@ -794,9 +800,26 @@ async function api(req, res, url) {
       fs.mkdirSync(RECEIPT_DIR, { recursive: true });
       const fname = crypto.randomBytes(12).toString("hex") + "." + ext;
       fs.writeFileSync(path.join(RECEIPT_DIR, fname), buf);
-      o.receipts = [...(o.receipts || []), fname].slice(-5); o.receipt = fname; o.payStatus = "review"; save();
-      tgNotify(`🧾 <b>Karta to‘lovi cheki keldi</b>\n${orderLine(o)}\nSumma: <b>${som(o.paySom)}</b>\n💬 @${htmlEsc(o.username)} · ${htmlEsc(o.phone)}\n\nAdmin panel → Arizalar’da tekshirib, “To‘lovni tasdiqlash” ni bosing.`, { buf, type: IMG_MIME[ext], ext });
+      o.receipts = [...(o.receipts || []), fname].slice(-5); o.receipt = fname; save();
+      // "To'lov qildim" bosilgandan keyin yangi chek yuklansa — adminga yana yuboramiz
+      if (o.payStatus === "review") notifyReceipt(o, "Yangilangan chek");
       return send(res, 200, publicOrder(o));
+    }
+    if (m === "POST" && ord[2] === "/paid") {
+      if (o.payStatus === "paid") return send(res, 200, publicOrder(o));
+      if (!["pending", "review", "expired"].includes(o.payStatus)) return send(res, 400, { error: "Bu buyurtma faol emas" });
+      if (limited("pd:" + clientIp(req), 20, 36e5)) return send(res, 429, { error: "Ko‘p urinish. Keyinroq qayta urinib ko‘ring." });
+      if (o.method === "card") {
+        if (!o.receipt) return send(res, 400, { error: "Avval to‘lov chekini yuklang" });
+        if (o.payStatus !== "review") { o.payStatus = "review"; o.claimedAt = new Date().toISOString(); save(); notifyReceipt(o, "Karta to‘lovi — mijoz “To‘lov qildim” bosdi"); }
+        return send(res, 200, publicOrder(o));
+      }
+      if (o.method === "usdt") {
+        if (!o.claimedAt) { o.claimedAt = new Date().toISOString(); save(); tgNotify(`💬 <b>Mijoz “To‘lov qildim” bosdi</b> (USDT)\n${orderLine(o)}\nKutilgan summa: <b>${usdt(o.payCents)}</b>\n💬 @${htmlEsc(o.username)}\n\nHamyon avtomatik tekshirilmoqda.`); }
+        await scanTick(true);
+        return send(res, 200, { ...publicOrder(o), note: o.payStatus === "paid" ? "" : "Hamyon tekshirilmoqda. To‘lov tarmoqda tasdiqlangach (odatda 1–3 daqiqa) bu sahifa o‘zi yangilanadi." });
+      }
+      return send(res, 400, { error: "Bu buyurtma uchun kerak emas" });
     }
     if (m === "POST" && ord[2] === "/cancel") {
       if (o.payStatus === "pending") { o.payStatus = "cancelled"; save(); }
@@ -981,6 +1004,14 @@ http.createServer(async (req, res) => {
     if (file === "admin.html") { headers["X-Frame-Options"] = "DENY"; headers["Referrer-Policy"] = "no-referrer"; headers["X-Robots-Tag"] = "noindex"; }
     const fp = path.join(__dirname, file), tag = etagOf(fp);
     headers.ETag = tag;
+    if (file === "index.html" || file === "admin.html") { // css/js manzillariga versiya — telefon eski faylni xotiradan olmasin
+      const ver = (n) => etagOf(path.join(__dirname, n)).slice(1, 9);
+      const html = fs.readFileSync(fp, "utf8").replace(/(href|src)="\/?(styles\.css|script\.js|fx\.js|admin\.css|admin\.js)"/g, (m0, a, n) => `${a}="/${n}?v=${ver(n)}"`);
+      const htag = `"${crypto.createHash("sha1").update(html).digest("hex").slice(0, 16)}"`;
+      if (req.headers["if-none-match"] === htag) { res.writeHead(304, { ETag: htag, "Cache-Control": "no-cache" }); return res.end(); }
+      res.writeHead(200, { ...headers, ETag: htag });
+      return res.end(html);
+    }
     if (req.headers["if-none-match"] === tag) { res.writeHead(304, { ETag: tag, "Cache-Control": "no-cache" }); return res.end(); }
     res.writeHead(200, headers);
     fs.createReadStream(fp).pipe(res);

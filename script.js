@@ -528,6 +528,7 @@ function initLeadForm() {
           <li><span>Hamyon manzili</span><div class="pay-box"><code class="pay-addr">${esc(P.address)}</code>${copyBtn(P.address, "Hamyon manzili")}</div></li>
         </ol>
         <div class="pay-wait"><i class="spin" aria-hidden="true"></i><p>To‘lov tarmoqda tasdiqlangach (odatda 1–3 daqiqa) bu sahifa o‘zi yangilanadi. Sahifani yopsangiz ham buyurtma saqlanadi.</p></div>
+        <div class="paid-wrap"><button class="button paid-btn" type="button" data-pay="paid">To‘lov qildim${ARROW}</button><p class="promo-msg" id="paid-msg" role="status"></p></div>
         <form class="txid-form" data-pay="txid"><label for="pay-txid">Tezlashtirish uchun TxID (ixtiyoriy)</label><div class="promo-row"><input id="pay-txid" name="txid" autocomplete="off" placeholder="0x…" maxlength="70" /><button class="promo-btn" type="submit">Tekshirish</button></div><p class="promo-msg" role="status"></p></form>
         ${foot}`;
     }
@@ -537,9 +538,13 @@ function initLeadForm() {
         <li><span>Shu summani o‘tkazing</span><div class="pay-box"><code class="pay-amount">${Number(P.sum).toLocaleString("ru-RU")} so‘m</code>${copyBtn(String(P.sum), "Summa")}</div><small>${cents(o.amountCents)} × ${Number(P.rate).toLocaleString("ru-RU")} so‘m kurs bo‘yicha</small></li>
         <li><span>Karta raqami</span><div class="pay-box"><code class="pay-addr">${esc(P.card)}</code>${copyBtn(P.card.replace(/\s/g, ""), "Karta raqami")}</div>${P.holder || P.bank ? `<small>${esc([P.holder, P.bank].filter(Boolean).join(" · "))}</small>` : ""}</li>
         <li><span>Chekni yuklang</span>
-          ${o.payStatus === "review" ? `<div class="pay-wait"><i class="spin" aria-hidden="true"></i><p>Chek qabul qilindi. Menejer tekshirib tasdiqlaydi — odatda bir necha daqiqadan bir necha soatgacha. Sahifa o‘zi yangilanadi.</p></div>` : ""}
-          <label class="upload"><input type="file" accept="image/jpeg,image/png,image/webp" data-pay="receipt" /><span>${o.payStatus === "review" ? "Boshqa chek yuklash" : "Chek skrinshotini tanlash"}</span></label>
+          ${o.payStatus === "review" ? `<div class="pay-wait"><i class="spin" aria-hidden="true"></i><p>To‘lovingiz tekshirilmoqda. Menejer chekni ko‘rib tasdiqlaydi — odatda bir necha daqiqadan bir necha soatgacha. Sahifa o‘zi yangilanadi.</p></div>`
+            : o.hasReceipt ? `<p class="rc-ok">${svgI("M5 12.5l4.5 4.5L19 7")}Chek yuklandi</p>` : ""}
+          <label class="upload${o.hasReceipt ? " small" : ""}"><input type="file" accept="image/jpeg,image/png,image/webp" data-pay="receipt" /><span>${o.hasReceipt ? "Boshqa chek yuklash" : "Chek skrinshotini tanlash"}</span></label>
           <p class="promo-msg" id="rc-msg" role="status"></p></li>
+        ${o.payStatus === "review" ? "" : `<li><span>To‘lovni tasdiqlang</span>
+          <button class="button paid-btn" type="button" data-pay="paid"${o.hasReceipt ? "" : " disabled"}>To‘lov qildim${ARROW}</button>
+          <small>${o.hasReceipt ? "Bosganingizdan keyin menejer chekni tekshirib, to‘lovni tasdiqlaydi." : "Avval chekni yuklang — keyin bu tugma faollashadi."}</small></li>`}
       </ol>${foot}`;
   }
   async function shrinkImg(file) {
@@ -581,6 +586,18 @@ function initLeadForm() {
   panel.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-pay]"); if (!b || b.tagName === "FORM" || b.tagName === "INPUT") return;
     if (b.dataset.pay === "new") return resetOrder();
+    if (b.dataset.pay === "paid") {
+      b.disabled = true; const m = document.getElementById("paid-msg") || document.getElementById("rc-msg");
+      if (m) { m.className = "promo-msg"; m.textContent = "Tekshirilmoqda…"; }
+      try {
+        const r = await post(`/api/orders/${CURRENT.id}/paid?t=${TOKEN}`, {});
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "Xatolik. Qayta urinib ko‘ring.");
+        if (d.payStatus !== CURRENT.payStatus || d.method === "card") return showOrder(d, TOKEN, false);
+        if (m) { m.className = "promo-msg ok"; m.textContent = d.note || "Qabul qilindi."; }
+      } catch (err) { if (m) { m.className = "promo-msg err"; m.textContent = err.message; } }
+      b.disabled = false; return;
+    }
     if (b.dataset.pay === "cancel") {
       if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Ishonchingiz komilmi? Yana bosing"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Bekor qilish / boshqa usul"; }, 4000); return; }
       await post(`/api/orders/${CURRENT.id}/cancel?t=${TOKEN}`, {}).catch(() => {});

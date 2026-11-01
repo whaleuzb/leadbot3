@@ -925,3 +925,12 @@ html.lb-on { overflow: hidden; }
 }
 @media (max-width: 374px) { .topbar { gap: 5px; padding-left: 12px; } .topbar .brand { font-size: 16px; letter-spacing: -.8px; } .topbar .theme-toggle { width: 32px; height: 32px; } .topbar-cta { padding: 9px 10px; font-size: 12px; } }
 .meet-grid img[src*="meetup-street"] { object-position: 50% 6%; }
+
+.paid-btn { width: 100%; }
+.paid-btn[disabled] { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+.paid-wrap { display: grid; gap: 6px; }
+.rc-ok { display: flex; align-items: center; gap: 8px; margin: 0 0 4px !important; color: #2f7d57 !important; font-weight: 700; font-size: 14px; }
+.rc-ok svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.upload.small { min-height: 44px; font-size: 14px; }
+[data-theme="dark"] .rc-ok { color: #6fcf9d !important; }
+[data-theme="dark"] .paid-btn[disabled] { background: #2e2838; color: #8f879d; }
