@@ -154,7 +154,7 @@
         <h3>Qanday ishlaymiz?</h3>
         <p><strong>O‘rganamiz</strong> — grafik, daraja, trend, hajm va bitim rejasini qanday tuzishni tushunamiz.</p>
         <p><strong>Bajaramiz</strong> — demo hisobda dastur bo‘yicha mashq qilamiz, har bir bitimni jurnalga yozib, xatolarni tahlil qilamiz.</p>
-        <p><strong>Birga davom etamiz</strong> — Pro va Individual tariflarida umumiy chatda savollar beramiz, bozor sharhlarini muhokama qilamiz va kurator qo‘llab-quvvatlashini olamiz.</p>
+        <p><strong>Birga davom etamiz</strong> — Whales signal guruhida bozor sharhlari va g‘oyalarni muhokama qilamiz, Individual tariflarda esa mentor bilan shaxsan ishlaymiz.</p>
       </div>
     </div>
 
@@ -245,9 +245,13 @@
           <p class="eyebrow">SIZNING KEYINGI QADAMINGIZ</p>
           <h2>Tizimga birinchi qadam</h2>
         </div>
-        <p>Tarifni tanlang va ariza qoldiring. Menejer siz bilan bog‘lanib, to‘lov va kirish bo‘yicha ma’lumot beradi.</p>
+        <p>Formatni tanlang: online yoki offlayn. Barcha tariflarga <b>Whales signal guruhi</b> kiradi. To‘lov shu yerning o‘zida — USDT yoki karta orqali.</p>
       </div>
-      <div class="plans" id="plans-grid"></div>
+      <div class="fmt-tabs" role="tablist" aria-label="O‘qish formati">
+        <button type="button" role="tab" id="fmt-online" aria-selected="true" aria-controls="plans-grid" data-fmt="online">Online</button>
+        <button type="button" role="tab" id="fmt-offline" aria-selected="false" aria-controls="plans-grid" data-fmt="offline" tabindex="-1">Offlayn</button>
+      </div>
+      <div class="plans" id="plans-grid" role="tabpanel" aria-labelledby="fmt-online"></div>
     </div>
   </section>
 
@@ -276,32 +280,49 @@
     </div>
   </section>
 
-  <!-- ========== ARIZA FORMASI ========== -->
+  <!-- ========== BUYURTMA VA TO'LOV ========== -->
   <section class="section lead-section" id="apply">
-    <div class="lead-card">
-      <div>
-        <p class="eyebrow">ARIZA QOLDIRING</p>
-        <h2>Menejer o‘zi<br><em>bog‘lanadi</em></h2>
-        <p>Ism va telefon raqamingizni qoldiring. Tarif tanlashda yordam beramiz va to‘lov tartibini tushuntiramiz.</p>
-        <img class="lead-photo" src="/photos/lead.jpg" alt="Mentor oflayn uchrashuvda" loading="lazy" />
+    <div class="lead-card checkout">
+      <div class="co-side">
+        <p class="eyebrow">ARIZA VA TO‘LOV</p>
+        <h2>Joyingizni<br><em>band qiling</em></h2>
+        <p>Ma’lumotlaringizni qoldiring va qulay usulda to‘lang. To‘lov tasdiqlangach menejer sizni darslar va Whales signal guruhiga qo‘shadi.</p>
+        <div class="co-summary" id="co-summary" aria-live="polite"></div>
+        <ul class="co-trust">
+          <li>USDT (BEP20) — avtomatik tasdiqlanadi</li>
+          <li>Bank kartasi — chek yuklang, menejer tasdiqlaydi</li>
+          <li>Savol bo‘lsa — menejer Telegramda yordam beradi</li>
+        </ul>
       </div>
+
       <form id="lead-form" novalidate>
+        <div class="lf-field"><label for="lf-plan">Tarif</label><select id="lf-plan" name="plan" required></select></div>
         <div class="lf-field"><label for="lf-name">Ismingiz</label><input id="lf-name" name="name" autocomplete="name" maxlength="80" required /></div>
-        <div class="lf-field"><label for="lf-phone">Telefon</label><input id="lf-phone" name="phone" type="tel" autocomplete="tel" placeholder="+998 __ ___ __ __" maxlength="30" required /></div>
-        <div class="lf-field"><label for="lf-username">Telegram username <span class="opt">(ixtiyoriy)</span></label><input id="lf-username" name="username" autocomplete="off" autocapitalize="none" placeholder="@username" maxlength="80" /></div>
-        <div class="lf-field"><label for="lf-capital">Savdo uchun kapitalingiz</label><select id="lf-capital" name="capital" required><option value="">Tanlang</option><option>1.000$ gacha</option><option>1.000$ - 5.000$</option><option>5.000$ - 10.000$</option><option>10.000$ dan yuqori</option></select></div>
-        <div class="lf-field"><label for="lf-city">Shahar</label><input id="lf-city" name="city" autocomplete="address-level2" list="uz-cities" placeholder="Masalan: Toshkent" maxlength="60" required /><datalist id="uz-cities"><option>Toshkent</option><option>Samarqand</option><option>Buxoro</option><option>Andijon</option><option>Farg‘ona</option><option>Namangan</option><option>Qarshi</option><option>Navoiy</option><option>Jizzax</option><option>Guliston</option><option>Termiz</option><option>Urganch</option><option>Nukus</option></datalist></div>
+        <div class="lf-row">
+          <div class="lf-field"><label for="lf-phone">Telefon</label><input id="lf-phone" name="phone" type="tel" autocomplete="tel" placeholder="+998 __ ___ __ __" maxlength="30" required /></div>
+          <div class="lf-field"><label for="lf-username">Telegram username</label><input id="lf-username" name="username" autocomplete="off" autocapitalize="none" placeholder="@username" maxlength="80" required /></div>
+        </div>
+        <div class="lf-row">
+          <div class="lf-field"><label for="lf-city">Shahar</label><input id="lf-city" name="city" autocomplete="address-level2" list="uz-cities" placeholder="Masalan: Toshkent" maxlength="60" required /><datalist id="uz-cities"><option>Toshkent</option><option>Samarqand</option><option>Buxoro</option><option>Andijon</option><option>Farg‘ona</option><option>Namangan</option><option>Qarshi</option><option>Navoiy</option><option>Jizzax</option><option>Guliston</option><option>Termiz</option><option>Urganch</option><option>Nukus</option></datalist></div>
+          <div class="lf-field"><label for="lf-capital">Savdo kapitali <span class="opt">(ixtiyoriy)</span></label><select id="lf-capital" name="capital"><option value="">Tanlang</option><option>1.000$ gacha</option><option>1.000$ - 5.000$</option><option>5.000$ - 10.000$</option><option>10.000$ dan yuqori</option></select></div>
+        </div>
+        <div class="lf-field" id="lf-promo-wrap"><label for="lf-promo">Promo kod <span class="opt">(bo‘lsa)</span></label>
+          <div class="promo-row"><input id="lf-promo" name="promo" autocomplete="off" autocapitalize="characters" maxlength="20" placeholder="PROMO" /><button class="promo-btn" type="button" id="lf-promo-btn">Qo‘llash</button></div>
+          <p class="promo-msg" id="lf-promo-msg" role="status"></p>
+        </div>
         <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        <fieldset class="lf-field lf-format"><legend>O‘qish formati</legend>
+        <fieldset class="lf-field lf-format" id="lf-method-wrap"><legend>To‘lov usuli</legend>
           <div class="seg">
-            <label><input type="radio" name="format" value="Online" required /><span>Online</span></label>
-            <label><input type="radio" name="format" value="Offlayn" /><span>Offlayn</span></label>
+            <label><input type="radio" name="method" value="usdt" /><span><b>USDT</b><small>BEP20 · avtomatik</small></span></label>
+            <label><input type="radio" name="method" value="card" /><span><b>Bank kartasi</b><small>so‘mda · chek bilan</small></span></label>
           </div>
         </fieldset>
         <label class="lf-consent"><input type="checkbox" id="lf-consent" name="consent" required /><span>Kiritgan ma’lumotlarimni men bilan bog‘lanish maqsadida qayta ishlashga roziman.</span></label>
         <p class="lf-msg" id="lf-msg" role="status"></p>
-        <button class="button" type="submit">Ariza yuborish<svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg></button>
+        <button class="button" type="submit" id="lf-submit">To‘lovga o‘tish<svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg></button>
       </form>
+
+      <div class="pay-panel" id="pay-panel" hidden tabindex="-1" aria-live="polite"></div>
     </div>
   </section>
 

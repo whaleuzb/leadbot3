@@ -175,3 +175,19 @@ span.img-thumb { display: grid; place-items: center; color: var(--muted); font-s
 .res-item img { width: 100%; height: 220px; object-fit: contain; background: #0d0f14; border-radius: 10px; border: 1px solid var(--border); }
 .res-item input[data-f] { width: 100%; }
 .res-item .editor-tools { align-items: center; }
+
+/* To'lovlar */
+.pay-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 2px; }
+.pay-sel { width: auto; min-height: 34px; padding: 0 8px; font-size: 13px; font-weight: 700; }
+.pay-sel.paid { border-color: var(--ok); color: var(--ok); }
+.pay-sel.new { border-color: var(--info); color: var(--info); }
+.pay-sel.contacted { border-color: var(--warn); color: var(--warn); }
+.pay-sel.rejected { border-color: var(--bad); color: var(--bad); }
+.btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+tr.hl > td { background: var(--info-bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+#chain-card .tg-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#chain-card code { overflow-wrap: anywhere; }
+#chain-unmatched li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#chain-unmatched select { width: auto; min-height: 34px; }
+#pay-form { margin-bottom: 18px; }

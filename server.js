@@ -1,17 +1,20 @@
 /* =========================================================
    Mamurjon | MT — server (Node >= 18, tashqi kutubxonasiz)
    - Statik fayllar (landing + admin)
-   - Ochiq API: /api/config, /api/leads (POST), /api/track (POST)
+   - Ochiq API: /api/config, /api/orders (buyurtma + to'lov), /api/promo, /api/leads, /api/track
    - Admin API: /api/admin/* (parol + imzolangan cookie)
    Muhit o'zgaruvchilari:
      PORT            (default 3000)
      ADMIN_PASSWORD  boshlang'ich parol (default: admin123 — DARHOL o'zgartiring!)
      DATA_DIR        ma'lumotlar papkasi (default ./data; Railway'da Volume ulang)
+     USDT_WALLET     USDT (BEP20) qabul qilinadigan hamyonning OCHIQ manzili (bo'lmasa admin paneldagi)
+     BSC_RPC_URL     BNB Smart Chain RPC (default https://bsc-rpc.publicnode.com)
    ========================================================= */
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const pay = require("./pay");
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -19,6 +22,8 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
 const IMG_RE = /^\/uploads\/[a-f0-9]{16}\.(jpg|png|webp|gif)$/;
 const IMG_MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+const RECEIPT_DIR = path.join(DATA_DIR, "receipts"); // karta to'lovi cheklari — faqat admin ko'radi
+const RECEIPT_RE = /^[a-f0-9]{24}\.(jpg|png|webp)$/;
 /* ---------- Telegram bot ---------- */
 // Muhit o'zgaruvchilari: TELEGRAM_BOT_TOKEN (@BotFather), TELEGRAM_CHAT_ID (ariza yuboriladigan chat/guruh)
 const tgToken = () => process.env.TELEGRAM_BOT_TOKEN || "";
@@ -42,11 +47,22 @@ const tashkentFull = (iso) => {
   const d = new Date(new Date(iso).getTime() + 5 * 36e5), p = (n) => String(n).padStart(2, "0");
   return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
 };
+const usd = (cents) => "$" + (cents / 100).toFixed(cents % 100 ? 2 : 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const usdt = (cents) => (cents / 100).toFixed(2) + " USDT";
+const som = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so‘m";
+const METHOD = { usdt: "USDT (BEP20)", card: "Bank kartasi", manager: "Menejer orqali" };
+const PAY_STATUS = { pending: "⏳ To‘lov kutilmoqda", review: "🔎 Chek tekshirilmoqda", paid: "✅ To‘landi", expired: "⌛ Muddati o‘tdi", cancelled: "✖️ Bekor qilindi", none: "📝 Ariza (to‘lovsiz)" };
 function leadText(l) {
   const line = "━━━━━━━━━━━━━━";
-  return [`🆕 Yangi lid — ${htmlEsc(db.settings.brand)} Community kurs`, line,
-    `👤 Ism: ${htmlEsc(l.name)}`, `📞 Tel: ${htmlEsc(l.phone)}`, `💬 Telegram: ${htmlEsc(l.username || "—")}`,
-    `💰 Kapital: ${htmlEsc(l.capital || "—")}`, `🏙 Shahar: ${htmlEsc(l.city || "—")}`, `🎓 Format: ${htmlEsc(l.format || "—")}`, `🕐 Vaqt: ${tashkentFull(l.createdAt)}`, line].join("\n");
+  const head = l.no ? `🆕 Yangi buyurtma #${l.no} — ${htmlEsc(db.settings.brand)}` : `🆕 Yangi lid — ${htmlEsc(db.settings.brand)} Community kurs`;
+  const rows = [head, line, `👤 Ism: ${htmlEsc(l.name)}`, `📞 Tel: ${htmlEsc(l.phone)}`, `💬 Telegram: ${l.username ? "@" + htmlEsc(l.username) : "—"}`,
+    `💰 Kapital: ${htmlEsc(l.capital || "—")}`, `🏙 Shahar: ${htmlEsc(l.city || "—")}`, `🎓 Format: ${htmlEsc(l.format || "—")}`];
+  if (l.no) {
+    rows.push(`📦 Tarif: <b>${htmlEsc(l.planName)}</b>`, `💵 Narx: ${usd(l.priceCents)}${l.promo ? ` − ${usd(l.discountCents)} (promo ${htmlEsc(l.promo)})` : ""} = <b>${usd(l.amountCents)}</b>`,
+      `💳 To‘lov: ${METHOD[l.method] || "—"}${l.method === "usdt" ? ` · ${usdt(l.payCents)}` : l.method === "card" && l.paySom ? ` · ${som(l.paySom)}` : ""}`, `📍 Holat: ${PAY_STATUS[l.payStatus] || "—"}`);
+  }
+  rows.push(`🕐 Vaqt: ${tashkentFull(l.createdAt)}`, line);
+  return rows.join("\n");
 }
 async function notifyLead(lead) {
   if (!tgConfigured()) { lead.tg = "off"; save(); return; }
@@ -62,6 +78,22 @@ async function notifyLead(lead) {
   console.warn("Telegramga yuborilmadi:", lead.tgError);
   save();
 }
+/* Qisqa xabar (to'lov tushdi, chek keldi va h.k.) — xato bo'lsa jim o'tadi */
+async function tgNotify(text, photo) {
+  if (!tgConfigured()) return;
+  try {
+    if (photo) {
+      const fd = new FormData();
+      fd.append("chat_id", tgChat()); fd.append("caption", text.slice(0, 1000)); fd.append("parse_mode", "HTML");
+      fd.append("photo", new Blob([photo.buf], { type: photo.type }), "chek." + photo.ext);
+      const base = process.env.TELEGRAM_API_BASE || "https://api.telegram.org";
+      const r = await fetch(`${base}/bot${tgToken()}/sendPhoto`, { method: "POST", body: fd, signal: AbortSignal.timeout(20000) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.description || "sendPhoto " + r.status);
+    } else await tgCall("sendMessage", { chat_id: tgChat(), text, parse_mode: "HTML", disable_web_page_preview: true });
+  } catch (e) { console.warn("Telegram xabari yuborilmadi:", e.message); }
+}
+const orderLine = (o) => `#${o.no} · ${htmlEsc(o.name)} · ${htmlEsc(o.planName)} · <b>${usd(o.amountCents)}</b>`;
 const cleanImg = (v) => (typeof v === "string" && (IMG_RE.test(v) || (/^\/seed\/[a-z0-9-]+\.svg$/.test(v) && fs.existsSync(path.join(__dirname, "assets", "seed", v.slice(6))))) ? v : "");
 const STATIC = {
   "/": "index.html", "/index.html": "index.html", "/styles.css": "styles.css", "/script.js": "script.js", "/fx.js": "fx.js",
@@ -71,16 +103,26 @@ const STATIC = {
 const MIME = { ".txt": "text/plain; charset=utf-8", ".xml": "application/xml; charset=utf-8", ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
 
 /* ---------- Boshlang'ich ma'lumotlar ---------- */
-const BASE_FEATURES = [
-  "Treyding asoslari: bozor, aktivlar, brokerlar, terminal",
+const WHALES_UNLIMITED = "Whales signal guruhidan cheksiz foydalanish";
+const CORE = [
+  "Treyding asoslari: bozor, aktivlar, birjalar, terminal",
   "Texnik tahlil: trend, daraja, sham formatsiyalari, hajm",
   "Risk-menejment: pozitsiya hajmi, stop-loss, risk/foyda",
-  "Shaxsiy treyding strategiyasini qurish bo‘yicha darslar",
   "Treyder psixologiyasi: qo‘rquv va ochko‘zlikni boshqarish",
   "Treyding jurnali shabloni va bitimlarni tahlil qilish",
-  "Demo hisobda amaliy topshiriqlar",
-  "Community davomiyligi — 2 oy",
 ];
+function defaultPlans() {
+  return [
+    { id: "online-individual", format: "online", eyebrow: "ONLINE · 1 GA 1", badge: "SHAXSIY MENTOR", name: "Individual", description: "Mentor bilan 1 ga 1 online darslar: shaxsiy reja, bitimlaringiz tahlili va doimiy qo‘llab-quvvatlash.", duration: "2–3 oy", price: 899, oldPrice: 1200, available: true, featured: true, whales: "Cheksiz", image: "",
+      features: ["Mentor bilan 1 ga 1 online darslar", ...CORE, "Shaxsiy treyding strategiyangizni birga quramiz", "Bitimlaringiz va jurnalingizni individual tahlil qilish", "Mentor bilan shaxsiy aloqa", WHALES_UNLIMITED], excluded: [] },
+    { id: "online-lessons", format: "online", eyebrow: "ONLINE · MUSTAQIL", badge: "", name: "Darsliklar", description: "Video darsliklar orqali o‘z ritmingizda o‘rganing — telefondan yoki kompyuterdan.", duration: "3 oy", price: 399, oldPrice: 600, available: true, featured: false, whales: "3 oy", image: "",
+      features: ["Video darsliklarga kirish — 3 oy", ...CORE, "Amaliy topshiriqlar", "Whales signal guruhi — 3 oy"], excluded: ["Mentor bilan shaxsiy darslar"] },
+    { id: "offline-individual", format: "offline", eyebrow: "OFFLAYN · 1 GA 1", badge: "YUZMA-YUZ", name: "Individual", description: "Mentor bilan yuzma-yuz 1 ga 1 darslar: real grafikda birga ishlaymiz, xatolaringizni joyida tuzatamiz.", duration: "2–3 oy", price: 1699, oldPrice: 2200, available: true, featured: true, whales: "Cheksiz", image: "",
+      features: ["Mentor bilan 1 ga 1 offlayn darslar", ...CORE, "Shaxsiy treyding strategiyangizni birga quramiz", "Bitimlaringiz va jurnalingizni individual tahlil qilish", "Mentor bilan shaxsiy aloqa", WHALES_UNLIMITED], excluded: [] },
+    { id: "offline-group", format: "offline", eyebrow: "OFFLAYN · GURUH", badge: "", name: "Jamoaviy", description: "Kichik guruhda offlayn darslar: mentor bilan jonli mashg‘ulotlar va guruhdoshlar bilan tajriba almashish.", duration: "2–3 oy", price: 1299, oldPrice: 1500, available: false, featured: false, whales: "Cheksiz", image: "",
+      features: ["Kichik guruhda offlayn darslar", ...CORE, "Guruhli amaliy mashg‘ulotlar", WHALES_UNLIMITED], excluded: [] },
+  ];
+}
 function defaults() {
   return {
     settings: {
@@ -108,13 +150,10 @@ function defaults() {
         captionLabel: "TREYDING TIZIMI",
         caption: "Ishonch tasodifdan emas,\ntizimdan boshlanadi",
       },
+      payments: { usdtWallet: "", cardNumber: "", cardHolder: "", cardBank: "", usdRate: 0 },
       riskNote: "Treyding — yuqori xavfli faoliyat, kapitalingizning bir qismini yoki hammasini yo‘qotishingiz mumkin. Ushbu community ta’lim maqsadida va moliyaviy maslahat emas; o‘tgan natijalar kelajakdagi daromadni kafolatlamaydi. Faqat yo‘qotishga tayyor bo‘lgan mablag‘ bilan savdo qiling.",
     },
-    plans: [
-      { id: "mini", eyebrow: "01 / MUSTAQIL", badge: "", name: "Mini", description: "O‘z ritmida o‘rganishni istaganlar uchun. Chat va kurator nazoratisiz", duration: "Community 2 oy", featured: false, features: [...BASE_FEATURES], excluded: ["Umumiy chat va kurator yordamisiz"] },
-      { id: "pro", eyebrow: "02 / BIRGALIKDA", badge: "CHAT + QO‘LLAB-QUVVATLASH", name: "Community Pro", description: "Umumiy chatda muhokamalar va kurator nazorati ostida topshiriqlarni bajarish.", duration: "community 2 oy · materiallar 4 oy", featured: true, features: [...BASE_FEATURES, "Barcha materiallarga kirish — 4 oy", "Ishtirokchilar uchun umumiy chat", "Kurator bilan aloqa va qo‘llab-quvvatlash", "Haftalik bozor sharhi va tahlili", "2 ta guruhli savol-javob videoqo‘ng‘irog‘i"], excluded: [] },
-      { id: "individual", eyebrow: "03 / SHAXSIY", badge: "10 TA JOY", name: "Individual", description: "Mentor nazorati ostida ishlash, individual tavsiyalar va bitimlaringiz xatolari ustida ishlash (online)", duration: "community 2 oy · materiallar 7 oy", featured: true, features: [...BASE_FEATURES, "Barcha materiallarga kirish — 7 oy", "Ishtirokchilar uchun umumiy chat", "Mentor bilan shaxsiy aloqa va qo‘llab-quvvatlash", "Treyding jurnalingizni individual tahlil qilish", "6 ta guruhli savol-javob videoqo‘ng‘irog‘i"], excluded: [] },
-    ],
+    plans: defaultPlans(),
     lessons: [
       { n: "01", t: "Bozor tuzilishi", d: "Trend, diapazon, likvidlik" },
       { n: "02", t: "Daraja va zonalar", d: "Support / resistance qanday chiziladi" },
@@ -133,7 +172,11 @@ function defaults() {
       "“Tez boyish” emas, kapitalni himoya qiladigan va barqaror yondashuvni xohlaysizmi?",
     ],
     results: [], // shogirtlar natijalari: { image, caption }
-    leads: [],
+    leads: [], // arizalar va buyurtmalar (buyurtmada: no, plan, amountCents, method, payStatus ...)
+    promos: [], // { id, code, type: percent|fixed, value, plans: [], maxUses, used, expiresAt, active }
+    orderSeq: 1000,
+    chain: { wallet: "", lastBlock: null }, // USDT skaner holati
+    transfers: [], // hamyonga kelgan USDT o'tkazmalari: { ref, tx, from, cents, block, at, orderId }
     stats: { views: {}, clicks: {} }, // views: {sana: n}, clicks: {sana: {tarif: n}}
     auth: { secret: crypto.randomBytes(32).toString("hex"), passwordHash: null },
   };
@@ -150,6 +193,9 @@ function load() {
   db.audience = (db.audience || []).map((x) => (typeof x === "string" ? { t: x, image: "" } : x));
   db.settings = { ...d.settings, ...db.settings }; // yangi sozlamalar eski bazada ham paydo bo'ladi
   db.settings.hero = { ...d.settings.hero, ...(db.settings.hero || {}) };
+  db.settings.payments = { ...d.settings.payments, ...(db.settings.payments || {}) };
+  // Bir martalik: yangi tariflar (Online / Offlayn, narx va to'lov bilan)
+  if (!db.plansV2) { db.plans = d.plans; db.plansV2 = true; autoPlanImages(); save(); }
   db.auth.secret = db.auth.secret || d.auth.secret;
   seedImages();
   seedResults();
@@ -258,7 +304,7 @@ function autoImages(list, POOL) {
 const autoLessonImages = () => autoImages(db.lessons, LESSON_POOL);
 const autoAudienceImages = () => autoImages(db.audience, AUD_POOL);
 function autoPlanImages() {
-  const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual" }, order = ["plan-mini", "plan-pro", "plan-individual"];
+  const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual", "online-individual": "plan-individual", "online-lessons": "plan-mini", "offline-individual": "plan-pro", "offline-group": "plan-pro" }, order = ["plan-mini", "plan-pro", "plan-individual"];
   db.plans.forEach((p, i) => { if (!isAutoImage(p.image)) return; const n = byId[p.id] || order[i]; if (n) p.image = seedUrl(n); });
 }
 function seedImages() {
@@ -331,7 +377,7 @@ function readJson(req) {
 function readRaw(req, max) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
-    req.on("data", (c) => { size += c.length; if (size > max) { reject(Object.assign(new Error("Rasm juda katta (4 MB dan oshmasin)"), { code: 413 })); req.destroy(); } else chunks.push(c); });
+    req.on("data", (c) => { size += c.length; if (size > max) { reject(Object.assign(new Error(`Rasm juda katta (${Math.round(max / 1048576)} MB dan oshmasin)`), { code: 413 })); req.destroy(); } else chunks.push(c); });
     req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
@@ -412,8 +458,26 @@ function cleanSettings(s = {}) {
     stats,
     riskNote: str(s.riskNote, 1200) || cur.riskNote,
     hero: cleanHero(s.hero, cur.hero),
+    payments: s.payments === undefined ? cur.payments : cleanPayments(s.payments),
   };
 }
+function cleanPayments(p = {}) {
+  const bad = (m) => { throw Object.assign(new Error(m), { code: 400 }); };
+  const wallet = str(p.usdtWallet, 60);
+  if (wallet && !pay.normAddr(wallet)) bad("USDT hamyon manzili noto‘g‘ri (BEP20: 0x bilan boshlanadigan 42 belgi)");
+  const card = String(p.cardNumber ?? "").replace(/\D/g, "");
+  if (card && (card.length < 16 || card.length > 19)) bad("Karta raqami 16 xonali bo‘lsin");
+  const rate = Math.round(Number(p.usdRate) || 0);
+  if (rate && (rate < 1000 || rate > 100000)) bad("Dollar kursi noto‘g‘ri (masalan 12700)");
+  return { usdtWallet: pay.normAddr(wallet), cardNumber: card.replace(/(\d{4})(?=\d)/g, "$1 "), cardHolder: str(p.cardHolder, 60), cardBank: str(p.cardBank, 40), usdRate: rate };
+}
+/* To'lov sozlamalari: env ustun */
+const payCfg = () => {
+  const p = db.settings.payments || {};
+  return { ...p, usdtWallet: pay.normAddr(process.env.USDT_WALLET) || p.usdtWallet || "", walletFromEnv: !!pay.normAddr(process.env.USDT_WALLET) };
+};
+const methodsOn = () => { const p = payCfg(); return { usdt: !!p.usdtWallet, card: !!(p.cardNumber && p.usdRate > 0) }; };
+const planLabel = (p) => `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}`;
 const strList = (a, n = 30) => (Array.isArray(a) ? a.map((x) => str(x, 200)).filter(Boolean).slice(0, n) : []);
 function cleanPlans(arr) {
   if (!Array.isArray(arr) || !arr.length) throw Object.assign(new Error("Kamida bitta tarif kerak"), { code: 400 });
@@ -427,7 +491,27 @@ function cleanPlans(arr) {
       name: str(p.name, 40) || "Tarif", description: str(p.description, 300),
       duration: str(p.duration, 80), featured: !!p.featured, image: cleanImg(p.image),
       features: strList(p.features), excluded: strList(p.excluded, 10),
+      format: p.format === "offline" ? "offline" : "online",
+      price: Math.max(0, Math.round(Number(p.price) * 100) / 100 || 0),
+      oldPrice: Math.max(0, Math.round(Number(p.oldPrice) * 100) / 100 || 0),
+      available: p.available !== false, whales: str(p.whales, 30),
     };
+  });
+}
+function cleanPromos(arr) {
+  if (!Array.isArray(arr)) throw Object.assign(new Error("Noto‘g‘ri ro‘yxat"), { code: 400 });
+  const seen = new Set(), old = new Map(db.promos.map((x) => [x.id, x]));
+  return arr.slice(0, 200).map((x) => {
+    const code = str(x?.code, 20).toUpperCase();
+    if (!/^[A-Z0-9_-]{3,20}$/.test(code)) throw Object.assign(new Error(`Promo kod noto‘g‘ri: “${code || "bo‘sh"}” (3–20 belgi: lotin harf, raqam, - _)`), { code: 400 });
+    if (seen.has(code)) throw Object.assign(new Error(`Promo kod takrorlangan: ${code}`), { code: 400 });
+    seen.add(code);
+    const type = x.type === "fixed" ? "fixed" : "percent", value = Math.round(Number(x.value) * 100) / 100 || 0;
+    if (value <= 0 || (type === "percent" && value >= 100)) throw Object.assign(new Error(`${code}: chegirma qiymati noto‘g‘ri`), { code: 400 });
+    const prev = old.get(x.id);
+    return { id: prev ? prev.id : uid(), code, type, value, plans: Array.isArray(x.plans) ? x.plans.filter((id) => db.plans.some((p) => p.id === id)) : [],
+      maxUses: Math.max(0, parseInt(x.maxUses, 10) || 0), used: prev ? prev.used : 0,
+      expiresAt: isDate(x.expiresAt) ? x.expiresAt : "", active: x.active !== false, note: str(x.note, 100) };
   });
 }
 function cleanResults(arr) {
@@ -439,6 +523,101 @@ function cleanLessons(arr) {
   return arr.slice(0, 20).map((l, i) => ({ n: String(i + 1).padStart(2, "0"), t: str(l.t, 50) || "Dars", d: str(l.d, 100), image: cleanImg(l.image) }));
 }
 
+/* ---------- Buyurtma va to'lov ---------- */
+const ORDER_TTL = 48 * 36e5; // to'lov kutish muddati
+const findPromo = (code) => { const c = str(code, 20).toUpperCase(); return c ? db.promos.find((x) => x.code === c) : null; };
+/* Promo kodni tekshiradi: { ok, error?, discountCents } */
+function applyPromo(code, plan) {
+  const pr = findPromo(code), price = Math.round(plan.price * 100);
+  if (!pr || !pr.active) return { ok: false, error: "Bunday promo kod yo‘q yoki faol emas" };
+  if (pr.expiresAt && Date.parse(pr.expiresAt) < Date.now()) return { ok: false, error: "Promo kod muddati tugagan" };
+  if (pr.maxUses && pr.used >= pr.maxUses) return { ok: false, error: "Promo kod limiti tugagan" };
+  if (pr.plans.length && !pr.plans.includes(plan.id)) return { ok: false, error: "Bu promo kod tanlangan tarifga amal qilmaydi" };
+  const d = pr.type === "fixed" ? Math.round(pr.value * 100) : Math.round(price * pr.value / 100);
+  return { ok: true, promo: pr, discountCents: Math.max(0, Math.min(d, price - 100)) };
+}
+/* USDT summasi har bir kutilayotgan buyurtma uchun noyob (kasr qismi bilan) — kelgan o'tkazmani aniq topish uchun */
+function uniquePayCents(base) {
+  const busy = new Set(db.leads.filter((o) => o.method === "usdt" && o.payStatus === "pending").map((o) => o.payCents));
+  for (let k = 1 + Math.floor(Math.random() * 99), n = 0; n < 400; n++, k = (k % 399) + 1) if (!busy.has(base + k)) return base + k;
+  return base + 1 + Math.floor(Math.random() * 999);
+}
+function payInfo(o) {
+  const p = payCfg();
+  if (o.method === "usdt") return { network: "BEP20 (BNB Smart Chain)", token: "USDT", address: o.payAddress || p.usdtWallet, amount: (o.payCents / 100).toFixed(2), expiresAt: new Date(Date.parse(o.createdAt) + ORDER_TTL).toISOString() };
+  if (o.method === "card") return { card: p.cardNumber, holder: p.cardHolder, bank: p.cardBank, sum: o.paySom, rate: o.rate };
+  return null;
+}
+const publicOrder = (o) => ({ id: o.id, no: o.no, planName: o.planName, planId: o.plan, priceCents: o.priceCents, discountCents: o.discountCents, amountCents: o.amountCents, promo: o.promo || "",
+  method: o.method, payStatus: o.payStatus, pay: payInfo(o), txid: o.txid || "", hasReceipt: !!o.receipt, createdAt: o.createdAt, paidAt: o.paidAt || "" });
+const orderByToken = (id, t) => { const o = db.leads.find((x) => x.id === id && x.no); return o && typeof t === "string" && o.token && t.length === o.token.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(o.token)) ? o : null; };
+
+/* To'lov tasdiqlanganda (avtomatik yoki admin) — bir marta */
+function markPaid(o, how, extra = {}) {
+  if (o.payStatus === "paid") return false;
+  o.payStatus = "paid"; o.status = "paid"; o.paidAt = new Date().toISOString(); o.paidVia = how; Object.assign(o, extra);
+  const pr = o.promo && findPromo(o.promo);
+  if (pr) pr.used = (pr.used || 0) + 1;
+  save();
+  tgNotify(`✅ <b>To‘lov qabul qilindi</b> (${htmlEsc(how)})\n${orderLine(o)}\n💬 ${o.username ? "@" + htmlEsc(o.username) : htmlEsc(o.phone)}${o.txid ? `\n🔗 https://bscscan.com/tx/${o.txid}` : ""}\n\nMijozni Whales guruhi va darslarga qo‘shing.`);
+  return true;
+}
+function expireOrders() {
+  const now = Date.now(); let n = 0;
+  for (const o of db.leads) if (o.no && o.payStatus === "pending" && now - Date.parse(o.createdAt) > ORDER_TTL) { o.payStatus = "expired"; n++; }
+  if (n) save();
+}
+/* Kelgan o'tkazmani buyurtmaga moslash */
+const openUsdt = (addr) => db.leads.filter((o) => o.method === "usdt" && (o.payStatus === "pending" || o.payStatus === "expired") && o.payAddress === addr && Date.now() - Date.parse(o.createdAt) < ORDER_TTL + 24 * 36e5);
+async function onTransfer(t) {
+  if (db.transfers.some((x) => x.ref === t.ref)) return;
+  const rec = { ref: t.ref, tx: t.tx, from: t.from, to: t.to, cents: t.cents, block: t.block, at: new Date().toISOString(), orderId: null };
+  db.transfers.unshift(rec);
+  if (db.transfers.length > 500) db.transfers.length = 500;
+  const open = openUsdt(t.to);
+  // 1) TxID allaqachon yuborilgan  2) summa aynan mos  3) summaga mos YAGONA buyurtma (1 USDT gacha ortiq/kam)
+  let o = open.find((x) => x.claimTx === t.tx && t.cents >= x.payCents - 100)
+    || open.find((x) => x.payCents === t.cents);
+  if (!o) { const fits = open.filter((x) => t.cents >= x.payCents - 100 && t.cents < x.payCents + 100); if (fits.length === 1) o = fits[0]; }
+  if (o) { rec.orderId = o.id; markPaid(o, "USDT avtomatik", { txid: t.tx, paidCents: t.cents }); return; }
+  save();
+  tgNotify(`⚠️ <b>USDT keldi, lekin mos buyurtma topilmadi</b>\nSumma: <b>${usdt(t.cents)}</b>\nYuboruvchi: <code>${t.from}</code>\nTx: https://bscscan.com/tx/${t.tx}\n\nAdmin panel → Arizalar → “Biriktirilmagan o‘tkazmalar” dan buyurtmaga biriktiring.`);
+}
+let scanning = false, scanError = "", lastScan = 0;
+async function scanTick(force) {
+  if (scanning) return;
+  expireOrders();
+  const wallet = payCfg().usdtWallet;
+  if (!wallet) return;
+  const pending = db.leads.some((o) => o.method === "usdt" && o.payStatus === "pending");
+  if (!pending && !force && Date.now() - lastScan < 15 * 6e4) return; // kutilayotgan to'lov yo'q — kamdan-kam tekshiramiz
+  scanning = true;
+  try { await pay.scan(db.chain, wallet, onTransfer); lastScan = Date.now(); scanError = ""; save(); }
+  catch (e) { scanError = String(e.message).slice(0, 200); console.warn("USDT skaner:", scanError); }
+  finally { scanning = false; }
+}
+/* Mijoz TxID yuborganda — darhol tekshiramiz */
+async function claimTx(o, txRaw) {
+  const tx = pay.normTx(txRaw);
+  if (!tx) return { error: "TxID noto‘g‘ri (0x bilan boshlanadigan 66 belgi)" };
+  if (db.leads.some((x) => x !== o && (x.txid === tx || x.claimTx === tx))) return { error: "Bu TxID boshqa buyurtmaga biriktirilgan" };
+  o.claimTx = tx; save();
+  let r;
+  try { r = await pay.lookupTx(tx, o.payAddress); } catch (e) { return { status: "saved", note: "Tarmoqni hozir tekshirib bo‘lmadi — to‘lov avtomatik tekshiriladi." }; }
+  if (r.status === "failed") return { error: "Bu tranzaksiya tarmoqda muvaffaqiyatsiz bo‘lgan" };
+  if (r.status === "none") return { error: "Bu tranzaksiyada bizning hamyonga USDT (BEP20) o‘tkazmasi topilmadi. Tarmoq va manzilni tekshiring." };
+  if (r.status === "pending") return { status: "saved", note: "Tranzaksiya hali tasdiqlanmoqda — bir necha daqiqada avtomatik qabul qilinadi." };
+  if (r.time && r.time < Date.parse(o.createdAt) - 10 * 6e4) return { error: "Bu tranzaksiya buyurtmadan oldin qilingan" };
+  const fresh = r.transfers.filter((t) => !db.transfers.some((x) => x.ref === t.ref && x.orderId && x.orderId !== o.id));
+  const cents = fresh.reduce((a, t) => a + t.cents, 0);
+  if (!fresh.length) return { error: "Bu o‘tkazma allaqachon boshqa buyurtmaga biriktirilgan" };
+  if (cents < o.payCents - 100) return { error: `Kelgan summa (${usdt(cents)}) to‘lov summasidan kam. Menejerga yozing.` };
+  for (const t of fresh) { const ex = db.transfers.find((x) => x.ref === t.ref); if (ex) ex.orderId = o.id; else db.transfers.unshift({ ...t, at: new Date().toISOString(), orderId: o.id }); }
+  markPaid(o, "USDT TxID", { txid: tx, paidCents: cents });
+  return { status: "paid" };
+}
+function cleanReceipt(name) { return RECEIPT_RE.test(name) ? path.join(RECEIPT_DIR, name) : null; }
+
 /* ---------- Dashboard ---------- */
 function dashboard() {
   const days = [];
@@ -449,15 +628,16 @@ function dashboard() {
   const byPlan = {};
   for (const l of db.leads) {
     byStatus[l.status] = (byStatus[l.status] || 0) + 1;
-    const k = l.capital || l.plan || "—"; byPlan[k] = (byPlan[k] || 0) + 1;
+    const k = l.planName || l.capital || "—"; byPlan[k] = (byPlan[k] || 0) + 1;
   }
   const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
   const clicksByPlan = {};
   let clicksTotal = 0;
   for (const d of Object.values(db.stats.clicks)) for (const [k, v] of Object.entries(d)) { clicksByPlan[k] = (clicksByPlan[k] || 0) + v; clicksTotal += v; }
   const viewsTotal = sum(db.stats.views);
+  const revenueCents = db.leads.filter((l) => l.payStatus === "paid").reduce((a, l) => a + (l.amountCents || 0), 0);
   return {
-    totals: { views: viewsTotal, clicks: clicksTotal, leads: db.leads.length, paid: byStatus.paid,
+    totals: { views: viewsTotal, clicks: clicksTotal, leads: db.leads.length, paid: byStatus.paid, revenueCents,
       conversion: viewsTotal ? +(db.leads.length / viewsTotal * 100).toFixed(1) : 0 },
     byStatus, byPlan, clicksByPlan,
     series: days.map((d) => ({ date: d, views: db.stats.views[d] || 0, leads: leadsByDay[d] || 0 })),
@@ -470,7 +650,8 @@ async function api(req, res, url) {
 
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
-    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, plans: db.plans.map(({ price, oldPrice, discountUntil, ...rest }) => ({ ...rest, image: versioned(rest.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
+    const pc = payCfg();
+    return send(res, 200, { settings: { brand, authorName, telegram, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, payments: { ...methodsOn(), usdRate: pc.usdRate || 0 }, promos: db.promos.some((x) => x.active), plans: db.plans.map((p) => ({ ...p, image: versioned(p.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -480,8 +661,8 @@ async function api(req, res, url) {
     const d = today();
     if (b.type === "view") db.stats.views[d] = (db.stats.views[d] || 0) + 1;
     else if (b.type === "click") {
-      const plan = str(b.plan, 40);
-      if (db.plans.some((x) => x.name === plan)) {
+      const pl = db.plans.find((x) => x.id === str(b.plan, 40)), plan = pl && planLabel(pl);
+      if (plan) {
         db.stats.clicks[d] = db.stats.clicks[d] || {};
         db.stats.clicks[d][plan] = (db.stats.clicks[d][plan] || 0) + 1;
       }
@@ -512,6 +693,90 @@ async function api(req, res, url) {
     save();
     notifyLead(lead).catch((e) => console.error("notifyLead:", e.message)); // javobni kutdirmaymiz
     return send(res, 201, { ok: true });
+  }
+
+  if (m === "POST" && p === "/api/promo") {
+    const b = await readJson(req);
+    if (limited("pr:" + clientIp(req), 30, 36e5)) return send(res, 429, { error: "Ko‘p urinish. Keyinroq qayta urinib ko‘ring." });
+    const plan = db.plans.find((x) => x.id === str(b.plan, 40));
+    if (!plan) return send(res, 400, { error: "Tarifni tanlang" });
+    const r = applyPromo(b.code, plan);
+    if (!r.ok) return send(res, 400, { error: r.error });
+    return send(res, 200, { code: r.promo.code, discountCents: r.discountCents, amountCents: Math.round(plan.price * 100) - r.discountCents });
+  }
+
+  if (m === "POST" && p === "/api/orders") {
+    const b = await readJson(req);
+    if (b.website) return send(res, 204); // honeypot
+    if (limited("o:" + clientIp(req), 8, 36e5)) return send(res, 429, { error: "Juda ko‘p buyurtma. Keyinroq urinib ko‘ring yoki menejerga yozing." });
+    if (b.consent !== true) return send(res, 400, { error: "Davom etish uchun shaxsiy ma’lumotlarni qayta ishlashga rozilik bering" });
+    const plan = db.plans.find((x) => x.id === str(b.plan, 40));
+    if (!plan) return send(res, 400, { error: "Tarifni tanlang" });
+    if (!plan.available) return send(res, 400, { error: "Bu tarif vaqtincha mavjud emas" });
+    const name = str(b.name, 80), digits = String(b.phone ?? "").replace(/\D/g, "");
+    if (name.length < 2) return send(res, 400, { error: "Ismingizni kiriting" });
+    if (digits.length < 9 || digits.length > 15) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });
+    const username = str(b.username, 80).replace(/^(https?:\/\/)?(t\.me\/|telegram\.me\/)/i, "").replace(/^@/, "");
+    if (!/^[A-Za-z0-9_]{3,32}$/.test(username)) return send(res, 400, { error: "Telegram username kiriting (Whales guruhiga shu orqali qo‘shamiz)" });
+    const city = str(b.city, 60);
+    if (city.length < 2) return send(res, 400, { error: "Shaharni kiriting" });
+    const capital = db.settings.capitals.includes(str(b.capital, 40)) ? str(b.capital, 40) : "";
+    const on = methodsOn(), anyOn = on.usdt || on.card;
+    const method = anyOn ? (["usdt", "card"].includes(b.method) && on[b.method] ? b.method : "") : "manager";
+    if (!method) return send(res, 400, { error: "To‘lov usulini tanlang" });
+    const priceCents = Math.round(plan.price * 100);
+    let discountCents = 0, promo = "";
+    if (str(b.promo, 20)) {
+      const r = applyPromo(b.promo, plan);
+      if (!r.ok) return send(res, 400, { error: r.error });
+      discountCents = r.discountCents; promo = r.promo.code;
+    }
+    const amountCents = priceCents - discountCents, pc = payCfg();
+    const o = { id: uid(), no: ++db.orderSeq, token: crypto.randomBytes(16).toString("hex"), name, phone: fmtPhone(b.phone), username, capital, city,
+      format: plan.format === "offline" ? "Offlayn" : "Online", plan: plan.id, planName: planLabel(plan), priceCents, discountCents, promo, amountCents,
+      method, payStatus: method === "manager" ? "none" : "pending", status: "new", adminNote: "", consent: true, tg: "pending", createdAt: new Date().toISOString() };
+    if (method === "usdt") { o.payAddress = pc.usdtWallet; o.payCents = uniquePayCents(amountCents); }
+    if (method === "card") { o.rate = pc.usdRate; o.paySom = Math.ceil(amountCents / 100 * pc.usdRate / 1000) * 1000; }
+    db.leads.unshift(o);
+    if (db.leads.length > 5000) db.leads.length = 5000;
+    save();
+    notifyLead(o).catch((e) => console.error("notifyLead:", e.message));
+    if (method === "usdt") setTimeout(() => scanTick(true), 1000);
+    return send(res, 201, { ...publicOrder(o), token: o.token });
+  }
+  const ord = /^\/api\/orders\/(\w+)(\/txid|\/receipt|\/cancel)?$/.exec(p);
+  if (ord) {
+    const o = orderByToken(ord[1], url.searchParams.get("t") || "");
+    if (!o) return send(res, 404, { error: "Buyurtma topilmadi" });
+    if (m === "GET" && !ord[2]) return send(res, 200, publicOrder(o));
+    if (m === "POST" && ord[2] === "/txid") {
+      if (o.method !== "usdt") return send(res, 400, { error: "Bu buyurtma USDT orqali emas" });
+      if (o.payStatus === "paid") return send(res, 200, publicOrder(o));
+      if (limited("tx:" + clientIp(req), 20, 36e5)) return send(res, 429, { error: "Ko‘p urinish. Keyinroq qayta urinib ko‘ring." });
+      const r = await claimTx(o, (await readJson(req)).txid);
+      if (r.error) return send(res, 400, { error: r.error });
+      return send(res, 200, { ...publicOrder(o), note: r.note || "" });
+    }
+    if (m === "POST" && ord[2] === "/receipt") {
+      if (o.method !== "card") return send(res, 400, { error: "Bu buyurtma karta orqali emas" });
+      if (o.payStatus === "paid") return send(res, 200, publicOrder(o));
+      if (limited("rc:" + clientIp(req), 10, 36e5)) return send(res, 429, { error: "Ko‘p urinish. Keyinroq qayta urinib ko‘ring." });
+      if (!/^image\/(jpeg|png|webp)$/.test(req.headers["content-type"] || "")) return send(res, 415, { error: "Chekni rasm (JPG yoki PNG) sifatida yuklang" });
+      const buf = await readRaw(req, 6 * 1024 * 1024);
+      const ext = sniffImage(buf);
+      if (!ext || ext === "gif") return send(res, 400, { error: "Bu rasm fayli emas" });
+      fs.mkdirSync(RECEIPT_DIR, { recursive: true });
+      const fname = crypto.randomBytes(12).toString("hex") + "." + ext;
+      fs.writeFileSync(path.join(RECEIPT_DIR, fname), buf);
+      o.receipts = [...(o.receipts || []), fname].slice(-5); o.receipt = fname; o.payStatus = "review"; save();
+      tgNotify(`🧾 <b>Karta to‘lovi cheki keldi</b>\n${orderLine(o)}\nSumma: <b>${som(o.paySom)}</b>\n💬 @${htmlEsc(o.username)} · ${htmlEsc(o.phone)}\n\nAdmin panel → Arizalar’da tekshirib, “To‘lovni tasdiqlash” ni bosing.`, { buf, type: IMG_MIME[ext], ext });
+      return send(res, 200, publicOrder(o));
+    }
+    if (m === "POST" && ord[2] === "/cancel") {
+      if (o.payStatus === "pending") { o.payStatus = "cancelled"; save(); }
+      return send(res, 200, publicOrder(o));
+    }
+    return send(res, 404, { error: "Topilmadi" });
   }
 
   /* ---- Admin ---- */
@@ -558,7 +823,28 @@ async function api(req, res, url) {
   }
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
-  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results });
+  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results, promos: db.promos, payments: payCfg(), methods: methodsOn() });
+  if (m === "PUT" && p === "/api/admin/promos") { db.promos = cleanPromos((await readJson(req)).promos); save(); return send(res, 200, db.promos); }
+  if (m === "GET" && p === "/api/admin/transfers") {
+    return send(res, 200, { wallet: payCfg().usdtWallet, lastBlock: db.chain.lastBlock, lastScan: lastScan ? new Date(lastScan).toISOString() : "", error: scanError,
+      unmatched: db.transfers.filter((t) => !t.orderId).slice(0, 50) });
+  }
+  if (m === "POST" && p === "/api/admin/scan") { await scanTick(true); return send(res, 200, { ok: !scanError, error: scanError, lastBlock: db.chain.lastBlock }); }
+  if (m === "POST" && p === "/api/admin/transfers/assign") {
+    const b = await readJson(req), t = db.transfers.find((x) => x.ref === str(b.ref, 100)), o = db.leads.find((x) => x.id === str(b.orderId, 20) && x.no);
+    if (!t || t.orderId) return send(res, 400, { error: "O‘tkazma topilmadi yoki allaqachon biriktirilgan" });
+    if (!o) return send(res, 400, { error: "Buyurtma topilmadi" });
+    if (o.payStatus === "paid") return send(res, 400, { error: "Bu buyurtma allaqachon to‘langan" });
+    t.orderId = o.id; markPaid(o, "USDT (admin biriktirdi)", { txid: t.tx, paidCents: t.cents });
+    return send(res, 200, { ok: true, order: o });
+  }
+  const rcpt = /^\/api\/admin\/receipts\/([\w.]+)$/.exec(p);
+  if (m === "GET" && rcpt) {
+    const fp = cleanReceipt(rcpt[1]);
+    if (!fp || !fs.existsSync(fp)) return send(res, 404, { error: "Topilmadi" });
+    res.writeHead(200, { "Content-Type": IMG_MIME[path.extname(fp).slice(1)], "Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff" });
+    return fs.createReadStream(fp).pipe(res);
+  }
 
   const lead = /^\/api\/admin\/leads\/(\w+)$/.exec(p);
   if (lead) {
@@ -572,6 +858,13 @@ async function api(req, res, url) {
         db.leads[i].status = b.status;
       }
       if (b.adminNote !== undefined) db.leads[i].adminNote = str(b.adminNote, 500);
+      if (b.payStatus !== undefined && db.leads[i].no) {
+        const o = db.leads[i];
+        if (b.payStatus === "paid") { markPaid(o, "admin tasdiqladi"); return send(res, 200, o); }
+        if (!["pending", "review", "expired", "cancelled", "none"].includes(b.payStatus)) return send(res, 400, { error: "Noto‘g‘ri to‘lov holati" });
+        if (o.payStatus === "paid") { const pr = o.promo && findPromo(o.promo); if (pr && pr.used > 0) pr.used--; delete o.paidAt; if (o.status === "paid") o.status = "contacted"; }
+        o.payStatus = b.payStatus;
+      }
       save();
       return send(res, 200, db.leads[i]);
     }
@@ -614,6 +907,7 @@ async function api(req, res, url) {
 }
 
 load();
+setInterval(() => scanTick().catch(() => {}), (parseInt(process.env.BSC_SCAN_SECONDS, 10) || 20) * 1000).unref();
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");

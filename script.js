@@ -11,60 +11,10 @@ let ENROLL_END   = "2026-10-10T23:59:00+05:00";
 
 const ARROW = '<svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M9 5h10v10"/></svg>';
 
-const BASE_FEATURES = [
-  "Treyding asoslari: bozor, aktivlar, brokerlar, terminal",
-  "Texnik tahlil: trend, daraja, sham formatsiyalari, hajm",
-  "Risk-menejment: pozitsiya hajmi, stop-loss, risk/foyda",
-  "Shaxsiy treyding strategiyasini qurish bo‘yicha darslar",
-  "Treyder psixologiyasi: qo‘rquv va ochko‘zlikni boshqarish",
-  "Treyding jurnali shabloni va bitimlarni tahlil qilish",
-  "Demo hisobda amaliy topshiriqlar",
-  "Community davomiyligi — 2 oy",
-];
-
-let PLANS = [
-  {
-    eyebrow: "01 / MUSTAQIL",
-    name: "Mini",
-    description: "O‘z ritmida o‘rganishni istaganlar uchun. Chat va kurator nazoratisiz",
-    duration: "Community 2 oy",
-    featured: false,
-    features: [...BASE_FEATURES],
-    excluded: ["Umumiy chat va kurator yordamisiz"],
-  },
-  {
-    eyebrow: "02 / BIRGALIKDA",
-    badge: "CHAT + QO‘LLAB-QUVVATLASH",
-    name: "Community Pro",
-    description: "Umumiy chatda muhokamalar va kurator nazorati ostida topshiriqlarni bajarish.",
-    duration: "community 2 oy · materiallar 4 oy",
-    featured: true,
-    features: [
-      ...BASE_FEATURES,
-      "Barcha materiallarga kirish — 4 oy",
-      "Ishtirokchilar uchun umumiy chat",
-      "Kurator bilan aloqa va qo‘llab-quvvatlash",
-      "Haftalik bozor sharhi va tahlili",
-      "2 ta guruhli savol-javob videoqo‘ng‘irog‘i",
-    ],
-  },
-  {
-    eyebrow: "03 / SHAXSIY",
-    badge: "10 TA JOY",
-    name: "Individual",
-    description: "Mentor nazorati ostida ishlash, individual tavsiyalar va bitimlaringiz xatolari ustida ishlash (online)",
-    duration: "community 2 oy · materiallar 7 oy",
-    featured: true,
-    features: [
-      ...BASE_FEATURES,
-      "Barcha materiallarga kirish — 7 oy",
-      "Ishtirokchilar uchun umumiy chat",
-      "Mentor bilan shaxsiy aloqa va qo‘llab-quvvatlash",
-      "Treyding jurnalingizni individual tahlil qilish",
-      "6 ta guruhli savol-javob videoqo‘ng‘irog‘i",
-    ],
-  },
-];
+let PLANS = [];
+let PAYMENTS = { usdt: false, card: false };
+let HAS_PROMOS = false;
+let FORMAT = "online";
 
 let LESSONS = [
   { n: "01", t: "Bozor tuzilishi", d: "Trend, diapazon, likvidlik" },
@@ -89,28 +39,48 @@ function featureList(plan) {
   return `<ul>${ok}${no}</ul>`;
 }
 
-/* ---------- 1) Tariflar ---------- */
+/* ---------- 1) Tariflar (Online / Offlayn) ---------- */
+const money = (n) => { const v = Math.round(Number(n) * 100) / 100; return "$" + v.toLocaleString("en-US", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).replace(/,/g, " "); };
+const cents = (c) => money(c / 100);
+const fmtName = (f) => (f === "offline" ? "Offlayn" : "Online");
+const WHALE = '<svg class="whale-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13c0 4 3.6 6 8 6 5 0 9-3 9-8 1.6-.3 2.6-1.6 3-3-1.2.5-2.3.4-3-.2C19.6 5 18.6 4 17 4c.4 1.2 0 2.4-1 3H11c-4.4 0-8 2-8 6Z"/><circle cx="9" cy="12" r="1"/></svg>';
+function priceBlock(p) {
+  if (!p.price) return "";
+  const off = p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  return `<div class="plan-price">
+      ${off ? `<p class="old-price"><s>${money(p.oldPrice)}</s><span class="off">−${off}%</span></p>` : ""}
+      <p class="price">${money(p.price)}</p>
+    </div>`;
+}
 function renderPlans() {
   const grid = document.getElementById("plans-grid");
   if (!grid) return;
-  grid.innerHTML = PLANS.map((p, i) => {
+  const list = PLANS.filter((p) => (p.format || "online") === FORMAT);
+  grid.classList.toggle("two", list.length === 2);
+  grid.classList.toggle("one", list.length === 1);
+  grid.setAttribute("aria-labelledby", "fmt-" + FORMAT);
+  grid.innerHTML = list.map((p, i) => {
+    const off = p.available === false;
     return `
-    <article class="plan ${p.featured ? "featured" : ""}">
+    <article class="plan ${p.featured ? "featured" : ""}${off ? " unavailable" : ""}">
       ${p.image ? `<div class="plan-media"><img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy"></div>` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
-        ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
+        ${off ? `<span class="badge muted">VAQTINCHA MAVJUD EMAS</span>` : p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
       </div>
       <h3>${esc(p.name)}</h3>
       <p class="plan-description">${esc(p.description)}</p>
-      <p class="duration">${esc(p.duration)}</p>
-      <a class="button" href="#apply" data-plan="${esc(p.name)}">Ariza qoldirish${ARROW}</a>
+      ${priceBlock(p)}
+      <p class="duration">Davomiyligi: <b>${esc(p.duration)}</b></p>
+      ${p.whales ? `<p class="whales">${WHALE}<span>Whales signal guruhi: <b>${esc(p.whales)}</b></span></p>` : ""}
+      ${off ? `<button class="button" type="button" disabled>Vaqtincha mavjud emas</button>`
+        : `<a class="button" href="#apply" data-plan="${esc(p.id)}">To‘lash va qo‘shilish${ARROW}</a>`}
       <div class="desktop-features">${featureList(p)}</div>
       <div class="mobile-features">
-        <button type="button" class="features-toggle" aria-expanded="false" aria-controls="features-${i}">
+        <button type="button" class="features-toggle" aria-expanded="false" aria-controls="features-${FORMAT}-${i}">
           Tarifga nimalar kiradi?<span>+</span>
         </button>
-        <div id="features-${i}" hidden>${featureList(p)}</div>
+        <div id="features-${FORMAT}-${i}" hidden>${featureList(p)}</div>
       </div>
     </article>`;
   }).join("");
@@ -123,6 +93,23 @@ function renderPlans() {
       btn.setAttribute("aria-expanded", String(!open));
       btn.querySelector("span").textContent = open ? "+" : "−";
       panel.hidden = open;
+    });
+  });
+  if (window.FX && FX.refresh) FX.refresh();
+}
+function initFormatTabs() {
+  const tabs = [...document.querySelectorAll(".fmt-tabs [data-fmt]")];
+  const select = (b, focus) => {
+    FORMAT = b.dataset.fmt;
+    tabs.forEach((t) => { const on = t === b; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
+    if (focus) b.focus();
+    renderPlans();
+  };
+  tabs.forEach((b, i) => {
+    b.addEventListener("click", () => select(b));
+    b.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault(); select(tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length], true);
     });
   });
 }
@@ -349,7 +336,9 @@ async function loadConfig() {
   try {
     const r = await fetch("/api/config", { cache: "no-store" });
     if (!r.ok) throw new Error();
-    const { settings: s, plans, lessons, audience, results } = await r.json();
+    const { settings: s, plans, lessons, audience, results, payments, promos } = await r.json();
+    if (payments) PAYMENTS = payments;
+    HAS_PROMOS = !!promos;
     TELEGRAM = s.telegram; ENROLL_START = s.enrollStart; ENROLL_END = s.enrollEnd; ENROLL_OPEN = s.enrollmentOpen !== false; if (Array.isArray(s.capitals) && s.capitals.length) CAPITALS = s.capitals;
     if (plans?.length) PLANS = plans;
     if (lessons) LESSONS = lessons;
@@ -374,33 +363,249 @@ function initTracking() {
     const a = e.target.closest("a[data-plan]");
     if (!a) return;
     post("/api/track", { type: "click", plan: a.dataset.plan }).catch(() => {});
+    window.tmSelectPlan?.(a.dataset.plan);
     setTimeout(() => document.getElementById("lf-name")?.focus({ preventScroll: true }), 600);
   });
 }
 
+/* ---------- Buyurtma va to'lov ---------- */
+const ORDER_KEY = "tm-order";
+const svgI = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const COPY_ICO = svgI("M9 9h10v12H9zM5 15V3h10");
+function copyBtn(value, label) {
+  return `<button class="copy-btn" type="button" data-copy="${esc(value)}" aria-label="${esc(label)} — nusxalash">${COPY_ICO}<span>Nusxalash</span></button>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-copy]"); if (!b) return;
+  try { await navigator.clipboard.writeText(b.dataset.copy); } catch {
+    const t = Object.assign(document.createElement("textarea"), { value: b.dataset.copy }); document.body.append(t); t.select(); document.execCommand("copy"); t.remove();
+  }
+  const sp = b.querySelector("span"); sp.textContent = "Nusxalandi ✓"; b.classList.add("done");
+  setTimeout(() => { sp.textContent = "Nusxalash"; b.classList.remove("done"); }, 1600);
+});
+
 function initLeadForm() {
   const form = document.getElementById("lead-form");
   if (!form) return;
-  const msg = document.getElementById("lf-msg"), cap = document.getElementById("lf-capital");
+  const $ = (id) => document.getElementById(id);
+  const msg = $("lf-msg"), cap = $("lf-capital"), planSel = $("lf-plan"), summary = $("co-summary"), panel = $("pay-panel");
+  const promoIn = $("lf-promo"), promoMsg = $("lf-promo-msg");
   if (CAPITALS) cap.innerHTML = `<option value="">Tanlang</option>` + CAPITALS.map((c) => `<option>${esc(c)}</option>`).join("");
+  $("lf-promo-wrap").hidden = !HAS_PROMOS;
+
+  // Tariflar ro'yxati (Online / Offlayn guruhlari)
+  const groups = ["online", "offline"].map((f) => {
+    const ps = PLANS.filter((p) => (p.format || "online") === f);
+    return ps.length ? `<optgroup label="${fmtName(f)}">${ps.map((p) => `<option value="${esc(p.id)}"${p.available === false ? " disabled" : ""}>${fmtName(f)} · ${esc(p.name)} — ${p.available === false ? "vaqtincha mavjud emas" : money(p.price)}</option>`).join("")}</optgroup>` : "";
+  }).join("");
+  planSel.innerHTML = `<option value="">Tarifni tanlang</option>` + groups;
+
+  // To'lov usullari
+  const methods = ["usdt", "card"].filter((k) => PAYMENTS[k]);
+  $("lf-method-wrap").hidden = !methods.length;
+  form.querySelectorAll('input[name="method"]').forEach((r) => { r.closest("label").hidden = !PAYMENTS[r.value]; r.disabled = !PAYMENTS[r.value]; });
+  const seg = form.querySelector("#lf-method-wrap .seg");
+  seg.classList.toggle("single", methods.length === 1);
+  if (methods.length === 1) form.querySelector(`input[name="method"][value="${methods[0]}"]`).checked = true;
+  const submitTxt = () => { const b = $("lf-submit"); b.firstChild.textContent = methods.length ? "To‘lovga o‘tish" : "Ariza yuborish"; };
+  submitTxt();
+
+  let promo = null; // { code, discountCents, plan }
+  const plan = () => PLANS.find((p) => p.id === planSel.value);
+  function renderSummary() {
+    const p = plan();
+    if (!p) { summary.innerHTML = `<p class="co-empty">Tarifni tanlang — narx va nimalar kirishi shu yerda ko‘rinadi.</p>`; return; }
+    const price = Math.round(p.price * 100), disc = promo && promo.plan === p.id ? promo.discountCents : 0, total = price - disc;
+    const usdRate = PAYMENTS.usdRate || 0, m = form.querySelector('input[name="method"]:checked')?.value;
+    summary.innerHTML = `
+      <div class="co-plan"><span>${fmtName(p.format)} · ${esc(p.duration)}</span><strong>${esc(p.name)}</strong></div>
+      ${p.whales ? `<p class="whales">${WHALE}<span>Whales signal guruhi: <b>${esc(p.whales)}</b></span></p>` : ""}
+      <dl class="co-lines">
+        ${p.oldPrice > p.price ? `<div><dt>Asl narx</dt><dd><s>${money(p.oldPrice)}</s></dd></div>` : ""}
+        <div><dt>Chegirmali narx</dt><dd>${money(p.price)}</dd></div>
+        ${disc ? `<div class="promo-line"><dt>Promo kod ${esc(promo.code)}</dt><dd>−${cents(disc)}</dd></div>` : ""}
+        <div class="total"><dt>Jami</dt><dd>${cents(total)}</dd></div>
+        ${m === "card" && usdRate ? `<div class="som"><dt>Karta orqali</dt><dd>≈ ${(Math.ceil(total / 100 * usdRate / 1000) * 1000).toLocaleString("ru-RU")} so‘m</dd></div>` : ""}
+      </dl>`;
+  }
+  window.tmSelectPlan = (id) => {
+    const p = PLANS.find((x) => x.id === id);
+    if (!p || p.available === false) return;
+    if (panel.hidden === false && CURRENT && CURRENT.payStatus !== "paid") return; // to'lov jarayonida — almashtirmaymiz
+    planSel.value = id; onPlanChange();
+  };
+  function onPlanChange() {
+    if (promo && promo.plan !== planSel.value) {
+      if (promoIn.value.trim()) checkPromo(true); else { promo = null; promoMsg.textContent = ""; }
+    }
+    renderSummary();
+  }
+  planSel.addEventListener("change", onPlanChange);
+  form.addEventListener("change", (e) => { if (e.target.name === "method") renderSummary(); });
+
+  async function checkPromo(silent) {
+    const code = promoIn.value.trim();
+    promoMsg.className = "promo-msg"; promoMsg.textContent = "";
+    promo = null;
+    if (!code) { renderSummary(); return true; }
+    if (!plan()) { promoMsg.className = "promo-msg err"; promoMsg.textContent = "Avval tarifni tanlang"; renderSummary(); return false; }
+    try {
+      const r = await post("/api/promo", { code, plan: planSel.value });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Promo kodni tekshirib bo‘lmadi");
+      promo = { code: d.code, discountCents: d.discountCents, plan: planSel.value };
+      promoMsg.className = "promo-msg ok"; promoMsg.textContent = `Promo kod qo‘llandi: −${cents(d.discountCents)}`;
+      renderSummary(); return true;
+    } catch (err) { if (!silent || code) { promoMsg.className = "promo-msg err"; promoMsg.textContent = err.message; } renderSummary(); return false; }
+  }
+  $("lf-promo-btn").addEventListener("click", () => checkPromo());
+  promoIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); checkPromo(); } });
+  promoIn.addEventListener("input", () => { if (promo) { promo = null; promoMsg.textContent = ""; renderSummary(); } });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const btn = form.querySelector("button"), fd = new FormData(form);
+    const btn = $("lf-submit"), fd = new FormData(form);
     msg.className = "lf-msg"; msg.textContent = "";
+    const fail = (t, el) => { msg.className = "lf-msg err"; msg.textContent = t; el?.focus(); };
+    if (!plan()) return fail("Tarifni tanlang", planSel);
+    if (methods.length && !fd.get("method")) return fail("To‘lov usulini tanlang", form.querySelector('input[name="method"]:not(:disabled)'));
+    if (promoIn.value.trim() && (!promo || promo.plan !== planSel.value) && !(await checkPromo())) return fail("Promo kodni tekshiring yoki o‘chiring", promoIn);
     btn.disabled = true;
     try {
-      const r = await post("/api/leads", { name: fd.get("name"), phone: fd.get("phone"), username: fd.get("username"), capital: fd.get("capital"), city: fd.get("city"), format: fd.get("format"), website: fd.get("website"), consent: fd.get("consent") === "on" });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Xatolik. Keyinroq urinib ko‘ring.");
-      form.reset(); msg.className = "lf-msg ok"; msg.textContent = "Rahmat! Ariza qabul qilindi. Menejer tez orada bog‘lanadi.";
-    } catch (err) { msg.className = "lf-msg err"; msg.textContent = err.message; }
+      const r = await post("/api/orders", { plan: planSel.value, name: fd.get("name"), phone: fd.get("phone"), username: fd.get("username"), city: fd.get("city"), capital: fd.get("capital"),
+        promo: promo ? promo.code : "", method: fd.get("method") || "", website: fd.get("website"), consent: fd.get("consent") === "on" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Xatolik. Keyinroq urinib ko‘ring.");
+      try { localStorage.setItem(ORDER_KEY, JSON.stringify({ id: d.id, t: d.token })); } catch {}
+      showOrder(d, d.token, true);
+    } catch (err) { fail(err.message); }
     btn.disabled = false;
   });
+
+  /* ----- To'lov paneli ----- */
+  let CURRENT = null, TOKEN = "", poll = null;
+  const STATUS_TXT = { pending: "To‘lov kutilmoqda", review: "Chek tekshirilmoqda", paid: "To‘landi", expired: "Muddati o‘tdi", cancelled: "Bekor qilingan", none: "Ariza qabul qilindi" };
+  const tgLink = (o, text) => telegramLink(text || `Assalomu alaykum! Buyurtma #${o.no} (${o.planName}) bo‘yicha yozyapman.`);
+  function showOrder(o, token, scroll) {
+    CURRENT = o; TOKEN = token;
+    form.hidden = true; panel.hidden = false;
+    const p = PLANS.find((x) => x.id === o.planId);
+    if (p) { planSel.value = p.id; promo = o.discountCents ? { code: o.promo, discountCents: o.discountCents, plan: p.id } : null; renderSummary(); }
+    panel.innerHTML = panelHtml(o);
+    if (scroll) { document.getElementById("apply").scrollIntoView({ behavior: "smooth", block: "start" }); panel.focus({ preventScroll: true }); }
+    clearInterval(poll);
+    if (o.payStatus === "pending" || o.payStatus === "review") poll = setInterval(refresh, o.method === "usdt" ? 8000 : 15000);
+  }
+  async function refresh() {
+    if (document.hidden || !CURRENT) return;
+    try {
+      const r = await fetch(`/api/orders/${CURRENT.id}?t=${TOKEN}`, { cache: "no-store" });
+      if (r.status === 404) return resetOrder();
+      if (!r.ok) return;
+      const o = await r.json();
+      if (o.payStatus !== CURRENT.payStatus) showOrder(o, TOKEN, false);
+    } catch {}
+  }
+  function resetOrder() {
+    clearInterval(poll); CURRENT = null;
+    try { localStorage.removeItem(ORDER_KEY); } catch {}
+    panel.hidden = true; panel.innerHTML = ""; form.hidden = false;
+  }
+  function panelHtml(o) {
+    const head = `<div class="pay-head"><div><p class="eyebrow">BUYURTMA #${o.no}</p><h3>${esc(o.planName)}</h3></div><span class="pay-pill ${o.payStatus}">${STATUS_TXT[o.payStatus] || ""}</span></div>`;
+    const foot = `<div class="pay-foot"><a class="text-link" href="${esc(tgLink(o))}" target="_blank" rel="noopener noreferrer">Menejerga yozish</a>${o.payStatus === "paid" || o.payStatus === "none" ? `<button class="text-link" type="button" data-pay="new">Yangi buyurtma</button>` : `<button class="text-link" type="button" data-pay="cancel">Bekor qilish / boshqa usul</button>`}</div>`;
+    if (o.payStatus === "paid") return `${head}<div class="pay-done"><div class="pay-check">${svgI("M5 12.5l4.5 4.5L19 7")}</div>
+      <h4>To‘lov qabul qilindi!</h4><p>Rahmat, ${cents(o.amountCents)} to‘lovingiz tasdiqlandi. Menejer tez orada Telegram orqali bog‘lanib, sizni darslar va <b>Whales signal guruhi</b>ga qo‘shadi.</p>
+      <a class="button" href="${esc(tgLink(o, `Assalomu alaykum! Buyurtma #${o.no} to‘landi (${o.planName}). Kirishni bersangiz.`))}" target="_blank" rel="noopener noreferrer">Menejerga yozish${ARROW}</a></div>${foot}`;
+    if (o.payStatus === "none") return `${head}<div class="pay-done"><h4>Ariza qabul qilindi</h4><p>Menejer tez orada bog‘lanib, to‘lov tartibini tushuntiradi.</p></div>${foot}`;
+    if (o.payStatus === "expired" || o.payStatus === "cancelled") return `${head}<div class="pay-done"><p>${o.payStatus === "expired" ? "To‘lov muddati o‘tdi. Agar to‘lagan bo‘lsangiz — menejerga TxID yoki chekni yuboring." : "Buyurtma bekor qilindi."}</p></div>${foot}`;
+    if (o.method === "usdt") {
+      const P = o.pay;
+      return `${head}
+        <ol class="pay-steps">
+          <li><span>Tarmoq</span><div class="pay-net"><b>USDT</b> · ${esc(P.network)}</div><small class="warn">Faqat <b>BEP20 (BSC)</b> tarmog‘ida yuboring — boshqa tarmoqda yuborilgan mablag‘ yo‘qoladi.</small></li>
+          <li><span>Aynan shu summani yuboring</span><div class="pay-box"><code class="pay-amount">${esc(P.amount)} USDT</code>${copyBtn(P.amount, "Summa")}</div><small>Kasr qismi (.${esc(P.amount.split(".")[1])}) to‘lovingizni avtomatik aniqlash uchun. Birja komissiyasini hisobga oling — hamyonga aynan shu summa yetib kelsin.</small></li>
+          <li><span>Hamyon manzili</span><div class="pay-box"><code class="pay-addr">${esc(P.address)}</code>${copyBtn(P.address, "Hamyon manzili")}</div></li>
+        </ol>
+        <div class="pay-wait"><i class="spin" aria-hidden="true"></i><p>To‘lov tarmoqda tasdiqlangach (odatda 1–3 daqiqa) bu sahifa o‘zi yangilanadi. Sahifani yopsangiz ham buyurtma saqlanadi.</p></div>
+        <form class="txid-form" data-pay="txid"><label for="pay-txid">Tezlashtirish uchun TxID (ixtiyoriy)</label><div class="promo-row"><input id="pay-txid" name="txid" autocomplete="off" placeholder="0x…" maxlength="70" /><button class="promo-btn" type="submit">Tekshirish</button></div><p class="promo-msg" role="status"></p></form>
+        ${foot}`;
+    }
+    const P = o.pay;
+    return `${head}
+      <ol class="pay-steps">
+        <li><span>Shu summani o‘tkazing</span><div class="pay-box"><code class="pay-amount">${Number(P.sum).toLocaleString("ru-RU")} so‘m</code>${copyBtn(String(P.sum), "Summa")}</div><small>${cents(o.amountCents)} × ${Number(P.rate).toLocaleString("ru-RU")} so‘m kurs bo‘yicha</small></li>
+        <li><span>Karta raqami</span><div class="pay-box"><code class="pay-addr">${esc(P.card)}</code>${copyBtn(P.card.replace(/\s/g, ""), "Karta raqami")}</div>${P.holder || P.bank ? `<small>${esc([P.holder, P.bank].filter(Boolean).join(" · "))}</small>` : ""}</li>
+        <li><span>Chekni yuklang</span>
+          ${o.payStatus === "review" ? `<div class="pay-wait"><i class="spin" aria-hidden="true"></i><p>Chek qabul qilindi. Menejer tekshirib tasdiqlaydi — odatda bir necha daqiqadan bir necha soatgacha. Sahifa o‘zi yangilanadi.</p></div>` : ""}
+          <label class="upload"><input type="file" accept="image/jpeg,image/png,image/webp" data-pay="receipt" /><span>${o.payStatus === "review" ? "Boshqa chek yuklash" : "Chek skrinshotini tanlash"}</span></label>
+          <p class="promo-msg" id="rc-msg" role="status"></p></li>
+      </ol>${foot}`;
+  }
+  async function shrinkImg(file) {
+    if (!/^image\//.test(file.type)) throw new Error("Chekni rasm sifatida yuklang");
+    try {
+      const bmp = await createImageBitmap(file), k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+      const c = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) });
+      const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      return await new Promise((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error("Rasmni o‘qib bo‘lmadi"))), "image/jpeg", 0.88));
+    } catch (e) { if (file.size < 6e6 && /jpe?g|png|webp/.test(file.type)) return file; throw e; }
+  }
+  panel.addEventListener("change", async (e) => {
+    if (e.target.dataset.pay !== "receipt" || !e.target.files[0]) return;
+    const m = document.getElementById("rc-msg"), lab = e.target.closest(".upload");
+    m.className = "promo-msg"; m.textContent = "Yuklanmoqda…"; lab.classList.add("busy");
+    try {
+      const blob = await shrinkImg(e.target.files[0]);
+      const r = await fetch(`/api/orders/${CURRENT.id}/receipt?t=${TOKEN}`, { method: "POST", headers: { "Content-Type": blob.type || "image/jpeg" }, body: blob });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Yuklab bo‘lmadi");
+      showOrder(d, TOKEN, false);
+    } catch (err) { m.className = "promo-msg err"; m.textContent = err.message; lab.classList.remove("busy"); }
+    e.target.value = "";
+  });
+  panel.addEventListener("submit", async (e) => {
+    if (e.target.dataset.pay !== "txid") return;
+    e.preventDefault();
+    const m = e.target.querySelector(".promo-msg"), b = e.target.querySelector("button");
+    m.className = "promo-msg"; m.textContent = "Tekshirilmoqda…"; b.disabled = true;
+    try {
+      const r = await post(`/api/orders/${CURRENT.id}/txid?t=${TOKEN}`, { txid: e.target.txid.value.trim() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Tekshirib bo‘lmadi");
+      if (d.payStatus === "paid") return showOrder(d, TOKEN, false);
+      m.className = "promo-msg ok"; m.textContent = d.note || "TxID saqlandi — to‘lov avtomatik tekshiriladi.";
+    } catch (err) { m.className = "promo-msg err"; m.textContent = err.message; }
+    b.disabled = false;
+  });
+  panel.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-pay]"); if (!b || b.tagName === "FORM" || b.tagName === "INPUT") return;
+    if (b.dataset.pay === "new") return resetOrder();
+    if (b.dataset.pay === "cancel") {
+      if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Ishonchingiz komilmi? Yana bosing"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Bekor qilish / boshqa usul"; }, 4000); return; }
+      await post(`/api/orders/${CURRENT.id}/cancel?t=${TOKEN}`, {}).catch(() => {});
+      resetOrder();
+    }
+  });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+
+  // Avvalgi buyurtmani tiklash (sahifa yangilansa ham)
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(ORDER_KEY) || "null"); } catch {}
+  renderSummary();
+  if (saved?.id && saved?.t) {
+    fetch(`/api/orders/${saved.id}?t=${saved.t}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((o) => {
+      if (o.payStatus === "cancelled" || (o.payStatus === "expired") || (o.payStatus === "paid" && Date.now() - Date.parse(o.paidAt || 0) > 7 * 864e5)) return resetOrder();
+      showOrder(o, saved.t, false);
+    }).catch((st) => { if (st === 404) resetOrder(); });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadConfig();
   const contact = telegramLink("Assalomu alaykum! Tariflar haqida ma’lumot olmoqchiman.");
   ["contact-btn", "footer-tg"].forEach((id) => { const a = document.getElementById(id); if (a) a.href = contact; });
+  initFormatTabs();
   renderPlans();
   renderAudience();
   initResults();

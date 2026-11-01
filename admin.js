@@ -5,6 +5,10 @@ const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const money = (n) => Number(n || 0).toLocaleString("ru-RU").replace(/ /g, " ");
 const STATUS = { new: "Yangi", contacted: "Bog‘lanildi", paid: "To‘landi", rejected: "Rad etildi" };
 const STATUS_COLOR = { new: "#7560b8", contacted: "#d9a21b", paid: "#2f7d57", rejected: "#b3372f" };
+const PAY = { pending: "To‘lov kutilmoqda", review: "Chek tekshirilmoqda", paid: "To‘landi", expired: "Muddati o‘tdi", cancelled: "Bekor qilindi", none: "To‘lovsiz ariza" };
+const PAY_CLASS = { pending: "contacted", review: "new", paid: "paid", expired: "rejected", cancelled: "rejected", none: "" };
+const METHOD = { usdt: "USDT", card: "Karta", manager: "Menejer" };
+const usd = (c) => "$" + (c / 100).toFixed(c % 100 ? 2 : 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 let toastTimer;
 function toast(msg, error = false) {
@@ -45,13 +49,13 @@ $("#login-form").addEventListener("submit", async (e) => {
 $("#logout").addEventListener("click", async () => { await api("/logout", { method: "POST" }).catch(() => {}); showLogin(); });
 
 /* ---------- Marshrutlash ---------- */
-const TABS = ["dashboard", "leads", "plans", "lessons", "audience", "results", "settings", "security"];
+const TABS = ["dashboard", "leads", "plans", "promos", "lessons", "audience", "results", "settings", "security"];
 const loaded = {};
 function route() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
   $$(".tab").forEach((s) => (s.hidden = s.id !== "tab-" + tab));
   $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.tab === tab));
-  const loader = { dashboard: loadDashboard, leads: loadLeads, settings: async () => { await loadContent(); await loadTelegram(); }, plans: loadContent, lessons: loadContent, audience: loadContent, results: loadContent }[tab];
+  const loader = { dashboard: loadDashboard, leads: loadLeads, settings: async () => { await loadContent(); await loadTelegram(); }, plans: loadContent, promos: loadContent, lessons: loadContent, audience: loadContent, results: loadContent }[tab];
   if (loader) guard(loader);
   window.scrollTo(0, 0);
 }
@@ -67,7 +71,7 @@ async function start(defaultPassword) {
 async function refreshBadge() {
   try {
     const { leads } = await api("/leads");
-    const n = leads.filter((l) => l.status === "new").length;
+    const n = leads.filter((l) => l.status === "new" || l.payStatus === "review").length;
     $("#nav-new").hidden = !n; $("#nav-new").textContent = n;
   } catch {}
 }
@@ -80,7 +84,8 @@ async function loadDashboard() {
     ["Tashriflar", money(t.views), "jami"],
     ["Tarif tugmasi bosildi", money(t.clicks), "jami"],
     ["Arizalar", money(t.leads), `konversiya ${t.conversion}%`],
-    ["To‘langan", money(t.paid), "ta ariza"],
+    ["To‘langan", money(t.paid), "ta buyurtma"],
+    ["Tushum", usd(t.revenueCents || 0), "tasdiqlangan to‘lovlar"],
   ].map(([l, v, s]) => `<div class="kpi"><span>${l}</span><strong>${v}</strong><small>${s}</small></div>`).join("");
 
   drawChart(d.series);
@@ -91,11 +96,11 @@ async function loadDashboard() {
 
   const names = Object.keys(d.byPlan).sort((x, y) => d.byPlan[y] - d.byPlan[x]);
   $("#plan-table").innerHTML = names.length
-    ? `<tr><th>Kapital</th><th class="num">Ariza</th></tr>` + names.map((n) => `<tr><td>${esc(n)}</td><td class="num">${d.byPlan[n]}</td></tr>`).join("")
+    ? `<tr><th>Tarif / kapital</th><th class="num">Ariza</th></tr>` + names.map((n) => `<tr><td>${esc(n)}</td><td class="num">${d.byPlan[n]}</td></tr>`).join("")
     : `<tr><td class="empty">Hali ma’lumot yo‘q</td></tr>`;
 
   $("#recent").innerHTML = leads.length
-    ? leads.slice(0, 6).map((l) => `<div class="recent-item"><div><div class="lead-name">${esc(l.name)}</div><div class="lead-meta">${esc(l.capital || l.plan || "—")} · ${fmtDate(l.createdAt)}</div></div><span class="pill ${l.status}">${STATUS[l.status]}</span></div>`).join("")
+    ? leads.slice(0, 6).map((l) => `<div class="recent-item"><div><div class="lead-name">${esc(l.name)}</div><div class="lead-meta">${esc(l.planName || l.capital || "—")}${l.amountCents ? " · " + usd(l.amountCents) : ""} · ${fmtDate(l.createdAt)}</div></div><span class="pill ${l.payStatus ? PAY_CLASS[l.payStatus] : l.status}">${l.payStatus ? PAY[l.payStatus] : STATUS[l.status]}</span></div>`).join("")
     : `<p class="empty">Hali ariza yo‘q. Saytdagi forma orqali kelgan arizalar shu yerda ko‘rinadi.</p>`;
 }
 function drawChart(series) {
@@ -129,15 +134,16 @@ async function loadLeads() {
   LEADS = (await api("/leads")).leads;
   await ensureContent();
   const cur = $("#lead-plan").value;
-  $("#lead-plan").innerHTML = `<option value="">Barcha kapital</option>` + [...new Set([...CONTENT.settings.capitals, ...LEADS.map((l) => l.capital).filter(Boolean)])].map((c) => `<option>${esc(c)}</option>`).join("");
+  $("#lead-plan").innerHTML = `<option value="">Barcha tariflar</option>` + [...new Set(LEADS.map((l) => l.planName || l.capital).filter(Boolean))].map((c) => `<option>${esc(c)}</option>`).join("");
   $("#lead-plan").value = cur;
   renderLeads();
   refreshBadge();
+  loadChain().catch(() => {});
 }
 function filteredLeads() {
-  const q = $("#lead-search").value.trim().toLowerCase(), st = $("#lead-status").value, pl = $("#lead-plan").value;
-  return LEADS.filter((l) => (!st || l.status === st) && (!pl || l.capital === pl) &&
-    (!q || l.name.toLowerCase().includes(q) || l.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "") || "\u0000") || l.phone.toLowerCase().includes(q)));
+  const q = $("#lead-search").value.trim().toLowerCase(), st = $("#lead-status").value, pl = $("#lead-plan").value, ps = $("#lead-pay").value;
+  return LEADS.filter((l) => (!st || l.status === st) && (!pl || (l.planName || l.capital) === pl) && (!ps || l.payStatus === ps) &&
+    (!q || l.name.toLowerCase().includes(q) || String(l.no || "") === q.replace(/^#/, "") || (l.username || "").toLowerCase().includes(q.replace(/^@/, "")) || l.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "") || "\u0000") || l.phone.toLowerCase().includes(q)));
 }
 const tgPill = (l) => ({
   sent: `<span class="pill paid" title="Telegramga yuborildi">Telegram ✓</span>`,
@@ -145,14 +151,23 @@ const tgPill = (l) => ({
   off: `<span class="pill contacted" title="Bot sozlanmagan">Bot ulanmagan</span><button class="btn sm" data-act="resend" type="button">Yuborish</button>`,
   pending: `<span class="pill new">Yuborilmoqda…</span>`,
 }[l.tg] || "");
+function payCell(l) {
+  const amt = l.method === "usdt" && l.payCents ? `${(l.payCents / 100).toFixed(2)} USDT` : l.method === "card" && l.paySom ? `${money(l.paySom)} so‘m` : "";
+  const rc = (l.receipts || []).map((f, i, a) => `<a href="/api/admin/receipts/${esc(f)}" target="_blank" rel="noopener">Chek${a.length > 1 ? " " + (i + 1) : ""} ↗</a>`).join(" ");
+  return `<div class="lead-name">${esc(l.planName)}</div>
+    <div class="lead-meta"><b>${usd(l.amountCents)}</b>${l.promo ? ` (promo ${esc(l.promo)} −${usd(l.discountCents)})` : ""} · ${METHOD[l.method] || ""}${amt ? " · " + amt : ""}</div>
+    <div class="pay-line"><select data-act="pay" aria-label="To‘lov holati" class="pay-sel ${PAY_CLASS[l.payStatus] || ""}">${Object.entries(PAY).filter(([k]) => k !== "none" || l.payStatus === "none").map(([k, v]) => `<option value="${k}"${l.payStatus === k ? " selected" : ""}>${v}</option>`).join("")}</select>
+    ${l.payStatus === "review" || l.payStatus === "pending" ? `<button class="btn sm ok" data-act="confirm" type="button">To‘lovni tasdiqlash</button>` : ""}</div>
+    ${rc || l.txid ? `<div class="lead-meta">${rc}${l.txid ? ` <a href="https://bscscan.com/tx/${esc(l.txid)}" target="_blank" rel="noopener noreferrer">Tx ↗</a>` : ""}${l.paidVia ? ` · ${esc(l.paidVia)}` : ""}</div>` : ""}`;
+}
 function renderLeads() {
   const rows = filteredLeads();
   $("#leads-sub").textContent = `${rows.length} ta ariza ko‘rsatilyapti · jami ${LEADS.length}`;
   $("#leads-table").innerHTML = rows.length
-    ? `<tr><th>Mijoz</th><th>Kapital / Shahar / Format</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
-      <tr data-id="${l.id}">
-        <td><div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.username ? `<div class="lead-meta"><a href="https://t.me/${esc(l.username)}" target="_blank" rel="noopener noreferrer">@${esc(l.username)}</a></div>` : ""}${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
-        <td>${esc(l.capital || l.plan || "—")}<div class="lead-meta">${esc(l.city || "")}${l.format ? ` · <b>${esc(l.format)}</b>` : ""}</div></td>
+    ? `<tr><th>Mijoz</th><th>Tarif va to‘lov</th><th>Sana</th><th>Holat va izoh</th><th></th></tr>` + rows.map((l) => `
+      <tr data-id="${l.id}"${l.payStatus === "review" ? ' class="hl"' : ""}>
+        <td>${l.no ? `<div class="lead-meta">#${l.no}</div>` : ""}<div class="lead-name">${esc(l.name)}</div><div class="lead-meta"><a href="tel:${esc(l.phone.replace(/[^\d+]/g, ""))}">${esc(l.phone)}</a></div>${l.username ? `<div class="lead-meta"><a href="https://t.me/${esc(l.username)}" target="_blank" rel="noopener noreferrer">@${esc(l.username)}</a></div>` : ""}${l.note ? `<div class="lead-meta">“${esc(l.note)}”</div>` : ""}</td>
+        <td>${l.no ? payCell(l) : esc(l.capital || l.plan || "—")}<div class="lead-meta">${esc(l.city || "")}${l.format && !l.no ? ` · <b>${esc(l.format)}</b>` : ""}${l.no && l.capital ? ` · ${esc(l.capital)}` : ""}</div></td>
         <td class="lead-meta">${fmtDate(l.createdAt)}</td>
         <td><div class="lead-tools">
           <select data-act="status" aria-label="Holat">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${l.status === k ? " selected" : ""}>${v}</option>`).join("")}</select>
@@ -162,14 +177,25 @@ function renderLeads() {
       </tr>`).join("")
     : `<tr><td class="empty">Ariza topilmadi.</td></tr>`;
 }
-["lead-search", "lead-status", "lead-plan"].forEach((id) => $("#" + id).addEventListener("input", renderLeads));
+["lead-search", "lead-status", "lead-plan", "lead-pay"].forEach((id) => $("#" + id).addEventListener("input", renderLeads));
 $("#leads-table").addEventListener("change", (e) => {
   const tr = e.target.closest("tr[data-id]"); if (!tr) return;
   const lead = LEADS.find((l) => l.id === tr.dataset.id);
   if (e.target.dataset.act === "status") guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { status: e.target.value } })); refreshBadge(); }, "Holat yangilandi");
+  if (e.target.dataset.act === "pay") {
+    if (e.target.value === "paid" && !confirm(`#${lead.no} — ${lead.name}: to‘lovni tasdiqlaysizmi? Telegramga xabar ketadi.`)) { e.target.value = lead.payStatus; return; }
+    guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { payStatus: e.target.value } })); renderLeads(); refreshBadge(); }, "To‘lov holati yangilandi");
+  }
   if (e.target.dataset.act === "note") guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { adminNote: e.target.value } })); }, "Izoh saqlandi");
 });
 $("#leads-table").addEventListener("click", (e) => {
+  const cf = e.target.closest("[data-act=confirm]");
+  if (cf) {
+    const l = LEADS.find((x) => x.id === cf.closest("tr").dataset.id);
+    if (!confirm(`#${l.no} — ${l.name}: ${usd(l.amountCents)} to‘lovni tasdiqlaysizmi? Telegramga xabar ketadi.`)) return;
+    cf.disabled = true;
+    return guard(async () => { Object.assign(l, await api("/leads/" + l.id, { method: "PATCH", body: { payStatus: "paid" } })); renderLeads(); refreshBadge(); }, "To‘lov tasdiqlandi");
+  }
   const rs = e.target.closest("[data-act=resend]");
   if (rs) {
     const l = LEADS.find((x) => x.id === rs.closest("tr").dataset.id);
@@ -183,16 +209,37 @@ $("#leads-table").addEventListener("click", (e) => {
 });
 $("#export-csv").addEventListener("click", () => {
   const cell = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
-  const rows = [["Sana", "Ism", "Telefon", "Telegram", "Kapital", "Shahar", "Format", "Holat", "Bot", "Izoh"], ...filteredLeads().map((l) => [fmtDate(l.createdAt), l.name, l.phone, l.username || "", l.capital || l.plan || "", l.city || "", l.format || "", STATUS[l.status], l.tg || "", l.adminNote])];
+  const rows = [["#", "Sana", "Ism", "Telefon", "Telegram", "Tarif", "Summa ($)", "Promo", "To‘lov usuli", "To‘lov holati", "TxID", "Kapital", "Shahar", "Format", "Holat", "Bot", "Izoh"], ...filteredLeads().map((l) => [l.no || "", fmtDate(l.createdAt), l.name, l.phone, l.username || "", l.planName || "", l.amountCents ? (l.amountCents / 100).toFixed(2) : "", l.promo || "", METHOD[l.method] || "", PAY[l.payStatus] || "", l.txid || "", l.capital || "", l.city || "", l.format || "", STATUS[l.status], l.tg || "", l.adminNote])];
   const blob = new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "arizalar.csv" });
   a.click(); URL.revokeObjectURL(a.href);
 });
 
+/* ---------- USDT hamyon kuzatuvi ---------- */
+async function loadChain() {
+  const c = await api("/transfers"), card = $("#chain-card");
+  card.hidden = !c.wallet;
+  if (!c.wallet) return;
+  const pill = $("#chain-pill");
+  pill.className = "pill " + (c.error ? "rejected" : "paid");
+  pill.textContent = c.error ? "Xato" : "Ishlayapti";
+  $("#chain-text").innerHTML = `Hamyon: <code>${esc(c.wallet)}</code>${c.lastScan ? ` · oxirgi tekshiruv ${fmtDate(c.lastScan)}` : ""}${c.error ? `<br>Xato: ${esc(c.error)}` : ""}`;
+  const open = LEADS.filter((l) => l.method === "usdt" && l.payStatus !== "paid");
+  $("#chain-unmatched").innerHTML = c.unmatched.length ? `<p class="tg-text"><b>Biriktirilmagan o‘tkazmalar</b> — summa hech bir buyurtmaga mos kelmadi. Buyurtmani tanlab biriktiring:</p><ul class="tg-chats">` + c.unmatched.map((t) => `<li data-ref="${esc(t.ref)}"><b>${(t.cents / 100).toFixed(2)} USDT</b> <span>${fmtDate(t.at)} · <a href="https://bscscan.com/tx/${esc(t.tx)}" target="_blank" rel="noopener noreferrer">Tx ↗</a></span>
+      <select aria-label="Buyurtma"><option value="">Buyurtmani tanlang</option>${open.map((l) => `<option value="${l.id}">#${l.no} · ${esc(l.name)} · ${(l.payCents / 100).toFixed(2)} USDT</option>`).join("")}</select><button class="btn sm" data-assign type="button">Biriktirish</button></li>`).join("") + `</ul>` : "";
+}
+$("#chain-scan").addEventListener("click", (e) => { e.target.disabled = true; guard(async () => { const r = await api("/scan", { method: "POST", body: {} }); if (!r.ok) throw new Error(r.error || "Tekshirib bo‘lmadi"); await loadLeads(); }, "Tekshirildi").finally(() => (e.target.disabled = false)); });
+$("#chain-unmatched").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-assign]"); if (!b) return;
+  const li = b.closest("li"), id = $("select", li).value;
+  if (!id) return toast("Buyurtmani tanlang", true);
+  guard(async () => { await api("/transfers/assign", { method: "POST", body: { ref: li.dataset.ref, orderId: id } }); await loadLeads(); }, "Biriktirildi — to‘lov tasdiqlandi");
+});
+
 /* ---------- Kontent (tariflar, darslar, sozlamalar) ---------- */
 let CONTENT = null;
 async function ensureContent() { if (!CONTENT) CONTENT = await api("/all"); }
-async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderLessons(); renderAudience(); renderResults(); renderSettings(); }
+async function loadContent() { CONTENT = await api("/all"); renderPlans(); renderPromos(); renderLessons(); renderAudience(); renderResults(); renderSettings(); }
 const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
 
 /* ---------- Rasm yuklash (umumiy) ---------- */
@@ -251,7 +298,12 @@ function renderPlans() {
         <div><label>Nomi</label><input data-f="name" value="${esc(p.name)}" maxlength="40" /></div>
         <div><label>Yorliq (eyebrow)</label><input data-f="eyebrow" value="${esc(p.eyebrow)}" maxlength="40" /></div>
         <div><label>Nishon (badge)</label><input data-f="badge" value="${esc(p.badge)}" maxlength="40" placeholder="Masalan: 10 TA JOY" /></div>
-        <div class="span2"><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" /></div>
+        <div><label>Format</label><select data-f="format"><option value="online"${p.format !== "offline" ? " selected" : ""}>Online</option><option value="offline"${p.format === "offline" ? " selected" : ""}>Offlayn</option></select></div>
+        <div><label>Narx ($, chegirmali)</label><input data-f="price" type="number" min="0" step="1" value="${esc(p.price || "")}" /></div>
+        <div><label>Eski narx ($, ustidan chiziladi)</label><input data-f="oldPrice" type="number" min="0" step="1" value="${esc(p.oldPrice || "")}" /></div>
+        <div><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" placeholder="2–3 oy" /></div>
+        <div><label>Whales signal guruhi</label><input data-f="whales" value="${esc(p.whales || "")}" maxlength="30" placeholder="Cheksiz / 3 oy" /></div>
+        <div><label>Holati</label><label class="check"><input type="checkbox" data-f="available" ${p.available !== false ? "checked" : ""} /> Sotuvda (o‘chirilsa — “vaqtincha mavjud emas”)</label></div>
         <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
         <div class="span2"><label>Nimalar kiradi (har qatorda bittadan)</label><textarea data-f="features" rows="8">${esc(p.features.join("\n"))}</textarea></div>
@@ -264,7 +316,8 @@ $("#plans-editor").addEventListener("input", (e) => {
   const card = e.target.closest("[data-i]"), f = e.target.dataset.f; if (!card || !f) return;
   const p = CONTENT.plans[card.dataset.i];
   if (f === "features" || f === "excluded") p[f] = e.target.value.split("\n").map((x) => x.trim()).filter(Boolean);
-  else if (f === "featured") p.featured = e.target.checked;
+  else if (f === "featured" || f === "available") p[f] = e.target.checked;
+  else if (f === "price" || f === "oldPrice") p[f] = Number(e.target.value) || 0;
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
 $("#plans-editor").addEventListener("click", (e) => {
@@ -280,10 +333,51 @@ $("#plans-editor").addEventListener("click", (e) => {
   renderPlans();
 });
 $("#add-plan").addEventListener("click", () => {
-  CONTENT.plans.push({ id: "", eyebrow: String(CONTENT.plans.length + 1).padStart(2, "0") + " / YANGI", badge: "", name: "Yangi tarif", description: "", duration: "", featured: false, image: "", features: [], excluded: [] });
+  CONTENT.plans.push({ id: "", format: "online", eyebrow: "ONLINE", badge: "", name: "Yangi tarif", description: "", duration: "", price: 0, oldPrice: 0, available: true, whales: "Cheksiz", featured: false, image: "", features: [], excluded: [] });
   renderPlans(); $$("#plans-editor .card").at(-1).scrollIntoView({ behavior: "smooth", block: "center" });
 });
 $("#save-plans").addEventListener("click", () => guard(async () => { CONTENT.plans = await api("/plans", { method: "PUT", body: { plans: CONTENT.plans } }); renderPlans(); }, "Tariflar saqlandi — saytda yangilandi"));
+
+/* Promo kodlar */
+const planName = (id) => { const p = CONTENT.plans.find((x) => x.id === id); return p ? `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}` : id; };
+function renderPromos() {
+  const ps = CONTENT.promos || (CONTENT.promos = []);
+  $("#promos-editor").innerHTML = ps.length ? ps.map((x, i) => `
+    <div class="card editor-card" data-i="${i}">
+      <div class="editor-head"><strong>${esc(x.code || "Yangi kod")}</strong>
+        <div class="editor-tools"><span class="pill ${x.active ? "paid" : "rejected"}">${x.active ? "Faol" : "O‘chirilgan"}</span><span class="lead-meta">Ishlatilgan: <b>${x.used || 0}</b>${x.maxUses ? " / " + x.maxUses : ""}</span><button class="btn sm danger" data-act="del" type="button">O‘chirish</button></div></div>
+      <div class="fields">
+        <div><label>Kod</label><input data-f="code" value="${esc(x.code)}" maxlength="20" placeholder="MAMURJON10" style="text-transform:uppercase" /></div>
+        <div><label>Chegirma turi</label><select data-f="type"><option value="percent"${x.type !== "fixed" ? " selected" : ""}>Foiz (%)</option><option value="fixed"${x.type === "fixed" ? " selected" : ""}>Aniq summa ($)</option></select></div>
+        <div><label>Qiymati</label><input data-f="value" type="number" min="0" step="0.01" value="${esc(x.value || "")}" /></div>
+        <div><label>Limit (0 — cheksiz)</label><input data-f="maxUses" type="number" min="0" step="1" value="${esc(x.maxUses || 0)}" /></div>
+        <div><label>Amal qilish muddati</label><input data-f="expiresAt" type="date" value="${x.expiresAt ? toLocalInput(x.expiresAt).slice(0, 10) : ""}" /></div>
+        <div><label>Holati</label><label class="check"><input type="checkbox" data-f="active" ${x.active !== false ? "checked" : ""} /> Faol</label></div>
+        <div class="span3"><label>Qaysi tariflarga (hech biri belgilanmasa — hammasiga)</label><div class="chips">${CONTENT.plans.map((p) => `<label class="check"><input type="checkbox" data-plan="${esc(p.id)}" ${x.plans?.includes(p.id) ? "checked" : ""} /> ${esc(planName(p.id))}</label>`).join("")}</div></div>
+        <div class="span3"><label>Izoh (faqat siz uchun)</label><input data-f="note" value="${esc(x.note || "")}" maxlength="100" placeholder="Masalan: Instagram aksiyasi" /></div>
+      </div>
+    </div>`).join("") : `<div class="card empty">Promo kodlar yo‘q. “+ Promo kod” tugmasini bosing. Faol kod bo‘lmasa, saytda promo maydoni ko‘rinmaydi.</div>`;
+}
+$("#promos-editor").addEventListener("input", (e) => {
+  const card = e.target.closest("[data-i]"); if (!card) return;
+  const x = CONTENT.promos[card.dataset.i], f = e.target.dataset.f;
+  if (e.target.dataset.plan) { const id = e.target.dataset.plan; x.plans = (x.plans || []).filter((p) => p !== id); if (e.target.checked) x.plans.push(id); return; }
+  if (!f) return;
+  if (f === "active") x.active = e.target.checked;
+  else if (f === "expiresAt") x.expiresAt = e.target.value ? e.target.value + "T23:59:00+05:00" : "";
+  else if (f === "value" || f === "maxUses") x[f] = Number(e.target.value) || 0;
+  else { x[f] = f === "code" ? e.target.value.toUpperCase() : e.target.value; if (f === "code") $("strong", card).textContent = x.code || "Yangi kod"; }
+});
+$("#promos-editor").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act=del]"), card = e.target.closest("[data-i]"); if (!b || !card) return;
+  if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tasdiqlang"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "O‘chirish"; }, 3000); return; }
+  CONTENT.promos.splice(+card.dataset.i, 1); renderPromos();
+});
+$("#add-promo").addEventListener("click", () => {
+  CONTENT.promos.push({ id: "", code: "", type: "percent", value: 10, maxUses: 0, expiresAt: "", active: true, plans: [], used: 0, note: "" });
+  renderPromos(); $$("#promos-editor [data-f=code]").at(-1)?.focus();
+});
+$("#save-promos").addEventListener("click", () => guard(async () => { CONTENT.promos = await api("/promos", { method: "PUT", body: { promos: CONTENT.promos } }); renderPromos(); }, "Promo kodlar saqlandi"));
 
 /* Darslar */
 function renderLessons() {
@@ -395,6 +489,10 @@ function renderSettings() {
   $("#h-eyebrow").value = H.eyebrow; $("#h-t1").value = H.title1; $("#h-acc").value = H.accent; $("#h-t3").value = H.title3;
   $("#h-intro").value = H.intro; $("#h-note").value = H.note; $("#h-clabel").value = H.captionLabel; $("#h-caption").value = H.caption;
   heroPreview();
+  const P = CONTENT.payments || {};
+  $("#p-wallet").value = P.usdtWallet || ""; $("#p-wallet").disabled = !!P.walletFromEnv;
+  if (P.walletFromEnv) $("#p-wallet-hint").textContent = "Railway’dagi USDT_WALLET o‘zgaruvchisidan olinmoqda — o‘zgartirish uchun o‘sha yerda yangilang.";
+  $("#p-card").value = P.cardNumber || ""; $("#p-holder").value = P.cardHolder || ""; $("#p-bank").value = P.cardBank || ""; $("#p-rate").value = P.usdRate || "";
   $("#stats-editor").innerHTML = s.stats.map((x, i) => `<div><input data-i="${i}" data-k="value" value="${esc(x.value)}" maxlength="20" aria-label="Qiymat ${i + 1}" /><input data-i="${i}" data-k="label" value="${esc(x.label)}" maxlength="60" aria-label="Izoh ${i + 1}" /></div>`).join("");
 }
 $("#save-settings").addEventListener("click", () => guard(async () => {
@@ -410,6 +508,13 @@ $("#save-settings").addEventListener("click", () => guard(async () => {
   };
   CONTENT.settings = await api("/settings", { method: "PUT", body }); renderSettings();
 }, "Sozlamalar saqlandi — saytda yangilandi"));
+
+$("#save-pay").addEventListener("click", () => guard(async () => {
+  const cur = CONTENT.payments || {};
+  const body = { payments: { usdtWallet: cur.walletFromEnv ? (CONTENT.settings.payments?.usdtWallet || "") : $("#p-wallet").value.trim(), cardNumber: $("#p-card").value, cardHolder: $("#p-holder").value, cardBank: $("#p-bank").value, usdRate: Number($("#p-rate").value) || 0 } };
+  CONTENT.settings = await api("/settings", { method: "PUT", body: { ...CONTENT.settings, ...body } });
+  CONTENT = await api("/all"); renderSettings();
+}, "To‘lov sozlamalari saqlandi"));
 
 /* ---------- Telegram bot holati ---------- */
 async function loadTelegram() {

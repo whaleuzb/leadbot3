@@ -28,8 +28,9 @@
     <a class="brand" href="/" title="Saytni ochish">Mamurjon | MT</a>
     <nav id="nav">
       <a href="#dashboard" data-tab="dashboard">Umumiy ko‘rinish</a>
-      <a href="#leads" data-tab="leads">Arizalar <span class="count" id="nav-new" hidden></span></a>
+      <a href="#leads" data-tab="leads">Arizalar va to‘lovlar <span class="count" id="nav-new" hidden></span></a>
       <a href="#plans" data-tab="plans">Tariflar</a>
+      <a href="#promos" data-tab="promos">Promo kodlar</a>
       <a href="#lessons" data-tab="lessons">Darslar</a>
       <a href="#audience" data-tab="audience">Kimga mos</a>
       <a href="#results" data-tab="results">Natijalar</a>
@@ -58,7 +59,7 @@
         <div class="card"><h2>Ariza holatlari</h2><div id="status-bars"></div></div>
       </div>
       <div class="grid-2">
-        <div class="card"><h2>Kapital bo‘yicha arizalar</h2><div class="table-wrap"><table id="plan-table"></table></div></div>
+        <div class="card"><h2>Tarif bo‘yicha arizalar</h2><div class="table-wrap"><table id="plan-table"></table></div></div>
         <div class="card"><h2>So‘nggi arizalar</h2><div id="recent"></div></div>
       </div>
     </section>
@@ -66,15 +67,25 @@
     <!-- Arizalar -->
     <section class="tab" id="tab-leads" hidden>
       <header class="page-head row">
-        <div><h1>Arizalar</h1><p id="leads-sub"></p></div>
+        <div><h1>Arizalar va to‘lovlar</h1><p id="leads-sub"></p></div>
         <button class="btn" id="export-csv" type="button">CSV yuklab olish</button>
       </header>
+      <div class="card tg-card" id="chain-card" hidden>
+        <div class="tg-head"><strong>USDT (BEP20) — hamyon kuzatuvi</strong><span class="pill" id="chain-pill">…</span><button class="btn sm" id="chain-scan" type="button">Hozir tekshirish</button></div>
+        <p class="tg-text" id="chain-text"></p>
+        <div id="chain-unmatched"></div>
+      </div>
       <div class="filters">
         <input id="lead-search" type="search" placeholder="Ism yoki telefon bo‘yicha qidirish" aria-label="Qidirish" />
         <select id="lead-status" aria-label="Holat bo‘yicha filtr">
           <option value="">Barcha holatlar</option>
           <option value="new">Yangi</option><option value="contacted">Bog‘lanildi</option>
           <option value="paid">To‘landi</option><option value="rejected">Rad etildi</option>
+        </select>
+        <select id="lead-pay" aria-label="To‘lov holati bo‘yicha filtr">
+          <option value="">Barcha to‘lovlar</option>
+          <option value="review">Chek tekshirilmoqda</option><option value="pending">To‘lov kutilmoqda</option>
+          <option value="paid">To‘langan</option><option value="expired">Muddati o‘tgan</option><option value="cancelled">Bekor qilingan</option><option value="none">To‘lovsiz ariza</option>
         </select>
         <select id="lead-plan" aria-label="Tarif bo‘yicha filtr"></select>
       </div>
@@ -88,6 +99,15 @@
         <div class="actions"><button class="btn" id="add-plan" type="button">+ Tarif qo‘shish</button><button class="btn primary" id="save-plans" type="button">Saqlash</button></div>
       </header>
       <div id="plans-editor" class="stack"></div>
+    </section>
+
+    <!-- Promo kodlar -->
+    <section class="tab" id="tab-promos" hidden>
+      <header class="page-head row">
+        <div><h1>Promo kodlar</h1><p>Chegirma kodlari. Mijoz to‘lov formasida kiritadi; “Ishlatilgan” faqat to‘lov tasdiqlanganda oshadi.</p></div>
+        <div class="actions"><button class="btn" id="add-promo" type="button">+ Promo kod</button><button class="btn primary" id="save-promos" type="button">Saqlash</button></div>
+      </header>
+      <div id="promos-editor" class="stack"></div>
     </section>
 
     <!-- Darslar -->
@@ -139,6 +159,15 @@
           </ol>
         </details>
       </div>
+      <form id="pay-form" class="card form-grid" autocomplete="off">
+        <div class="field wide"><strong>To‘lov sozlamalari</strong><small>Usul faqat to‘ldirilganda saytda chiqadi. Ikkalasi bo‘sh bo‘lsa — oddiy ariza qabul qilinadi.</small></div>
+        <div class="field wide"><label for="p-wallet">USDT (BEP20) hamyon manzili</label><input id="p-wallet" maxlength="60" placeholder="0x…" spellcheck="false" /><small id="p-wallet-hint">Faqat OCHIQ manzil (BNB Smart Chain). Kelgan to‘lovlar avtomatik aniqlanadi. Maxfiy kalit kerak emas va hech qachon kiritilmaydi.</small></div>
+        <div class="field"><label for="p-card">Karta raqami</label><input id="p-card" inputmode="numeric" maxlength="23" placeholder="8600 0000 0000 0000" /></div>
+        <div class="field"><label for="p-holder">Karta egasi</label><input id="p-holder" maxlength="60" placeholder="Ism Familiya" /></div>
+        <div class="field"><label for="p-bank">Bank / karta turi</label><input id="p-bank" maxlength="40" placeholder="Masalan: Uzcard · Kapitalbank" /></div>
+        <div class="field"><label for="p-rate">Dollar kursi (so‘m)</label><input id="p-rate" type="number" min="1000" max="100000" step="1" placeholder="12700" /><small>Karta summasi = narx × kurs (mingga yaxlitlanadi). Kursni vaqti-vaqti bilan yangilang.</small></div>
+        <div class="field wide"><button class="btn primary" id="save-pay" type="button">To‘lov sozlamalarini saqlash</button></div>
+      </form>
       <form id="settings-form" class="card form-grid" autocomplete="off">
         <div class="field"><label for="s-brand">Brend nomi</label><input id="s-brand" maxlength="30" /></div>
         <div class="field"><label for="s-author">Muallif ismi</label><input id="s-author" maxlength="60" /></div>
