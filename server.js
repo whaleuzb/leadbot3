@@ -487,9 +487,15 @@ async function refreshCbuRate() {
     const d = await r.json();
     const row = Array.isArray(d) ? d.find((x) => x && x.Ccy === "USD") || d[0] : null;
     const rate = Math.round(parseFloat(String(row?.Rate || "").replace(",", ".")));
-    if (rate >= 1000 && rate <= 100000) { db.cbuRate = { rate, date: str(row.Date, 20), at: new Date().toISOString() }; save(); }
-    else console.warn("CBU kursi noto‘g‘ri javob:", JSON.stringify(d).slice(0, 200));
+    if (rate >= 1000 && rate <= 100000) { db.cbuRate = { rate, date: str(row.Date, 20), source: "Markaziy bank", at: new Date().toISOString() }; save(); return; }
+    console.warn("CBU kursi noto‘g‘ri javob:", JSON.stringify(d).slice(0, 200));
   } catch (e) { console.warn("CBU kursini olib bo‘lmadi:", e.message); }
+  // Zaxira: cbu.uz chet eldan ochilmasa (Railway serveri AQShda)
+  try {
+    const r = await fetch("https://open.er-api.com/v6/latest/USD", { signal: AbortSignal.timeout(15000) });
+    const d = await r.json(), rate = Math.round(Number(d?.rates?.UZS));
+    if (rate >= 1000 && rate <= 100000) { db.cbuRate = { rate, date: tashkent(new Date().toISOString()).slice(0, 10), source: "open.er-api.com", at: new Date().toISOString() }; save(); }
+  } catch (e) { console.warn("Zaxira kursni ham olib bo‘lmadi:", e.message); }
 }
 const methodsOn = () => { const p = payCfg(); return { usdt: !!p.usdtWallet, card: !!(p.cardNumber && p.usdRate > 0) }; };
 const planLabel = (p) => `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}`;

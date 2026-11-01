@@ -9,24 +9,38 @@ const USDT_CONTRACT = "0x55d398326f99059ff775485246999027b3197955"; // BSC-USD, 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 const TX_RE = /^0x[0-9a-fA-F]{64}$/;
-const CHUNK = 500;          // bitta eth_getLogs oralig'i (bloklar)
-const MAX_SCAN = 6000;      // bitta scan() da ko'pi bilan
-const FIRST_LOOKBACK = 1500; // birinchi ishga tushishda orqaga (~20 daqiqa)
+const CHUNK = 100;          // bitta eth_getLogs oralig'i (bepul RPC'lar katta oraliqni sekin/rad qiladi)
+const MAX_SCAN = 2000;      // bitta scan() da ko'pi bilan
+const FIRST_LOOKBACK = 300; // birinchi ishga tushishda orqaga (~4 daqiqa)
 
-const rpcUrl = () => process.env.BSC_RPC_URL || "https://bsc-rpc.publicnode.com";
+/* Bir nechta ochiq RPC: biri ishlamasa keyingisi. BSC_RPC_URL (vergul bilan bir nechta) birinchi turadi. */
+const DEFAULT_RPCS = ["https://bsc.drpc.org", "https://bsc-rpc.publicnode.com"];
+const rpcList = () => [...new Set([...String(process.env.BSC_RPC_URL || "").split(",").map((x) => x.trim()).filter(Boolean), ...DEFAULT_RPCS])];
+let preferred = 0; // oxirgi ishlagan RPC
 const confirmations = () => Math.max(1, parseInt(process.env.BSC_CONFIRMATIONS, 10) || 15);
 const normAddr = (v) => (ADDR_RE.test(String(v || "").trim()) ? String(v).trim().toLowerCase() : "");
 const normTx = (v) => (TX_RE.test(String(v || "").trim()) ? String(v).trim().toLowerCase() : "");
 
-async function rpc(method, params) {
-  const r = await fetch(rpcUrl(), {
+async function rpcAt(url, method, params) {
+  const r = await fetch(url, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }), signal: AbortSignal.timeout(30000),
   });
-  if (!r.ok) throw new Error(`BSC RPC ${method}: HTTP ${r.status}`);
+  if (!r.ok) throw new Error(`${method}: HTTP ${r.status}`);
   const body = await r.json();
-  if (body.error) throw new Error(`BSC RPC ${method}: ${body.error.message || JSON.stringify(body.error)}`);
+  if (body.error) throw new Error(`${method}: ${body.error.message || JSON.stringify(body.error)}`);
+  if (method === "eth_blockNumber" && !/^0x[0-9a-f]+$/i.test(String(body.result))) throw new Error("eth_blockNumber: noto‘g‘ri javob");
   return body.result;
+}
+/* fn(rpc) ni bitta RPC bilan bajaradi (bosh blok va loglar bir manbadan bo'lsin); xato bo'lsa keyingisi */
+async function withRpc(fn) {
+  const list = rpcList(), errs = [];
+  for (let i = 0; i < list.length; i++) {
+    const k = (preferred + i) % list.length, url = list[k];
+    try { const out = await fn((m, p) => rpcAt(url, m, p)); preferred = k; return out; }
+    catch (e) { errs.push(`${new URL(url).host}: ${e.message}`); }
+  }
+  throw new Error(errs.join(" | ").slice(0, 300));
 }
 
 /* 18 xonali raw qiymat -> sent (pastga yaxlitlanadi) */
@@ -52,6 +66,9 @@ async function scan(state, wallet, onTransfer) {
   const addr = normAddr(wallet);
   if (!addr) return 0;
   if (state.wallet !== addr) { state.wallet = addr; state.lastBlock = null; }
+  return withRpc((rpc) => scanWith(rpc, state, addr, onTransfer));
+}
+async function scanWith(rpc, state, addr, onTransfer) {
   const head = parseInt(await rpc("eth_blockNumber", []), 16) - confirmations();
   let start = state.lastBlock != null ? state.lastBlock + 1 : Math.max(0, head - FIRST_LOOKBACK);
   if (head - start > MAX_SCAN * 5) start = head - MAX_SCAN; // uzoq to'xtab qolgan bo'lsa — eskisini o'tkazib yuboramiz
@@ -72,6 +89,9 @@ async function scan(state, wallet, onTransfer) {
 async function lookupTx(tx, wallet) {
   const addr = normAddr(wallet), hash = normTx(tx);
   if (!addr || !hash) return { status: "none", transfers: [] };
+  return withRpc((rpc) => lookupWith(rpc, hash, addr));
+}
+async function lookupWith(rpc, hash, addr) {
   const rc = await rpc("eth_getTransactionReceipt", [hash]);
   if (!rc) return { status: "pending", transfers: [] };
   if (rc.status !== "0x1") return { status: "failed", transfers: [] };

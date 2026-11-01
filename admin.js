@@ -494,7 +494,7 @@ function renderSettings() {
   if (P.walletFromEnv) $("#p-wallet-hint").textContent = "Railway’dagi USDT_WALLET o‘zgaruvchisidan olinmoqda — o‘zgartirish uchun o‘sha yerda yangilang.";
   $("#p-card").value = P.cardNumber || ""; $("#p-card").disabled = !!P.cardFromEnv;
   $("#p-holder").value = P.cardHolder || ""; $("#p-bank").value = P.cardBank || ""; $("#p-rate").value = P.rateManual ? P.usdRate : "";
-  $("#p-rate").placeholder = P.cbuRate ? `Avtomatik: ${P.cbuRate.rate} (Markaziy bank, ${P.cbuRate.date})` : "12700";
+  $("#p-rate").placeholder = P.cbuRate ? `Avtomatik: ${P.cbuRate.rate} (${P.cbuRate.source || "Markaziy bank"}, ${P.cbuRate.date})` : "12700";
   $("#stats-editor").innerHTML = s.stats.map((x, i) => `<div><input data-i="${i}" data-k="value" value="${esc(x.value)}" maxlength="20" aria-label="Qiymat ${i + 1}" /><input data-i="${i}" data-k="label" value="${esc(x.label)}" maxlength="60" aria-label="Izoh ${i + 1}" /></div>`).join("");
 }
 $("#save-settings").addEventListener("click", () => guard(async () => {
