@@ -191,3 +191,8 @@ tr.hl > td { background: var(--info-bg); }
 #chain-unmatched li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 #chain-unmatched select { width: auto; min-height: 34px; }
 #pay-form { margin-bottom: 18px; }
+
+.rate-card { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+.rate-card .tg-text { margin: 4px 0 0; }
+.rate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 700; }
+.rate-row input { width: 130px; font-size: 18px; font-weight: 700; }

@@ -89,6 +89,7 @@ async function loadDashboard() {
   ].map(([l, v, s]) => `<div class="kpi"><span>${l}</span><strong>${v}</strong><small>${s}</small></div>`).join("");
 
   drawChart(d.series);
+  loadRate().catch(() => {});
 
   const total = Object.values(d.byStatus).reduce((a, b) => a + b, 0) || 1;
   $("#status-bars").innerHTML = Object.keys(STATUS).map((k) =>
@@ -127,6 +128,21 @@ const fmtDate = (iso) => {
   const p = (n) => String(n).padStart(2, "0");
   return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 };
+
+/* ---------- Dollar kursi ---------- */
+function showRate(P) {
+  const src = { admin: "siz qo‘ygan kurs", env: "Railway’dagi USD_RATE", auto: `avtomatik (${P.cbuRate?.source || "Markaziy bank"}, ${P.cbuRate?.date || ""})` }[P.rateSource] || "kurs yo‘q — karta to‘lovi o‘chiq";
+  $("#rate-input").value = P.usdRate || "";
+  $("#rate-info").innerHTML = `Hozir: <b>1 $ = ${money(P.usdRate || 0)} so‘m</b> · ${esc(src)}. Karta orqali to‘lov summasi shu kurs bo‘yicha hisoblanadi (mingga yaxlitlanadi).`;
+  $("#rate-auto").hidden = P.rateSource !== "admin";
+}
+async function loadRate() { const all = await api("/all"); CONTENT = all; showRate(all.payments || {}); }
+$("#rate-form").addEventListener("submit", (e) => { e.preventDefault(); guard(async () => {
+  const v = Number($("#rate-input").value);
+  if (!(v >= 1000 && v <= 100000)) throw new Error("Kursni kiriting (masalan 12400)");
+  showRate(await api("/rate", { method: "PUT", body: { rate: v } }));
+}, "Kurs saqlandi — saytda darhol amal qiladi"); });
+$("#rate-auto").addEventListener("click", () => guard(async () => showRate(await api("/rate", { method: "PUT", body: { rate: 0 } })), "Avtomatik kursga qaytildi"));
 
 /* ---------- Arizalar ---------- */
 let LEADS = [];

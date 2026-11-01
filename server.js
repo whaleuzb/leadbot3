@@ -473,12 +473,14 @@ function cleanPayments(p = {}) {
 }
 /* To'lov sozlamalari: env ustun */
 const envCard = () => { const d = String(process.env.PAY_CARD_NUMBER || "").replace(/\D/g, ""); return d.length >= 16 && d.length <= 19 ? d.replace(/(\d{4})(?=\d)/g, "$1 ") : ""; };
+const envRate = () => { const r = Math.round(Number(process.env.USD_RATE) || 0); return r >= 1000 && r <= 100000 ? r : 0; };
 const payCfg = () => {
   const p = db.settings.payments || {};
   const cbu = db.cbuRate && db.cbuRate.rate > 0 ? db.cbuRate : null;
   return { ...p, usdtWallet: pay.normAddr(process.env.USDT_WALLET) || p.usdtWallet || "", walletFromEnv: !!pay.normAddr(process.env.USDT_WALLET),
     cardNumber: envCard() || p.cardNumber || "", cardFromEnv: !!envCard(), cardHolder: p.cardHolder || str(process.env.PAY_CARD_HOLDER, 60), cardBank: p.cardBank || str(process.env.PAY_CARD_BANK, 40),
-    usdRate: p.usdRate > 0 ? p.usdRate : cbu ? cbu.rate : 0, rateManual: p.usdRate > 0, cbuRate: cbu };
+    usdRate: p.usdRate > 0 ? p.usdRate : envRate() || (cbu ? cbu.rate : 0), rateManual: p.usdRate > 0, cbuRate: cbu,
+    rateSource: p.usdRate > 0 ? "admin" : envRate() ? "env" : cbu ? "auto" : "" };
 };
 /* Markaziy bank (cbu.uz) dollar kursi — admin kurs kiritmagan bo'lsa ishlatiladi, 6 soatda yangilanadi */
 async function refreshCbuRate() {
@@ -846,6 +848,12 @@ async function api(req, res, url) {
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
   if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results, promos: db.promos, payments: payCfg(), methods: methodsOn() });
+  if (m === "PUT" && p === "/api/admin/rate") {
+    const rate = Math.round(Number((await readJson(req)).rate) || 0);
+    if (rate && (rate < 1000 || rate > 100000)) return send(res, 400, { error: "Kurs noto‘g‘ri (masalan 12400)" });
+    db.settings.payments = { ...db.settings.payments, usdRate: rate }; save();
+    return send(res, 200, payCfg());
+  }
   if (m === "PUT" && p === "/api/admin/promos") { db.promos = cleanPromos((await readJson(req)).promos); save(); return send(res, 200, db.promos); }
   if (m === "GET" && p === "/api/admin/transfers") {
     return send(res, 200, { wallet: payCfg().usdtWallet, lastBlock: db.chain.lastBlock, lastScan: lastScan ? new Date(lastScan).toISOString() : "", error: scanError,

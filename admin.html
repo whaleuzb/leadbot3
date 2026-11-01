@@ -53,6 +53,11 @@
     <section class="tab" id="tab-dashboard" hidden>
       <header class="page-head"><h1>Umumiy ko‘rinish</h1><p>Oxirgi 14 kun va umumiy ko‘rsatkichlar</p></header>
       <div class="kpis" id="kpis"></div>
+      <form class="card rate-card" id="rate-form" autocomplete="off">
+        <div><strong>Dollar kursi</strong><p class="tg-text" id="rate-info">Karta orqali to‘lov summasi shu kurs bo‘yicha hisoblanadi.</p></div>
+        <div class="rate-row"><span>1 $ =</span><input id="rate-input" type="number" min="1000" max="100000" step="1" inputmode="numeric" aria-label="Dollar kursi, so‘m" /><span>so‘m</span>
+          <button class="btn primary" type="submit">Saqlash</button><button class="btn" type="button" id="rate-auto">Avtomatik kurs</button></div>
+      </form>
       <div class="grid-2">
         <div class="card"><h2>Tashriflar va arizalar</h2><div id="chart" class="chart"></div>
           <p class="legend"><i class="dot views"></i> Tashrif <i class="dot leads"></i> Ariza</p></div>
