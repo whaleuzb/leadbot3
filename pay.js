@@ -74,9 +74,19 @@ async function scanWith(rpc, state, addr, onTransfer) {
   if (head - start > MAX_SCAN * 5) start = head - MAX_SCAN; // uzoq to'xtab qolgan bo'lsa — eskisini o'tkazib yuboramiz
   const end = Math.min(head, start + MAX_SCAN - 1);
   let n = 0;
+  const getLogs = (lo, hi) => rpc("eth_getLogs", [{ fromBlock: "0x" + lo.toString(16), toBlock: "0x" + hi.toString(16), address: USDT_CONTRACT, topics: [TRANSFER_TOPIC, null, topicFor(addr)] }]);
   for (let lo = start; lo <= end; lo += CHUNK) {
-    const hi = Math.min(end, lo + CHUNK - 1);
-    const logs = await rpc("eth_getLogs", [{ fromBlock: "0x" + lo.toString(16), toBlock: "0x" + hi.toString(16), address: USDT_CONTRACT, topics: [TRANSFER_TOPIC, null, topicFor(addr)] }]);
+    let hi = Math.min(end, lo + CHUNK - 1), logs;
+    try { logs = await getLogs(lo, hi); }
+    catch (e) {
+      // Yuklama taqsimlangan RPC: so'rov ortda qolgan serverga tushdi — o'sha server bor blokgacha olamiz
+      const m = /beyond current head block.*head (\d+)/.exec(e.message);
+      if (!m) throw e;
+      const nodeHead = parseInt(m[1], 10) - 2;
+      if (nodeHead < lo) return n; // keyingi safar davom etamiz
+      hi = nodeHead; logs = await getLogs(lo, hi);
+      lo = hi - CHUNK + 1; // sikl keyingi blokdan davom etadi
+    }
     logs.sort((a, b) => parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16) || parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16));
     for (const item of logs) { const t = parseLog(item); if (t && t.to === addr) { await onTransfer(t); n++; } }
     state.lastBlock = hi;
