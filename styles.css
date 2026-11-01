@@ -748,7 +748,7 @@ html.lb-on { overflow: hidden; }
   .meet-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 120px; gap: 10px; }
   .meet-grid figure { border-radius: 18px; }
   .meet-grid figure:last-child { grid-column: span 2; }
-  .meet-grid figure:last-child img { object-position: 50% 30%; }
+  .meet-grid figure:last-child img { object-position: 50% 6%; }
   .lead-photo { height: 240px; }
   .contact-photo { width: 100%; height: 240px; margin-bottom: 24px; }
   .mentor-chip { margin-top: 18px; }
@@ -924,3 +924,4 @@ html.lb-on { overflow: hidden; }
   .topbar-cta { padding: 10px 14px; font-size: 13px; }
 }
 @media (max-width: 374px) { .topbar { gap: 5px; padding-left: 12px; } .topbar .brand { font-size: 16px; letter-spacing: -.8px; } .topbar .theme-toggle { width: 32px; height: 32px; } .topbar-cta { padding: 9px 10px; font-size: 12px; } }
+.meet-grid img[src*="meetup-street"] { object-position: 50% 6%; }
