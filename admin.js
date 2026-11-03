@@ -300,6 +300,17 @@ function wireImages(container, getArr, rerender) {
 }
 
 /* Tariflar */
+// Bandlar shabloni: barcha tariflarda ishlatiladigan bandlar bir joyda — belgilab tanlanadi
+const featLib = () => (CONTENT.featureLib || (CONTENT.featureLib = []));
+const isUsed = (t) => CONTENT.plans.some((p) => p.features.includes(t) || p.excluded.includes(t));
+function setFeat(p, t, st) {
+  // tartib saqlanadi: allaqachon belgilangan band joyida qoladi, yangisi oxiriga qo'shiladi
+  if (st === "in" && p.features.includes(t)) return;
+  if (st === "out" && p.excluded.includes(t)) return;
+  p.features = p.features.filter((x) => x !== t); p.excluded = p.excluded.filter((x) => x !== t);
+  if (st === "in") p.features.push(t); if (st === "out") p.excluded.push(t);
+}
+function rerenderKeep(card) { const y = scrollY; renderPlans(); scrollTo(0, y); }
 function renderPlans() {
   const plans = CONTENT.plans;
   $("#plans-editor").innerHTML = plans.map((p, i) => `
@@ -322,23 +333,36 @@ function renderPlans() {
         <div><label>Holati</label><label class="check"><input type="checkbox" data-f="available" ${p.available !== false ? "checked" : ""} /> Sotuvda (o‘chirilsa — “vaqtincha mavjud emas”)</label></div>
         <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
-        <div class="span2"><label>Nimalar kiradi (har qatorda bittadan)</label><textarea data-f="features" rows="8">${esc(p.features.join("\n"))}</textarea></div>
-        <div><label>Kirmaydi (har qatorda bittadan)</label><textarea data-f="excluded" rows="3">${esc(p.excluded.join("\n"))}</textarea>
-          <label class="check" style="margin-top:12px"><input type="checkbox" data-f="featured" ${p.featured ? "checked" : ""} /> Ajratib ko‘rsatish (lilac fon)</label></div>
+        <div class="span3"><label class="check"><input type="checkbox" data-f="featured" ${p.featured ? "checked" : ""} /> Ajratib ko‘rsatish (lilac fon)</label></div>
+        <div class="span3 feat-box">
+          <div class="feat-head"><label>Tarifga nimalar kiradi — belgilang</label>
+            <span class="feat-tools"><span class="lead-meta">${p.features.length} ta kiradi${p.excluded.length ? ` · ${p.excluded.length} ta kirmaydi` : ""}</span>
+            <select data-act="copyfrom" aria-label="Boshqa tarifdan nusxa olish"><option value="">Boshqa tarifdan nusxa…</option>${plans.map((q, j) => j === i ? "" : `<option value="${j}">${esc(planName(q.id) || q.name)}</option>`).join("")}</select></span></div>
+          <ul class="feat-list">${featLib().map((t, k) => { const st = p.features.includes(t) ? "in" : p.excluded.includes(t) ? "out" : ""; return `<li class="${st}" data-k="${k}">
+            <span class="feat-text">${esc(t)}</span>
+            <span class="feat-seg" role="group" aria-label="${esc(t)}"><button type="button" data-st="in" aria-pressed="${st === "in"}" title="Kiradi">✓ Kiradi</button><button type="button" data-st="out" aria-pressed="${st === "out"}" title="Kirmaydi">× Kirmaydi</button><button type="button" data-st="" aria-pressed="${!st}" title="Ko‘rsatilmaydi">—</button></span>
+            ${isUsed(t) ? "" : `<button type="button" class="feat-del" data-act="libdel" title="Shablondan o‘chirish" aria-label="Shablondan o‘chirish">×</button>`}</li>`; }).join("")}</ul>
+          <div class="feat-add"><input data-act="newfeat" maxlength="200" placeholder="Ro‘yxatda yo‘q bandni yozing — masalan: Haftalik jonli efir" /><button class="btn sm" type="button" data-act="addfeat">+ Qo‘shish</button></div>
+        </div>
       </div>
     </div>`).join("");
 }
 $("#plans-editor").addEventListener("input", (e) => {
   const card = e.target.closest("[data-i]"), f = e.target.dataset.f; if (!card || !f) return;
   const p = CONTENT.plans[card.dataset.i];
-  if (f === "features" || f === "excluded") p[f] = e.target.value.split("\n").map((x) => x.trim()).filter(Boolean);
-  else if (f === "featured" || f === "available") p[f] = e.target.checked;
+  if (f === "featured" || f === "available") p[f] = e.target.checked;
   else if (f === "price" || f === "oldPrice") p[f] = Number(e.target.value) || 0;
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
 $("#plans-editor").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]"), card = e.target.closest("[data-i]"); if (!b || !card || b.dataset.act.startsWith("img")) return;
+  const card = e.target.closest("[data-i]"); if (!card) return;
+  const st = e.target.closest("[data-st]");
+  if (st) { const t = featLib()[+st.closest("li").dataset.k]; setFeat(CONTENT.plans[card.dataset.i], t, st.dataset.st); return rerenderKeep(); }
+  const b = e.target.closest("[data-act]"); if (!b || b.dataset.act.startsWith("img")) return;
   const i = +card.dataset.i, plans = CONTENT.plans;
+  if (b.dataset.act === "addfeat") return addFeat(card);
+  if (b.dataset.act === "libdel") { featLib().splice(+b.closest("li").dataset.k, 1); return rerenderKeep(); }
+  if (b.dataset.act === "copyfrom" || b.dataset.act === "newfeat") return;
   if (b.dataset.act === "up") move(plans, i, -1);
   if (b.dataset.act === "down") move(plans, i, 1);
   if (b.dataset.act === "del") {
@@ -348,11 +372,26 @@ $("#plans-editor").addEventListener("click", (e) => {
   }
   renderPlans();
 });
+function addFeat(card) {
+  const inp = $("[data-act=newfeat]", card), t = inp.value.trim().replace(/\s+/g, " ");
+  if (!t) return inp.focus();
+  if (!featLib().some((x) => x.toLowerCase() === t.toLowerCase())) featLib().push(t);
+  setFeat(CONTENT.plans[card.dataset.i], featLib().find((x) => x.toLowerCase() === t.toLowerCase()), "in");
+  rerenderKeep(); toast("Band qo‘shildi — u boshqa tariflarda ham shablon sifatida chiqadi");
+}
+$("#plans-editor").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.dataset.act === "newfeat") { e.preventDefault(); addFeat(e.target.closest("[data-i]")); } });
+$("#plans-editor").addEventListener("change", (e) => {
+  if (e.target.dataset.act !== "copyfrom" || e.target.value === "") return;
+  const p = CONTENT.plans[e.target.closest("[data-i]").dataset.i], src = CONTENT.plans[+e.target.value];
+  p.features = [...src.features]; p.excluded = [...src.excluded];
+  rerenderKeep(); toast(`“${src.name}” bandlari nusxalandi — keraklisini o‘zgartiring`);
+});
 $("#add-plan").addEventListener("click", () => {
-  CONTENT.plans.push({ id: "", format: "online", eyebrow: "ONLINE", badge: "", name: "Yangi tarif", description: "", duration: "", price: 0, oldPrice: 0, available: true, whales: "Cheksiz", featured: false, image: "", features: [], excluded: [] });
+  CONTENT.plans.push({ id: "", format: "online", eyebrow: "ONLINE", badge: "", name: "Yangi tarif", description: "", duration: "", price: 0, oldPrice: 0, available: true, whales: "Cheksiz", featured: false, image: "",
+    features: featLib().filter((t) => CONTENT.plans.length && CONTENT.plans.every((p) => p.features.includes(t))), excluded: [] }); // hamma tarifda bor bandlar oldindan belgilanadi
   renderPlans(); $$("#plans-editor .card").at(-1).scrollIntoView({ behavior: "smooth", block: "center" });
 });
-$("#save-plans").addEventListener("click", () => guard(async () => { CONTENT.plans = await api("/plans", { method: "PUT", body: { plans: CONTENT.plans } }); renderPlans(); }, "Tariflar saqlandi — saytda yangilandi"));
+$("#save-plans").addEventListener("click", () => guard(async () => { CONTENT.plans = await api("/plans", { method: "PUT", body: { plans: CONTENT.plans, featureLib: featLib() } }); renderPlans(); }, "Tariflar saqlandi — saytda yangilandi"));
 
 /* Promo kodlar */
 const planName = (id) => { const p = CONTENT.plans.find((x) => x.id === id); return p ? `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}` : id; };

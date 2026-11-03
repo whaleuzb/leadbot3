@@ -123,6 +123,15 @@ function defaultPlans() {
       features: ["Kichik guruhda offlayn darslar", ...CORE, "Guruhli amaliy mashg‘ulotlar", WHALES_UNLIMITED], excluded: [] },
   ];
 }
+/* Tarif bandlari shabloni: standart bandlar + admin qo'shganlari + tariflarda ishlatilganlari (takrorsiz, tartib saqlanadi) */
+function featureLibrary() {
+  const d = defaultPlans(), out = [], seen = new Set();
+  const add = (t) => { const k = String(t || "").trim(); if (k && !seen.has(k.toLowerCase())) { seen.add(k.toLowerCase()); out.push(k); } };
+  d.forEach((p) => p.features.forEach(add)); d.forEach((p) => p.excluded.forEach(add));
+  (db.featureLib || []).forEach(add);
+  db.plans.forEach((p) => { p.features.forEach(add); p.excluded.forEach(add); });
+  return out.slice(0, 150);
+}
 function defaults() {
   return {
     settings: {
@@ -872,7 +881,7 @@ async function api(req, res, url) {
   }
   if (m === "GET" && p === "/api/admin/dashboard") return send(res, 200, dashboard());
   if (m === "GET" && p === "/api/admin/leads") return send(res, 200, { leads: db.leads });
-  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results, promos: db.promos, payments: payCfg(), methods: methodsOn() });
+  if (m === "GET" && p === "/api/admin/all") return send(res, 200, { settings: db.settings, plans: db.plans, lessons: db.lessons, audience: db.audience, results: db.results, promos: db.promos, payments: payCfg(), methods: methodsOn(), featureLib: featureLibrary() });
   if (m === "PUT" && p === "/api/admin/rate") {
     const rate = Math.round(Number((await readJson(req)).rate) || 0);
     if (rate && (rate < 1000 || rate > 100000)) return send(res, 400, { error: "Kurs noto‘g‘ri (masalan 12400)" });
@@ -935,7 +944,12 @@ async function api(req, res, url) {
     return send(res, 201, { url: "/uploads/" + name });
   }
   if (m === "PUT" && p === "/api/admin/settings") { db.settings = cleanSettings(await readJson(req)); save(); return send(res, 200, db.settings); }
-  if (m === "PUT" && p === "/api/admin/plans") { db.plans = cleanPlans((await readJson(req)).plans); save(); return send(res, 200, db.plans); }
+  if (m === "PUT" && p === "/api/admin/plans") {
+    const b = await readJson(req);
+    db.plans = cleanPlans(b.plans);
+    if (Array.isArray(b.featureLib)) db.featureLib = strList(b.featureLib, 150);
+    save(); return send(res, 200, db.plans);
+  }
   if (m === "PUT" && p === "/api/admin/audience") {
     const a = (await readJson(req)).audience;
     if (!Array.isArray(a)) return send(res, 400, { error: "Noto‘g‘ri ro‘yxat" });
