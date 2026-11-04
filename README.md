@@ -28,6 +28,7 @@ ADMIN_PASSWORD='kuchli-parol' npm start     # http://localhost:3000  ·  admin: 
 | `TELEGRAM_CHAT_ID` | arizalar keladigan chat/guruh ID si (admin → Sozlamalar → “Chat ID topish”) |
 | `USDT_WALLET` | (ixtiyoriy) USDT BEP20 hamyonning ochiq manzili — admin paneldagidan ustun turadi |
 | `BSC_RPC_URL` | (ixtiyoriy) BNB Smart Chain RPC, default `https://bsc-rpc.publicnode.com` |
+| `GOOGLE_SITE_VERIFICATION` | (ixtiyoriy) Google Search Console tasdiqlash kodi (meta tegning content qiymati yoki butun tegi) |
 | `USD_RATE` | (ixtiyoriy) dollar kursi, so‘m — admin panelda kurs qo‘yilsa, o‘sha ustun turadi |
 | `BSC_CONFIRMATIONS` | (ixtiyoriy) tasdiqlar soni, default 15 |
 

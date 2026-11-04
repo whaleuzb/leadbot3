@@ -17,6 +17,7 @@ const crypto = require("crypto");
 const pay = require("./pay");
 
 const PORT = process.env.PORT || 3000;
+const STARTED = new Date().toISOString().slice(0, 10);
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
@@ -1018,9 +1019,15 @@ http.createServer(async (req, res) => {
     if (file === "admin.html") { headers["X-Frame-Options"] = "DENY"; headers["Referrer-Policy"] = "no-referrer"; headers["X-Robots-Tag"] = "noindex"; }
     const fp = path.join(__dirname, file), tag = etagOf(fp);
     headers.ETag = tag;
+    if (file === "sitemap.xml") { // lastmod — sayt oxirgi yangilangan sana (deploy vaqti)
+      const xml = fs.readFileSync(fp, "utf8").replace("<changefreq>", `<lastmod>${STARTED}</lastmod><changefreq>`);
+      delete headers.ETag; res.writeHead(200, { ...headers, "Cache-Control": "public, max-age=3600" }); return res.end(xml);
+    }
     if (file === "index.html" || file === "admin.html") { // css/js manzillariga versiya — telefon eski faylni xotiradan olmasin
       const ver = (n) => etagOf(path.join(__dirname, n)).slice(1, 9);
-      const html = fs.readFileSync(fp, "utf8").replace(/(href|src)="\/?(styles\.css|script\.js|fx\.js|admin\.css|admin\.js)"/g, (m0, a, n) => `${a}="/${n}?v=${ver(n)}"`);
+      // Google Search Console tasdiqlash kodi (GOOGLE_SITE_VERIFICATION) — faqat bosh sahifaga
+      const gsv = file === "index.html" ? String(process.env.GOOGLE_SITE_VERIFICATION || "").replace(/^.*content="([^"]+)".*$/s, "$1").replace(/[^\w-]/g, "").slice(0, 100) : "";
+      const html = fs.readFileSync(fp, "utf8").replace("</title>", gsv ? `</title>\n  <meta name="google-site-verification" content="${gsv}" />` : "</title>").replace(/(href|src)="\/?(styles\.css|script\.js|fx\.js|admin\.css|admin\.js)"/g, (m0, a, n) => `${a}="/${n}?v=${ver(n)}"`);
       const htag = `"${crypto.createHash("sha1").update(html).digest("hex").slice(0, 16)}"`;
       if (req.headers["if-none-match"] === htag) { res.writeHead(304, { ETag: htag, "Cache-Control": "no-cache" }); return res.end(); }
       res.writeHead(200, { ...headers, ETag: htag });
