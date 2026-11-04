@@ -934,3 +934,20 @@ html.lb-on { overflow: hidden; }
 .upload.small { min-height: 44px; font-size: 14px; }
 [data-theme="dark"] .rc-ok { color: #6fcf9d !important; }
 [data-theme="dark"] .paid-btn[disabled] { background: #2e2838; color: #8f879d; }
+
+/* Hero: shogirdlar natijalari slayderi */
+.hero-results { background: #15121c; }
+.hero-results::after { inset: 55% 0 0; z-index: 1; background: linear-gradient(rgba(17,14,22,0), rgba(17,14,22,.92)); }
+.hero-results figcaption { z-index: 2; }
+.hero-results .demo-chip { z-index: 3; }
+.hr-link { position: absolute; inset: 0; z-index: 4; }
+.hr-link:focus-visible { outline: 3px solid var(--ring); outline-offset: -3px; border-radius: inherit; }
+.hr-slides, .hr-slide { position: absolute; inset: 0; }
+.hr-slide { opacity: 0; transition: opacity .9s ease; }
+.hr-slide.on { opacity: 1; }
+.hr-bg { position: absolute; inset: -30px; background: center / cover no-repeat; filter: blur(26px) brightness(.45) saturate(1.2); }
+.hr-shot { position: absolute; left: 50%; top: 64px; bottom: 130px; height: calc(100% - 194px); width: auto; max-width: calc(100% - 56px); object-fit: contain; transform: translateX(-50%) scale(.96); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.5); transition: transform 3.6s ease-out; }
+.hr-slide.on .hr-shot { transform: translateX(-50%) scale(1); }
+.hero-results figcaption strong em { color: #c9b8ff; font-style: normal; }
+.hero-results figcaption strong em.up { color: #58e0a0; }
+@media (prefers-reduced-motion: reduce) { .hr-slide, .hr-shot { transition: none; } }

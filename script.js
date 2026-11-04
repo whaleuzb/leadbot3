@@ -319,6 +319,40 @@ function initResults() {
   });
 }
 
+/* ---------- Hero: shogirdlar natijalari (demo grafik o'rniga) ---------- */
+function initHeroResults() {
+  const fig = document.querySelector(".hero-image.chart-card");
+  if (!fig || !RESULTS.length) return; // natija yo'q bo'lsa — eski grafik qoladi
+  // foizli natijalar (+30% kabi) birinchi
+  const list = [...RESULTS].sort((a, b) => (/\+\d/.test(b.caption || "") ? 1 : 0) - (/\+\d/.test(a.caption || "") ? 1 : 0));
+  const N = list.length, pad = (n) => String(n).padStart(2, "0");
+  fig.querySelector(".hero-chart")?.remove();
+  fig.classList.add("hero-results");
+  fig.setAttribute("aria-label", "Shogirdlar natijalari");
+  fig.insertAdjacentHTML("afterbegin", `<a class="hr-link" href="#natijalar" aria-label="Barcha natijalarni ko‘rish"></a>
+    <div class="hr-slides">${list.map((r, i) => `<div class="hr-slide${i === 0 ? " on" : ""}" data-i="${i}"><span class="hr-bg"></span><img class="hr-shot" alt="${esc(r.caption || "Shogird natijasi")}" decoding="async" draggable="false"></div>`).join("")}</div>
+    <span class="demo-chip"><i></i>SHOGIRDLAR NATIJALARI</span>`);
+  const cap = fig.querySelector("figcaption");
+  cap.innerHTML = `<span id="hero-clabel"></span><strong id="hero-caption"></strong>`;
+  const slides = [...fig.querySelectorAll(".hr-slide")], label = cap.querySelector("span"), title = cap.querySelector("strong");
+  const load = (i) => { const sl = slides[i % N], im = sl.querySelector("img"); if (!im.src) { im.src = list[i % N].image; sl.querySelector(".hr-bg").style.backgroundImage = `url("${list[i % N].image}")`; } };
+  let cur = 0;
+  const show = (i) => {
+    slides[cur].classList.remove("on"); cur = (i + N) % N; slides[cur].classList.add("on");
+    const [head, ...rest] = String(list[cur].caption || "Shogird natijasi").split(" · ");
+    label.textContent = `SHOGIRD NATIJASI · ${pad(cur + 1)} / ${pad(N)}`;
+    title.innerHTML = `${esc(head)}${rest.length ? ` <em class="${/\+\d/.test(rest.join(" ")) ? "up" : ""}">${esc(rest.join(" · "))}</em>` : ""}`;
+    load(cur + 1); // keyingisini oldindan yuklab qo'yamiz
+  };
+  load(0); show(0);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches || N < 2) return;
+  let hover = false, visible = true;
+  fig.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") hover = true; });
+  fig.addEventListener("pointerleave", () => (hover = false));
+  if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(fig);
+  setInterval(() => { if (!hover && visible && !document.hidden) show(cur + 1); }, 3200);
+}
+
 /* ---------- 6) Server ma'lumotlari, kuzatuv, ariza formasi ---------- */
 function applyHero(h) {
   if (!h) return;
@@ -626,6 +660,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderPlans();
   renderAudience();
   initResults();
+  initHeroResults();
   initGallery();
   initCountdown();
   initTracking();
