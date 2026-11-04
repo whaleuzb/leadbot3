@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675"><style>
+text{font-family:Arial,Helvetica,"Liberation Sans",sans-serif}
+@keyframes flo{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes br{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes form{0%{transform:scaleY(0);opacity:0}2%{opacity:1}9%{transform:scaleY(1);opacity:1}88%{transform:scaleY(1);opacity:1}96%,100%{transform:scaleY(1);opacity:0}}
+@keyframes draw{0%,30%{stroke-dashoffset:1}48%,88%{stroke-dashoffset:0}96%,100%{stroke-dashoffset:1}}
+@keyframes draw2{0%,48%{stroke-dashoffset:1}64%,88%{stroke-dashoffset:0}96%,100%{stroke-dashoffset:1}}
+@keyframes cur{0%,14%{transform:translate(420px,40px)}30%{transform:translate(0,0)}46%{transform:translate(0,0)}64%{transform:translate(330px,-190px)}88%{transform:translate(330px,-190px)}100%{transform:translate(420px,40px)}}
+@keyframes live{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes sig{0%,4%{opacity:0;transform:translateX(24px)}10%,86%{opacity:1;transform:none}94%,100%{opacity:0}}
+@keyframes talk{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+.cd,.glow,.bar{transform-box:fill-box}
+.cd{animation:form 8s cubic-bezier(.25,.8,.25,1) infinite both}
+.d1{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 8s cubic-bezier(.4,0,.2,1) infinite}
+.d2{stroke-dasharray:1;stroke-dashoffset:1;animation:draw2 8s cubic-bezier(.4,0,.2,1) infinite}
+.cur{animation:cur 8s cubic-bezier(.45,0,.25,1) infinite}
+.live{animation:live 1.4s ease-in-out infinite}
+.sig{opacity:0;animation:sig 8s cubic-bezier(.2,.8,.2,1) infinite}
+.bar{transform-origin:50% 50%;animation:talk .9s ease-in-out infinite}
+.chip{animation:flo 4.5s ease-in-out infinite}
+.glow{transform-origin:50% 50%;animation:br 6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.d1,.d2{stroke-dashoffset:0}.sig{opacity:1}}
+</style><clipPath id="vb"><rect width="1200" height="675"/></clipPath><g clip-path="url(#vb)"><defs>
+<radialGradient id="bg" cx="70%" cy="20%" r="95%"><stop offset="0" stop-color="#3a2f52"/><stop offset=".55" stop-color="#1d1828"/><stop offset="1" stop-color="#110e17"/></radialGradient>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a697eb" stop-opacity=".35"/><stop offset="1" stop-color="#a697eb" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/><line x1="62" y1="0" x2="62" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="124" y1="0" x2="124" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="186" y1="0" x2="186" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="248" y1="0" x2="248" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="310" y1="0" x2="310" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="372" y1="0" x2="372" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="434" y1="0" x2="434" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="496" y1="0" x2="496" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="558" y1="0" x2="558" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="620" y1="0" x2="620" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="682" y1="0" x2="682" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="744" y1="0" x2="744" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="806" y1="0" x2="806" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="868" y1="0" x2="868" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="930" y1="0" x2="930" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="992" y1="0" x2="992" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="1054" y1="0" x2="1054" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="1116" y1="0" x2="1116" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="1178" y1="0" x2="1178" y2="675" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="62" x2="1200" y2="62" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="124" x2="1200" y2="124" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="186" x2="1200" y2="186" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="248" x2="1200" y2="248" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="310" x2="1200" y2="310" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="372" x2="1200" y2="372" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="434" x2="1200" y2="434" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="496" x2="1200" y2="496" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="558" x2="1200" y2="558" stroke="#fff" stroke-opacity=".035"/><line x1="0" y1="620" x2="1200" y2="620" stroke="#fff" stroke-opacity=".035"/>
+<circle class="glow" cx="420" cy="300" r="350" fill="url(#glow)"/>
+<!-- noutbuk -->
+<g transform="translate(80 60)">
+  <rect width="680" height="500" rx="24" fill="#0f0c15" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
+  <rect x="16" y="16" width="648" height="468" rx="12" fill="#1d1828"/>
+  <rect x="16" y="16" width="648" height="40" rx="12" fill="#241e33"/>
+  <circle class="live" cx="40" cy="36" r="7" fill="#e88aa6"/><text x="56" y="42" font-size="15" font-weight="800" fill="#efeaff" letter-spacing="1">JONLI · EKRAN ULASHILGAN</text>
+  <g transform="translate(36 90)">
+    <line x1="0" y1="226.0" x2="600" y2="226.0" stroke="#6fcf9d" stroke-opacity=".55" stroke-width="2" stroke-dasharray="10 8"/>
+    <text x="0" y="250.0" font-size="14" font-weight="700" fill="#6fcf9d" letter-spacing="1">DARAJA</text>
+    <g><g class="cd" style="transform-origin:50% 100%;animation-delay:0ms"><line x1="36" x2="36" y1="170.0" y2="222.5" stroke="#bba5fa" stroke-width="3"/><rect x="28" y="184.0" width="16" height="24.5" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:170ms"><line x1="74" x2="74" y1="142.0" y2="198.0" stroke="#bba5fa" stroke-width="3"/><rect x="66" y="156.0" width="16" height="28.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:340ms"><line x1="112" x2="112" y1="142.0" y2="187.5" stroke="#e88aa6" stroke-width="3"/><rect x="104" y="156.0" width="16" height="17.5" rx="3" fill="#e88aa6"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:510ms"><line x1="150" x2="150" y1="159.5" y2="215.5" stroke="#e88aa6" stroke-width="3"/><rect x="142" y="173.5" width="16" height="28.0" rx="3" fill="#e88aa6"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:680ms"><line x1="188" x2="188" y1="187.5" y2="240.0" stroke="#e88aa6" stroke-width="3"/><rect x="180" y="201.5" width="16" height="24.5" rx="3" fill="#e88aa6"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:850ms"><line x1="226" x2="226" y1="198.0" y2="240.0" stroke="#bba5fa" stroke-width="3"/><rect x="218" y="212.0" width="16" height="14.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1020ms"><line x1="264" x2="264" y1="163.0" y2="226.0" stroke="#bba5fa" stroke-width="3"/><rect x="256" y="177.0" width="16" height="35.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1190ms"><line x1="302" x2="302" y1="128.0" y2="191.0" stroke="#bba5fa" stroke-width="3"/><rect x="294" y="142.0" width="16" height="35.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1360ms"><line x1="340" x2="340" y1="100.0" y2="156.0" stroke="#bba5fa" stroke-width="3"/><rect x="332" y="114.0" width="16" height="28.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1530ms"><line x1="378" x2="378" y1="100.0" y2="142.0" stroke="#e88aa6" stroke-width="3"/><rect x="370" y="114.0" width="16" height="14.0" rx="3" fill="#e88aa6"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1700ms"><line x1="416" x2="416" y1="72.0" y2="142.0" stroke="#bba5fa" stroke-width="3"/><rect x="408" y="86.0" width="16" height="42.0" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:1870ms"><line x1="454" x2="454" y1="40.5" y2="100.0" stroke="#bba5fa" stroke-width="3"/><rect x="446" y="54.5" width="16" height="31.5" rx="3" fill="#bba5fa"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:2040ms"><line x1="492" x2="492" y1="40.5" y2="82.5" stroke="#e88aa6" stroke-width="3"/><rect x="484" y="54.5" width="16" height="14.0" rx="3" fill="#e88aa6"/></g><g class="cd" style="transform-origin:50% 100%;animation-delay:2210ms"><line x1="530" x2="530" y1="16.0" y2="82.5" stroke="#bba5fa" stroke-width="3"/><rect x="522" y="30.0" width="16" height="38.5" rx="3" fill="#bba5fa"/></g></g>
+    <!-- mentor belgilari -->
+    <ellipse class="d1" pathLength="1" cx="188" cy="212.0" rx="44" ry="34" fill="none" stroke="#f2d58a" stroke-width="4" stroke-linecap="round"/>
+    <path class="d2" pathLength="1" d="M230 191.0 C320 138.5 420 86.0 516 26.5" fill="none" stroke="#f2d58a" stroke-width="4" stroke-linecap="round"/>
+    <path class="d2" pathLength="1" d="M494 16.0 L520 26.5 L506 61.5" fill="none" stroke="#f2d58a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="cur" style="transform-origin:0 0"><g transform="translate(200 226.0)"><path d="M0 0 L0 26 L7 19 L13 32 L18 30 L12 17 L22 17 Z" fill="#efeaff" stroke="#211a35" stroke-width="1.5" stroke-linejoin="round"/></g></g>
+  </g>
+  <!-- mentor kichik oynasi -->
+  <g transform="translate(484 352)">
+    <rect width="164" height="116" rx="14" fill="#2c2440" stroke="#bba5fa" stroke-opacity=".6" stroke-width="2"/>
+    <circle cx="82" cy="50" r="24" fill="#bba5fa"/><path d="M42 116 Q42 80 82 80 Q122 80 122 116 Z" fill="#bba5fa"/>
+    <text x="82" y="58" text-anchor="middle" font-size="20" font-weight="800" fill="#211a35">M</text>
+    <g transform="translate(14 14)"><rect class="bar" x="0" y="0" width="4" height="14" rx="2" fill="#6fcf9d"/><rect class="bar" x="7" y="0" width="4" height="14" rx="2" fill="#6fcf9d" style="animation-delay:-.3s"/><rect class="bar" x="14" y="0" width="4" height="14" rx="2" fill="#6fcf9d" style="animation-delay:-.6s"/></g>
+  </g>
+  <path d="M-30 500 L710 500 L740 532 L-60 532 Z" fill="#2c2440"/>
+</g>
+<!-- Whales signal kartasi -->
+<g transform="translate(860 170)">
+  <rect x="-20" y="-70" width="290" height="300" rx="22" fill="#0f0c15" stroke="#fff" stroke-opacity=".16"/>
+  <text x="0" y="-32" font-size="16" font-weight="700" fill="#9a90ad" letter-spacing="2">WHALES SIGNAL</text>
+  <circle class="live" cx="244" cy="-38" r="6" fill="#6fcf9d"/>
+  <g class="sig" style="animation-delay:0.0s"><g transform="translate(0 0)"><rect width="250" height="54" rx="14" fill="#241e33" stroke="#fff" stroke-opacity=".08"/><text x="16" y="34" font-size="18" font-weight="700" fill="#efeaff">BTC/USDT</text><rect x="156" y="14" width="78" height="26" rx="13" fill="#6fcf9d"/><text x="195" y="33" text-anchor="middle" font-size="14" font-weight="800" fill="#10301f" letter-spacing="1">LONG</text></g></g><g class="sig" style="animation-delay:1.6s"><g transform="translate(0 66)"><rect width="250" height="54" rx="14" fill="#241e33" stroke="#fff" stroke-opacity=".08"/><text x="16" y="34" font-size="18" font-weight="700" fill="#efeaff">ETH/USDT</text><rect x="156" y="14" width="78" height="26" rx="13" fill="#6fcf9d"/><text x="195" y="33" text-anchor="middle" font-size="14" font-weight="800" fill="#10301f" letter-spacing="1">LONG</text></g></g><g class="sig" style="animation-delay:3.2s"><g transform="translate(0 132)"><rect width="250" height="54" rx="14" fill="#241e33" stroke="#fff" stroke-opacity=".08"/><text x="16" y="34" font-size="18" font-weight="700" fill="#efeaff">SOL/USDT</text><rect x="142" y="14" width="92" height="26" rx="13" fill="#f2d58a"/><text x="188" y="33" text-anchor="middle" font-size="14" font-weight="800" fill="#3d3216" letter-spacing="1">KUTISH</text></g></g>
+</g>
+<g class="chip" style="animation-delay:-0.6s"><rect x="840" y="440" width="140" height="40" rx="20" fill="#bba5fa"/><text x="910" y="467" text-anchor="middle" font-size="19" font-weight="700" fill="#211a35" letter-spacing="1">1 GA 1</text></g>
+<g class="chip" style="animation-delay:-2.2s"><rect x="992" y="440" width="130" height="40" rx="20" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/><text x="1057" y="466" text-anchor="middle" font-size="18" font-weight="700" fill="#efeaff">Online</text></g>
+<g class="chip" style="animation-delay:-3.4s"><rect x="860" y="496" width="240" height="38" rx="19" fill="#2c2440" stroke="#fff" stroke-opacity=".12"/><text x="980" y="522" text-anchor="middle" font-size="18" font-weight="700" fill="#efeaff">Whales · cheksiz</text></g>
+</g></svg>
