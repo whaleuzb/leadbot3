@@ -315,7 +315,7 @@ function autoImages(list, POOL) {
 const autoLessonImages = () => autoImages(db.lessons, LESSON_POOL);
 const autoAudienceImages = () => autoImages(db.audience, AUD_POOL);
 function autoPlanImages() {
-  const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual", "online-individual": "plan-online", "online-lessons": "plan-mini", "offline-individual": "plan-offline", "offline-group": "plan-group" }, order = ["plan-mini", "plan-pro", "plan-individual"];
+  const byId = { mini: "plan-mini", pro: "plan-pro", individual: "plan-individual", "online-individual": "plan-online", "online-lessons": "plan-lessons", "offline-individual": "plan-offline", "offline-group": "plan-group" }, order = ["plan-mini", "plan-pro", "plan-individual"];
   db.plans.forEach((p, i) => { if (!isAutoImage(p.image)) return; const n = byId[p.id] || order[i]; if (n) p.image = seedUrl(n); });
 }
 function seedImages() {
