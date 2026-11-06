@@ -220,3 +220,38 @@ tr.hl > td { background: var(--info-bg); }
 .feat-add { display: flex; gap: 8px; margin-top: 10px; }
 .feat-add input { flex: 1; min-width: 0; }
 @media (max-width: 640px) { .feat-list li { flex-wrap: wrap; } .feat-text { flex-basis: 100%; } }
+
+/* =========================================================
+   Tungi rejim
+   ========================================================= */
+.theme-btn { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: 600 14px var(--body); cursor: pointer; }
+.theme-btn svg { width: 34px; height: 34px; padding: 8px; border: 1px solid var(--border); border-radius: 50%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+.theme-btn:hover svg { background: var(--lilac); }
+.theme-btn .ico-sun, [data-theme="dark"] .theme-btn .ico-moon { display: none; }
+[data-theme="dark"] .theme-btn .ico-sun { display: block; }
+.login-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:root[data-theme="dark"] {
+  --bg: #110e16; --surface: #1c1826; --fg: #ece8f4; --muted: #a59db3; --border: #2e2838;
+  --accent: #b39ff5; --lilac: #2a2340; --dark: #efeaff; --ring: #b39ff5;
+  --ok: #6fcf9d; --ok-bg: #173226; --warn: #f2d58a; --warn-bg: #3a3016; --bad: #f09a92; --bad-bg: #3d1f1d; --info: #c9b8ff; --info-bg: #2a2340;
+  color-scheme: dark;
+}
+[data-theme="dark"] .sidebar nav a { color: #cfc8dc; }
+[data-theme="dark"] .sidebar nav a.active { color: #efeaff; }
+[data-theme="dark"] .count, [data-theme="dark"] .btn.ok, [data-theme="dark"] .feat-seg button[aria-pressed="true"][data-st="in"], [data-theme="dark"] .feat-seg button[aria-pressed="true"][data-st="out"] { color: #110e16; }
+[data-theme="dark"] .toast { color: #211a35; }
+[data-theme="dark"] .btn { border-color: #3a3346; }
+[data-theme="dark"] .btn.primary { color: var(--primary-ink); }
+[data-theme="dark"] td, [data-theme="dark"] .recent-item { border-bottom-color: #2a2433; }
+[data-theme="dark"] .tg-help ol { color: #cfc8dc; }
+[data-theme="dark"] .chart line { stroke: #2e2838; }
+[data-theme="dark"] .chart rect[fill="#d6cafa"] { fill: #4a3d6e; }
+[data-theme="dark"] .chart rect[fill="#7560b8"] { fill: #b39ff5; }
+[data-theme="dark"] .dot.views { background: #4a3d6e; }
+[data-theme="dark"] .feat-list li, [data-theme="dark"] .feat-seg { background: #15121c; }
+[data-theme="dark"] .feat-list li.out { background: #2a1817; }
+[data-theme="dark"] .feat-seg button { color: #a59db3; }
+[data-theme="dark"] .feat-seg button[data-st=""][aria-pressed="true"] { background: #2e2838; color: #ece8f4; }
+[data-theme="dark"] tr.hl > td { background: #221c33; }
+[data-theme="dark"] .img-thumb.empty { background: #15121c; }
