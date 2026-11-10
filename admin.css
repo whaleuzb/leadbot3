@@ -255,3 +255,9 @@ tr.hl > td { background: var(--info-bg); }
 [data-theme="dark"] .feat-seg button[data-st=""][aria-pressed="true"] { background: #2e2838; color: #ece8f4; }
 [data-theme="dark"] tr.hl > td { background: #221c33; }
 [data-theme="dark"] .img-thumb.empty { background: #15121c; }
+
+.grp-box { padding: 14px 16px; border: 1px dashed var(--border); border-radius: 16px; }
+.grp-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.grp-row input { flex: 1 1 220px; min-width: 0; }
+.grp-list { margin-top: 10px; }
+.inv-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }

@@ -975,3 +975,6 @@ html.lb-on { overflow: hidden; }
   .spotlight .button { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .plan.flash { animation: none; } .sp-eyebrow i { animation: none; } }
+
+.join-btn { width: 100%; }
+.lead-card p.join-note { margin: 0; color: var(--muted); font-size: 13px; }

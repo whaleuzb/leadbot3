@@ -575,15 +575,16 @@ function initLeadForm() {
     if (scroll) { document.getElementById("apply").scrollIntoView({ behavior: "smooth", block: "start" }); panel.focus({ preventScroll: true }); }
     clearInterval(poll);
     if (o.payStatus === "pending" || o.payStatus === "review") poll = setInterval(refresh, o.method === "usdt" ? 8000 : 15000);
+    else if (o.payStatus === "paid" && !o.inviteLink && Date.now() - Date.parse(o.paidAt || 0) < 10 * 6e4) { let n = 0; poll = setInterval(() => { if (++n > 8) clearInterval(poll); refresh(true); }, 4000); } // guruh havolasi bir necha soniyada tayyor bo'ladi
   }
-  async function refresh() {
+  async function refresh() { // eslint-disable-line
     if (document.hidden || !CURRENT) return;
     try {
       const r = await fetch(`/api/orders/${CURRENT.id}?t=${TOKEN}`, { cache: "no-store" });
       if (r.status === 404) return resetOrder();
       if (!r.ok) return;
       const o = await r.json();
-      if (o.payStatus !== CURRENT.payStatus) showOrder(o, TOKEN, false);
+      if (o.payStatus !== CURRENT.payStatus || (o.inviteLink && !CURRENT.inviteLink)) showOrder(o, TOKEN, false);
     } catch {}
   }
   function resetOrder() {
@@ -595,8 +596,13 @@ function initLeadForm() {
     const head = `<div class="pay-head"><div><p class="eyebrow">BUYURTMA #${o.no}</p><h3>${esc(o.planName)}</h3></div><span class="pay-pill ${o.payStatus}">${STATUS_TXT[o.payStatus] || ""}</span></div>`;
     const foot = `<div class="pay-foot"><a class="text-link" href="${esc(tgLink(o))}" target="_blank" rel="noopener noreferrer">Menejerga yozish</a>${o.payStatus === "paid" || o.payStatus === "none" ? `<button class="text-link" type="button" data-pay="new">Yangi buyurtma</button>` : `<button class="text-link" type="button" data-pay="cancel">Bekor qilish / boshqa usul</button>`}</div>`;
     if (o.payStatus === "paid") return `${head}<div class="pay-done"><div class="pay-check">${svgI("M5 12.5l4.5 4.5L19 7")}</div>
-      <h4>To‘lov qabul qilindi!</h4><p>Rahmat, ${cents(o.amountCents)} to‘lovingiz tasdiqlandi. Menejer tez orada Telegram orqali bog‘lanib, sizni darslar va <b>Whales signal guruhi</b>ga qo‘shadi.</p>
-      <a class="button" href="${esc(tgLink(o, `Assalomu alaykum! Buyurtma #${o.no} to‘landi (${o.planName}). Kirishni bersangiz.`))}" target="_blank" rel="noopener noreferrer">Menejerga yozish${ARROW}</a></div>${foot}`;
+      <h4>To‘lov qabul qilindi!</h4>
+      ${o.inviteLink ? `<p>Rahmat, ${cents(o.amountCents)} to‘lovingiz tasdiqlandi. Quyidagi tugma orqali${o.inviteTitle ? ` <b>“${esc(o.inviteTitle)}”</b>` : ""} guruhiga qo‘shiling.</p>
+      <a class="button join-btn" href="${esc(o.inviteLink)}" target="_blank" rel="noopener noreferrer">Guruhga qo‘shilish${ARROW}</a>
+      <p class="join-note">Havola faqat siz uchun: bir marta ishlaydi${o.inviteExpires ? `, ${esc(untilText(o.inviteExpires))} amal qiladi` : ""}. Boshqalarga yubormang.</p>
+      <a class="text-link" href="${esc(tgLink(o, `Assalomu alaykum! Buyurtma #${o.no} to‘landi (${o.planName}).`))}" target="_blank" rel="noopener noreferrer">Savol bo‘lsa — menejerga yozing</a>`
+      : `<p>Rahmat, ${cents(o.amountCents)} to‘lovingiz tasdiqlandi. Menejer tez orada Telegram orqali bog‘lanib, sizni darslar va <b>Whales signal guruhi</b>ga qo‘shadi.</p>
+      <a class="button" href="${esc(tgLink(o, `Assalomu alaykum! Buyurtma #${o.no} to‘landi (${o.planName}). Kirishni bersangiz.`))}" target="_blank" rel="noopener noreferrer">Menejerga yozish${ARROW}</a>`}</div>${foot}`;
     if (o.payStatus === "none") return `${head}<div class="pay-done"><h4>Ariza qabul qilindi</h4><p>Menejer tez orada bog‘lanib, to‘lov tartibini tushuntiradi.</p></div>${foot}`;
     if (o.payStatus === "expired" || o.payStatus === "cancelled") return `${head}<div class="pay-done"><p>${o.payStatus === "expired" ? "To‘lov muddati o‘tdi. Agar to‘lagan bo‘lsangiz — menejerga TxID yoki chekni yuboring." : "Buyurtma bekor qilindi."}</p></div>${foot}`;
     if (o.method === "usdt") {

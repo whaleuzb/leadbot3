@@ -533,6 +533,7 @@ function cleanPlans(arr) {
       oldPrice: Math.max(0, Math.round(Number(p.oldPrice) * 100) / 100 || 0),
       available: p.available !== false, whales: str(p.whales, 30),
       availableUntil: isDate(p.availableUntil) ? p.availableUntil : "", pinned: !!p.pinned,
+      tgGroup: /^-?\d{5,20}$/.test(String(p.tgGroup ?? "").trim()) ? String(p.tgGroup).trim() : "", tgGroupTitle: str(p.tgGroupTitle, 80),
     };
   });
 }
@@ -587,8 +588,32 @@ function payInfo(o) {
   if (o.method === "card") return { card: p.cardNumber, holder: p.cardHolder, bank: p.cardBank, sum: o.paySom, rate: o.rate };
   return null;
 }
+const inviteValid = (o) => o.payStatus === "paid" && o.invite && o.invite.link && !(o.invite.expires && Date.parse(o.invite.expires) < Date.now());
 const publicOrder = (o) => ({ id: o.id, no: o.no, planName: o.planName, planId: o.plan, priceCents: o.priceCents, discountCents: o.discountCents, amountCents: o.amountCents, promo: o.promo || "",
-  method: o.method, payStatus: o.payStatus, pay: payInfo(o), txid: o.txid || "", hasReceipt: !!o.receipt, createdAt: o.createdAt, paidAt: o.paidAt || "" });
+  method: o.method, payStatus: o.payStatus, pay: payInfo(o), txid: o.txid || "", hasReceipt: !!o.receipt, createdAt: o.createdAt, paidAt: o.paidAt || "",
+  inviteLink: inviteValid(o) ? o.invite.link : "", inviteTitle: inviteValid(o) ? o.invite.title || "" : "", inviteExpires: inviteValid(o) ? o.invite.expires || "" : "" });
+
+/* To'lov qilganlar uchun Telegram guruhga bir martalik taklif havolasi.
+   Bot guruhda admin ("Foydalanuvchilarni taklif qilish" huquqi) bo'lishi kerak.
+   Botlar odamni o'zi qo'sha olmaydi — shuning uchun shaxsiy, 1 kishilik, 7 kunlik havola. */
+const INVITE_DAYS = 7;
+async function makeInvite(o, force) {
+  const plan = db.plans.find((p) => p.id === o.plan);
+  if (!plan || !plan.tgGroup || !tgToken()) return null;
+  if (!force && inviteValid(o)) return o.invite;
+  try {
+    if (force && o.invite && o.invite.link) await tgCall("revokeChatInviteLink", { chat_id: plan.tgGroup, invite_link: o.invite.link }).catch(() => {});
+    const exp = Math.floor(Date.now() / 1000) + INVITE_DAYS * 86400;
+    const r = await tgCall("createChatInviteLink", { chat_id: plan.tgGroup, name: `#${o.no} ${o.name}`.slice(0, 32), member_limit: 1, expire_date: exp });
+    o.invite = { link: r.invite_link, chat: plan.tgGroup, title: plan.tgGroupTitle || "", at: new Date().toISOString(), expires: new Date(exp * 1000).toISOString() };
+    delete o.inviteError; save();
+    return o.invite;
+  } catch (e) {
+    o.inviteError = String(e.message).slice(0, 200); save();
+    console.warn("Taklif havolasi yaratilmadi:", o.inviteError);
+    return null;
+  }
+}
 const orderByToken = (id, t) => { const o = db.leads.find((x) => x.id === id && x.no); return o && typeof t === "string" && o.token && t.length === o.token.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(o.token)) ? o : null; };
 
 /* To'lov tasdiqlanganda (avtomatik yoki admin) — bir marta */
@@ -598,7 +623,14 @@ function markPaid(o, how, extra = {}) {
   const pr = o.promo && findPromo(o.promo);
   if (pr) pr.used = (pr.used || 0) + 1;
   save();
-  tgNotify(`✅ <b>To‘lov qabul qilindi</b> (${htmlEsc(how)})\n${orderLine(o)}\n💬 ${o.username ? "@" + htmlEsc(o.username) : htmlEsc(o.phone)}${o.txid ? `\n🔗 https://bscscan.com/tx/${o.txid}` : ""}\n\nMijozni Whales guruhi va darslarga qo‘shing.`);
+  const plan = db.plans.find((p) => p.id === o.plan);
+  (async () => {
+    const inv = plan && plan.tgGroup ? await makeInvite(o) : null;
+    const grp = !plan || !plan.tgGroup ? "" : inv
+      ? `\n\n👥 Guruh${plan.tgGroupTitle ? " “" + htmlEsc(plan.tgGroupTitle) + "”" : ""} uchun shaxsiy havola (1 kishi, ${INVITE_DAYS} kun):\n${inv.link}\nMijoz to‘lov sahifasida ham ko‘radi. Sahifani yopgan bo‘lsa — shu havolani yuboring.`
+      : `\n\n⚠️ Guruh havolasini yaratib bo‘lmadi: ${htmlEsc(o.inviteError || "")}\nBot guruhda admin va “taklif qilish” huquqi borligini tekshiring.`;
+    tgNotify(`✅ <b>To‘lov qabul qilindi</b> (${htmlEsc(how)})\n${orderLine(o)}\n💬 ${o.username ? "@" + htmlEsc(o.username) : htmlEsc(o.phone)}${o.txid ? `\n🔗 https://bscscan.com/tx/${o.txid}` : ""}${grp}\n\nMijozni Whales guruhi va darslarga qo‘shing.`);
+  })().catch((e) => console.error("markPaid notify:", e.message));
   return true;
 }
 function expireOrders() {
@@ -872,9 +904,31 @@ async function api(req, res, url) {
     try {
       const ups = await tgCall("getUpdates", { limit: 100, allowed_updates: ["message", "channel_post", "my_chat_member"] });
       const chats = new Map();
+      for (const c of db.tgChats || []) chats.set(c.id, c); // avval ko'rilganlar (Telegram 24 soatdan keyin unutadi)
       for (const u of ups) { const c = (u.message || u.channel_post || u.my_chat_member)?.chat; if (c) chats.set(c.id, { id: c.id, type: c.type, name: c.title || [c.first_name, c.last_name].filter(Boolean).join(" ") || c.username || "" }); }
-      return send(res, 200, { chats: [...chats.values()] });
+      db.tgChats = [...chats.values()].slice(-50); save();
+      return send(res, 200, { chats: db.tgChats });
     } catch (e) { return send(res, 502, { error: "Telegram: " + e.message }); }
+  }
+  if (m === "GET" && p === "/api/admin/telegram/group") { // guruhni tekshirish: nomi va bot huquqlari
+    const id = str(url.searchParams.get("id") || "", 30);
+    if (!/^-?\d{5,20}$/.test(id)) return send(res, 400, { error: "Noto‘g‘ri guruh ID" });
+    try {
+      const chat = await tgCall("getChat", { chat_id: id }), me = await tgCall("getMe", {});
+      const mem = await tgCall("getChatMember", { chat_id: id, user_id: me.id });
+      return send(res, 200, { id, title: chat.title || "", type: chat.type, admin: mem.status === "administrator", canInvite: mem.status === "administrator" && mem.can_invite_users !== false });
+    } catch (e) { return send(res, 502, { error: "Telegram: " + e.message }); }
+  }
+  const inv = /^\/api\/admin\/leads\/(\w+)\/invite$/.exec(p);
+  if (m === "POST" && inv) {
+    const o = db.leads.find((x) => x.id === inv[1] && x.no);
+    if (!o) return send(res, 404, { error: "Buyurtma topilmadi" });
+    if (o.payStatus !== "paid") return send(res, 400, { error: "Avval to‘lovni tasdiqlang" });
+    const plan = db.plans.find((x) => x.id === o.plan);
+    if (!plan || !plan.tgGroup) return send(res, 400, { error: "Bu tarifga Telegram guruh ulanmagan (Tariflar bo‘limida tanlang)" });
+    const r = await makeInvite(o, true);
+    if (!r) return send(res, 502, { error: "Havola yaratilmadi: " + (o.inviteError || "") });
+    return send(res, 200, o);
   }
   const resend = /^\/api\/admin\/leads\/(\w+)\/resend$/.exec(p);
   if (m === "POST" && resend) {

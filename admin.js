@@ -167,6 +167,7 @@ const tgPill = (l) => ({
   off: `<span class="pill contacted" title="Bot sozlanmagan">Bot ulanmagan</span><button class="btn sm" data-act="resend" type="button">Yuborish</button>`,
   pending: `<span class="pill new">Yuborilmoqda…</span>`,
 }[l.tg] || "");
+const planHasGroup = (id) => !!(CONTENT && CONTENT.plans.find((p) => p.id === id && p.tgGroup));
 function payCell(l) {
   const amt = l.method === "usdt" && l.payCents ? `${(l.payCents / 100).toFixed(2)} USDT` : l.method === "card" && l.paySom ? `${money(l.paySom)} so‘m` : "";
   const rc = (l.receipts || []).map((f, i, a) => `<a href="/api/admin/receipts/${esc(f)}" target="_blank" rel="noopener">Chek${a.length > 1 ? " " + (i + 1) : ""} ↗</a>`).join(" ");
@@ -174,7 +175,8 @@ function payCell(l) {
     <div class="lead-meta"><b>${usd(l.amountCents)}</b>${l.promo ? ` (promo ${esc(l.promo)} −${usd(l.discountCents)})` : ""} · ${METHOD[l.method] || ""}${amt ? " · " + amt : ""}</div>
     <div class="pay-line"><select data-act="pay" aria-label="To‘lov holati" class="pay-sel ${PAY_CLASS[l.payStatus] || ""}">${Object.entries(PAY).filter(([k]) => k !== "none" || l.payStatus === "none").map(([k, v]) => `<option value="${k}"${l.payStatus === k ? " selected" : ""}>${v}</option>`).join("")}</select>
     ${l.payStatus === "review" || l.payStatus === "pending" ? `<button class="btn sm ok" data-act="confirm" type="button">To‘lovni tasdiqlash</button>` : ""}</div>
-    ${rc || l.txid ? `<div class="lead-meta">${rc}${l.txid ? ` <a href="https://bscscan.com/tx/${esc(l.txid)}" target="_blank" rel="noopener noreferrer">Tx ↗</a>` : ""}${l.paidVia ? ` · ${esc(l.paidVia)}` : ""}</div>` : ""}`;
+    ${rc || l.txid ? `<div class="lead-meta">${rc}${l.txid ? ` <a href="https://bscscan.com/tx/${esc(l.txid)}" target="_blank" rel="noopener noreferrer">Tx ↗</a>` : ""}${l.paidVia ? ` · ${esc(l.paidVia)}` : ""}</div>` : ""}
+    ${l.payStatus === "paid" && (l.invite || l.inviteError || planHasGroup(l.plan)) ? `<div class="lead-meta inv-line">👥 ${l.invite && l.invite.link ? `<a href="${esc(l.invite.link)}" target="_blank" rel="noopener noreferrer">Guruh havolasi ↗</a> <button class="btn sm" type="button" data-act="copyinv" data-link="${esc(l.invite.link)}">Nusxalash</button>` : l.inviteError ? `<span class="pill rejected" title="${esc(l.inviteError)}">Havola yaratilmadi</span>` : "Havola yo‘q"} <button class="btn sm" type="button" data-act="invite">${l.invite ? "Yangi havola" : "Havola yaratish"}</button></div>` : ""}`;
 }
 function renderLeads() {
   const rows = filteredLeads();
@@ -200,17 +202,26 @@ $("#leads-table").addEventListener("change", (e) => {
   if (e.target.dataset.act === "status") guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { status: e.target.value } })); refreshBadge(); }, "Holat yangilandi");
   if (e.target.dataset.act === "pay") {
     if (e.target.value === "paid" && !confirm(`#${lead.no} — ${lead.name}: to‘lovni tasdiqlaysizmi? Telegramga xabar ketadi.`)) { e.target.value = lead.payStatus; return; }
-    guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { payStatus: e.target.value } })); renderLeads(); refreshBadge(); }, "To‘lov holati yangilandi");
+    guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { payStatus: e.target.value } })); renderLeads(); refreshBadge(); if (e.target.value === "paid") setTimeout(() => loadLeads().catch(() => {}), 2500); }, "To‘lov holati yangilandi");
   }
   if (e.target.dataset.act === "note") guard(async () => { Object.assign(lead, await api("/leads/" + lead.id, { method: "PATCH", body: { adminNote: e.target.value } })); }, "Izoh saqlandi");
 });
 $("#leads-table").addEventListener("click", (e) => {
+  const ci = e.target.closest("[data-act=copyinv]");
+  if (ci) { navigator.clipboard?.writeText(ci.dataset.link).then(() => toast("Havola nusxalandi — mijozga yuboring"), () => toast(ci.dataset.link)); return; }
+  const iv = e.target.closest("[data-act=invite]");
+  if (iv) {
+    const l = LEADS.find((x) => x.id === iv.closest("tr").dataset.id);
+    if (l.invite && !confirm("Eski havola bekor qilinadi va yangisi yaratiladi. Davom etasizmi?")) return;
+    iv.disabled = true;
+    return guard(async () => { Object.assign(l, await api("/leads/" + l.id + "/invite", { method: "POST", body: {} })); renderLeads(); }, "Guruh havolasi yaratildi").finally(() => { iv.disabled = false; });
+  }
   const cf = e.target.closest("[data-act=confirm]");
   if (cf) {
     const l = LEADS.find((x) => x.id === cf.closest("tr").dataset.id);
     if (!confirm(`#${l.no} — ${l.name}: ${usd(l.amountCents)} to‘lovni tasdiqlaysizmi? Telegramga xabar ketadi.`)) return;
     cf.disabled = true;
-    return guard(async () => { Object.assign(l, await api("/leads/" + l.id, { method: "PATCH", body: { payStatus: "paid" } })); renderLeads(); refreshBadge(); }, "To‘lov tasdiqlandi");
+    return guard(async () => { Object.assign(l, await api("/leads/" + l.id, { method: "PATCH", body: { payStatus: "paid" } })); renderLeads(); refreshBadge(); setTimeout(() => loadLeads().catch(() => {}), 2500); /* guruh havolasi tayyor bo'lgach */ }, "To‘lov tasdiqlandi");
   }
   const rs = e.target.closest("[data-act=resend]");
   if (rs) {
@@ -332,6 +343,11 @@ function renderPlans() {
         <div><label>Whales signal guruhi</label><input data-f="whales" value="${esc(p.whales || "")}" maxlength="30" placeholder="Cheksiz / 3 oy" /></div>
         <div><label>Holati</label><label class="check"><input type="checkbox" data-f="available" ${p.available !== false ? "checked" : ""} /> Sotuvda (o‘chirilsa — “vaqtincha mavjud emas”)</label></div>
         <div><label>Sotuv tugash sanasi <span class="lead-meta">(ixtiyoriy)</span></label><input type="datetime-local" data-f="availableUntil" value="${p.availableUntil ? toLocalInput(p.availableUntil) : ""}" /><small class="lead-meta">${p.availableUntil && Date.parse(p.availableUntil) <= Date.now() ? "⛔ Muddat o‘tgan — saytda yopiq" : "Shu vaqtda tarif o‘zi yopiladi (Toshkent vaqti)"}</small></div>
+        <div class="span3 grp-box"><label>Telegram guruh — to‘lov qilganlarga avtomatik taklif havolasi</label>
+          <div class="grp-row"><input data-f="tgGroup" value="${esc(p.tgGroup || "")}" placeholder="Guruh ID (masalan -1001234567890)" maxlength="25" />
+            <button class="btn sm" type="button" data-act="grpfind">Guruhlarni topish</button><button class="btn sm" type="button" data-act="grpcheck">Tekshirish</button>${p.tgGroup ? `<button class="btn sm danger" type="button" data-act="grpdel">Uzish</button>` : ""}</div>
+          <small class="lead-meta grp-msg">${p.tgGroup ? `Ulangan: <b>${esc(p.tgGroupTitle || p.tgGroup)}</b>. To‘lov tasdiqlanganda mijozga 1 martalik, ${7} kunlik shaxsiy havola beriladi.` : "Ulanmagan. Bot guruhda admin bo‘lishi va “Foydalanuvchilarni taklif qilish” huquqi bo‘lishi kerak."}</small>
+          <ul class="tg-chats grp-list" hidden></ul></div>
         <div class="span2"><label>Ajratib ko‘rsatish</label><label class="check"><input type="checkbox" data-f="pinned" ${p.pinned ? "checked" : ""} /> Tariflar tepasida banner (“Qabul ochiq”) va o‘z bo‘limida birinchi</label></div>
         <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
@@ -353,6 +369,7 @@ $("#plans-editor").addEventListener("input", (e) => {
   const card = e.target.closest("[data-i]"), f = e.target.dataset.f; if (!card || !f) return;
   const p = CONTENT.plans[card.dataset.i];
   if (f === "featured" || f === "available" || f === "pinned") p[f] = e.target.checked;
+  else if (f === "tgGroup") { p.tgGroup = e.target.value.trim(); p.tgGroupTitle = ""; }
   else if (f === "availableUntil") p.availableUntil = e.target.value ? fromLocalInput(e.target.value) : "";
   else if (f === "price" || f === "oldPrice") p[f] = Number(e.target.value) || 0;
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
@@ -364,6 +381,15 @@ $("#plans-editor").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]"); if (!b || b.dataset.act.startsWith("img")) return;
   const i = +card.dataset.i, plans = CONTENT.plans;
   if (b.dataset.act === "addfeat") return addFeat(card);
+  if (b.dataset.act === "grpfind") return guard(async () => {
+    const { chats } = await api("/telegram/chats"), ul = $(".grp-list", card), groups = chats.filter((c) => /group|channel/.test(c.type));
+    ul.hidden = false;
+    ul.innerHTML = groups.length ? groups.map((c) => `<li><code>${esc(c.id)}</code> <span>${esc(c.name || "(nomsiz)")} · ${esc(c.type)}</span> <button class="btn sm" type="button" data-act="grppick" data-id="${esc(c.id)}" data-name="${esc(c.name || "")}">Shuni tanlash</button></li>`).join("")
+      : `<li>Guruh topilmadi. Guruhda botga xabar yozing (masalan <code>/start@botingiz</code>) yoki botni guruhdan chiqarib, qayta admin qiling — keyin yana bosing.</li>`;
+  });
+  if (b.dataset.act === "grppick") { const p = plans[i]; p.tgGroup = b.dataset.id; p.tgGroupTitle = b.dataset.name; rerenderKeep(); return checkGroup(i); }
+  if (b.dataset.act === "grpcheck") return checkGroup(i);
+  if (b.dataset.act === "grpdel") { plans[i].tgGroup = ""; plans[i].tgGroupTitle = ""; return rerenderKeep(); }
   if (b.dataset.act === "libdel") { featLib().splice(+b.closest("li").dataset.k, 1); return rerenderKeep(); }
   if (b.dataset.act === "copyfrom" || b.dataset.act === "newfeat") return;
   if (b.dataset.act === "up") move(plans, i, -1);
@@ -375,6 +401,16 @@ $("#plans-editor").addEventListener("click", (e) => {
   }
   renderPlans();
 });
+async function checkGroup(i) {
+  const p = CONTENT.plans[i], card = $(`#plans-editor [data-i="${i}"]`), msg = card && $(".grp-msg", card);
+  if (!p.tgGroup) return toast("Avval guruhni tanlang yoki ID kiriting", true);
+  try {
+    const g = await api("/telegram/group?id=" + encodeURIComponent(p.tgGroup));
+    p.tgGroupTitle = g.title;
+    if (msg) msg.innerHTML = g.canInvite ? `✅ <b>${esc(g.title)}</b> — bot admin, taklif havolasi yarata oladi. Oxirida “Saqlash” bosing.` : `⚠️ <b>${esc(g.title)}</b> — bot ${g.admin ? "admin, lekin “Foydalanuvchilarni taklif qilish” huquqi yo‘q" : "admin emas"}. Guruh sozlamalarida botga shu huquqni bering.`;
+    toast(g.canInvite ? "Guruh tayyor" : "Bot huquqlarini tekshiring", !g.canInvite);
+  } catch (e) { if (msg) msg.textContent = "❌ " + e.message; toast(e.message, true); }
+}
 function addFeat(card) {
   const inp = $("[data-act=newfeat]", card), t = inp.value.trim().replace(/\s+/g, " ");
   if (!t) return inp.focus();
