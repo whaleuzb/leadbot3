@@ -512,6 +512,8 @@ async function refreshCbuRate() {
   } catch (e) { console.warn("Zaxira kursni ham olib bo‘lmadi:", e.message); }
 }
 const methodsOn = () => { const p = payCfg(); return { usdt: !!p.usdtWallet, card: !!(p.cardNumber && p.usdRate > 0) }; };
+/* Sotuvda: admin yoqib qo'ygan va (bo'lsa) tugash sanasi o'tmagan */
+const planOpen = (p) => p.available !== false && !(p.availableUntil && Date.parse(p.availableUntil) <= Date.now());
 const planLabel = (p) => `${p.format === "offline" ? "Offlayn" : "Online"} · ${p.name}`;
 const strList = (a, n = 30) => (Array.isArray(a) ? a.map((x) => str(x, 200)).filter(Boolean).slice(0, n) : []);
 function cleanPlans(arr) {
@@ -530,6 +532,7 @@ function cleanPlans(arr) {
       price: Math.max(0, Math.round(Number(p.price) * 100) / 100 || 0),
       oldPrice: Math.max(0, Math.round(Number(p.oldPrice) * 100) / 100 || 0),
       available: p.available !== false, whales: str(p.whales, 30),
+      availableUntil: isDate(p.availableUntil) ? p.availableUntil : "", pinned: !!p.pinned,
     };
   });
 }
@@ -693,7 +696,7 @@ async function api(req, res, url) {
   if (m === "GET" && p === "/api/config") {
     const { brand, authorName, telegram, freeGuidesUrl, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero } = db.settings;
     const pc = payCfg();
-    return send(res, 200, { settings: { brand, authorName, telegram, freeGuidesUrl, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, payments: { ...methodsOn(), usdRate: pc.usdRate || 0 }, promos: db.promos.some((x) => x.active), plans: db.plans.map((p) => ({ ...p, image: versioned(p.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
+    return send(res, 200, { settings: { brand, authorName, telegram, freeGuidesUrl, enrollStart, enrollEnd, enrollmentOpen, capitals, stats, riskNote, hero }, payments: { ...methodsOn(), usdRate: pc.usdRate || 0 }, promos: db.promos.some((x) => x.active), plans: db.plans.map((p) => ({ ...p, available: planOpen(p), image: versioned(p.image) })), lessons: db.lessons.map((l) => ({ ...l, image: versioned(l.image) })), audience: db.audience.map((a) => ({ ...a, image: versioned(a.image) })), results: db.results });
   }
 
   if (m === "POST" && p === "/api/track") {
@@ -754,7 +757,7 @@ async function api(req, res, url) {
     if (b.consent !== true) return send(res, 400, { error: "Davom etish uchun shaxsiy ma’lumotlarni qayta ishlashga rozilik bering" });
     const plan = db.plans.find((x) => x.id === str(b.plan, 40));
     if (!plan) return send(res, 400, { error: "Tarifni tanlang" });
-    if (!plan.available) return send(res, 400, { error: "Bu tarif vaqtincha mavjud emas" });
+    if (!planOpen(plan)) return send(res, 400, { error: "Bu tarif vaqtincha mavjud emas" });
     const name = str(b.name, 80), digits = String(b.phone ?? "").replace(/\D/g, "");
     if (name.length < 2) return send(res, 400, { error: "Ismingizni kiriting" });
     if (digits.length < 9 || digits.length > 15) return send(res, 400, { error: "Telefon raqamini to‘liq kiriting" });

@@ -55,18 +55,19 @@ function priceBlock(p) {
 function renderPlans() {
   const grid = document.getElementById("plans-grid");
   if (!grid) return;
-  const list = PLANS.filter((p) => (p.format || "online") === FORMAT);
+  // ajratilgan (pinned) va sotuvdagi tarif — o'z bo'limida birinchi
+  const list = PLANS.filter((p) => (p.format || "online") === FORMAT).sort((a, b) => (pinOn(b) ? 1 : 0) - (pinOn(a) ? 1 : 0));
   grid.classList.toggle("two", list.length === 2);
   grid.classList.toggle("one", list.length === 1);
   grid.setAttribute("aria-labelledby", "fmt-" + FORMAT);
   grid.innerHTML = list.map((p, i) => {
     const off = p.available === false;
     return `
-    <article class="plan ${p.featured ? "featured" : ""}${off ? " unavailable" : ""}">
+    <article class="plan ${p.featured ? "featured" : ""}${off ? " unavailable" : ""}" id="plan-${esc(p.id)}">
       ${p.image ? `<div class="plan-media"><img class="plan-img" src="${esc(p.image)}" alt="" loading="lazy"></div>` : ""}
       <div class="plan-top">
         <p class="eyebrow">${esc(p.eyebrow)}</p>
-        ${off ? `<span class="badge muted">VAQTINCHA MAVJUD EMAS</span>` : p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
+        ${off ? `<span class="badge muted">VAQTINCHA MAVJUD EMAS</span>` : p.availableUntil ? `<span class="badge hot">${esc(untilText(p.availableUntil).toUpperCase())}</span>` : p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
       </div>
       <h3>${esc(p.name)}</h3>
       <p class="plan-description">${esc(p.description)}</p>
@@ -97,6 +98,51 @@ function renderPlans() {
   });
   if (window.FX && FX.refresh) FX.refresh();
 }
+/* Muddatli takliflar: "15-noyabrgacha" */
+const UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const tashDate = (iso) => new Date(Date.parse(iso) + 5 * 36e5); // Toshkent vaqti
+const untilText = (iso) => { const d = tashDate(iso); return `${d.getUTCDate()}-${UZ_MONTHS[d.getUTCMonth()]}gacha`; };
+const pinOn = (p) => p.pinned && p.available !== false;
+function renderSpotlight() {
+  const box = document.getElementById("spotlight");
+  if (!box) return;
+  const p = PLANS.find(pinOn);
+  if (!p) { box.hidden = true; return; }
+  const off = p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  box.hidden = false;
+  box.innerHTML = `<div class="sp-copy">
+      <p class="sp-eyebrow"><i></i>QABUL OCHIQ${p.availableUntil ? " · " + esc(untilText(p.availableUntil).toUpperCase()) : ""}</p>
+      <h3>${fmtName(p.format)} · ${esc(p.name)}</h3>
+      <p class="sp-desc">${esc(p.description)}</p>
+    </div>
+    <div class="sp-side">
+      <p class="sp-price">${off ? `<s>${money(p.oldPrice)}</s>` : ""}<b>${money(p.price)}</b></p>
+      ${p.availableUntil ? `<p class="sp-left" data-until="${esc(p.availableUntil)}"></p>` : ""}
+      <a class="button" href="#plan-${esc(p.id)}" data-spot="${esc(p.id)}" data-fmt-go="${esc(p.format || "online")}">Batafsil${ARROW}</a>
+    </div>`;
+  const left = box.querySelector(".sp-left");
+  if (left) {
+    const tick = () => {
+      const ms = Date.parse(left.dataset.until) - Date.now();
+      if (ms <= 0) { box.hidden = true; return; }
+      const d = Math.floor(ms / 864e5), h = Math.floor((ms % 864e5) / 36e5), m = Math.floor((ms % 36e5) / 6e4);
+      left.textContent = `Yopilishiga: ${d ? d + " kun " : ""}${h} soat ${m} daqiqa`;
+    };
+    tick(); setInterval(tick, 30000);
+  }
+}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-spot]"); if (!a) return;
+  e.preventDefault();
+  document.querySelector(`.fmt-tabs [data-fmt="${a.dataset.fmtGo}"]`)?.click();
+  requestAnimationFrame(() => {
+    const card = document.getElementById("plan-" + a.dataset.spot);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+  });
+});
+
 function initFormatTabs() {
   const tabs = [...document.querySelectorAll(".fmt-tabs [data-fmt]")];
   const select = (b, focus) => {
@@ -657,6 +703,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const contact = telegramLink("Assalomu alaykum! Tariflar haqida ma’lumot olmoqchiman.");
   ["contact-btn", "footer-tg"].forEach((id) => { const a = document.getElementById(id); if (a) a.href = contact; });
   initFormatTabs();
+  renderSpotlight();
   renderPlans();
   renderAudience();
   initResults();

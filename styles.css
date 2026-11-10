@@ -951,3 +951,27 @@ html.lb-on { overflow: hidden; }
 .hero-results figcaption strong em { color: #c9b8ff; font-style: normal; }
 .hero-results figcaption strong em.up { color: #58e0a0; }
 @media (prefers-reduced-motion: reduce) { .hr-slide, .hr-shot { transition: none; } }
+
+/* Ajratilgan taklif (spotlight) va muddat nishoni */
+.badge.hot { background: #e88aa6; color: #3a1020; }
+.spotlight { display: flex; justify-content: space-between; align-items: center; gap: 24px 40px; margin: -10px 0 28px; padding: 26px 30px; border-radius: 28px; background: linear-gradient(120deg, #292331, #3a2f52); color: #efeaff; box-shadow: 0 20px 50px rgba(41,35,49,.25); }
+.sp-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #f2b8c8; font-size: 12px; font-weight: 700; letter-spacing: 1.6px; }
+.sp-eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: #e88aa6; animation: pulse 1.8s infinite; }
+.spotlight h3 { margin: 0 0 6px; font-family: var(--display); font-size: 32px; font-weight: 800; letter-spacing: -.5px; }
+.sp-desc { margin: 0; max-width: 560px; color: #cfc8dc; font-size: 15px; }
+.sp-side { display: grid; justify-items: end; gap: 8px; flex: 0 0 auto; }
+.sp-price { display: flex; align-items: baseline; gap: 10px; margin: 0; }
+.sp-price s { color: #a59db3; font-size: 18px; }
+.sp-price b { font-family: var(--display); font-size: 40px; font-weight: 800; }
+.sp-left { margin: 0; color: #f2d58a; font-size: 14px; font-weight: 700; }
+.spotlight .button { background: var(--primary); color: var(--primary-ink); }
+.plan.flash { animation: flash 1.6s ease; }
+@keyframes flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 4px #e88aa6, 0 26px 54px rgba(60,44,100,.2); } }
+[data-theme="dark"] .spotlight { background: linear-gradient(120deg, #221c2c, #3a2f52); border: 1px solid #3a3346; }
+@media (max-width: 720px) {
+  .spotlight { flex-direction: column; align-items: stretch; padding: 22px 20px; margin: -6px 0 20px; border-radius: 22px; }
+  .spotlight h3 { font-size: 26px; }
+  .sp-side { justify-items: start; }
+  .spotlight .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .plan.flash { animation: none; } .sp-eyebrow i { animation: none; } }

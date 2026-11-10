@@ -331,6 +331,8 @@ function renderPlans() {
         <div><label>Muddat</label><input data-f="duration" value="${esc(p.duration)}" maxlength="80" placeholder="2–3 oy" /></div>
         <div><label>Whales signal guruhi</label><input data-f="whales" value="${esc(p.whales || "")}" maxlength="30" placeholder="Cheksiz / 3 oy" /></div>
         <div><label>Holati</label><label class="check"><input type="checkbox" data-f="available" ${p.available !== false ? "checked" : ""} /> Sotuvda (o‘chirilsa — “vaqtincha mavjud emas”)</label></div>
+        <div><label>Sotuv tugash sanasi <span class="lead-meta">(ixtiyoriy)</span></label><input type="datetime-local" data-f="availableUntil" value="${p.availableUntil ? toLocalInput(p.availableUntil) : ""}" /><small class="lead-meta">${p.availableUntil && Date.parse(p.availableUntil) <= Date.now() ? "⛔ Muddat o‘tgan — saytda yopiq" : "Shu vaqtda tarif o‘zi yopiladi (Toshkent vaqti)"}</small></div>
+        <div class="span2"><label>Ajratib ko‘rsatish</label><label class="check"><input type="checkbox" data-f="pinned" ${p.pinned ? "checked" : ""} /> Tariflar tepasida banner (“Qabul ochiq”) va o‘z bo‘limida birinchi</label></div>
         <div class="span3"><label>Karta rasmi</label>${imgField(p.image)}</div>
         <div class="span3"><label>Tavsif</label><textarea data-f="description" rows="2" maxlength="300">${esc(p.description)}</textarea></div>
         <div class="span3"><label class="check"><input type="checkbox" data-f="featured" ${p.featured ? "checked" : ""} /> Ajratib ko‘rsatish (lilac fon)</label></div>
@@ -350,7 +352,8 @@ function renderPlans() {
 $("#plans-editor").addEventListener("input", (e) => {
   const card = e.target.closest("[data-i]"), f = e.target.dataset.f; if (!card || !f) return;
   const p = CONTENT.plans[card.dataset.i];
-  if (f === "featured" || f === "available") p[f] = e.target.checked;
+  if (f === "featured" || f === "available" || f === "pinned") p[f] = e.target.checked;
+  else if (f === "availableUntil") p.availableUntil = e.target.value ? fromLocalInput(e.target.value) : "";
   else if (f === "price" || f === "oldPrice") p[f] = Number(e.target.value) || 0;
   else { p[f] = e.target.value; if (f === "name") $("strong", card).textContent = `${+card.dataset.i + 1}. ${e.target.value}`; }
 });
